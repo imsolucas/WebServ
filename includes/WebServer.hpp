@@ -1,34 +1,34 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Includes.h                                         :+:      :+:    :+:   */
+/*   WebServer.hpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: imsolucas <imsolucas@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/05/19 17:12:28 by imsolucas         #+#    #+#             */
-/*   Updated: 2025/05/20 14:10:16 by imsolucas        ###   ########.fr       */
+/*   Created: 2025/05/20 14:09:20 by imsolucas         #+#    #+#             */
+/*   Updated: 2025/05/20 14:18:19 by imsolucas        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef INCLUDES_H
-# define INCLUDES_H
+#ifndef WEBSERVER_HPP
+#define WEBSERVER_HPP
 
-#include <iostream>
-#include <exception>
-#include <string>
-#include <vector>
-#include <iomanip>
-#include <cstdlib>
-#include <map>
-#include <algorithm>
+#include "Includes.h"
 
-#include "Colors.h"
-#include "Exception.hpp"
-#include "WebServer.hpp"
-#include "LocationConfig.hpp"
-#include "Server.hpp"
-#include "ConfigParser.hpp"
+class WebServer
+{
+	public:
+		WebServer();
+		~WebServer();
 
-#define DEFAULT_CONFIG_PATH "./config/default.conf"
+		void start();
+		void stop();
+		void reload();
+
+	private:
+		int port;
+		std::string server_name;
+		std::vector<Server> servers;
+};
 
 #endif

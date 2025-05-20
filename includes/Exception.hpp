@@ -1,34 +1,32 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Includes.h                                         :+:      :+:    :+:   */
+/*   Exception.hpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: imsolucas <imsolucas@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/05/19 17:12:28 by imsolucas         #+#    #+#             */
-/*   Updated: 2025/05/20 14:10:16 by imsolucas        ###   ########.fr       */
+/*   Created: 2025/05/20 13:44:36 by imsolucas         #+#    #+#             */
+/*   Updated: 2025/05/20 13:46:20 by imsolucas        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef INCLUDES_H
-# define INCLUDES_H
+#ifndef EXCEPTION_HPP
+# define EXCEPTION_HPP
 
-#include <iostream>
-#include <exception>
-#include <string>
-#include <vector>
-#include <iomanip>
-#include <cstdlib>
-#include <map>
-#include <algorithm>
+#include "Includes.h"
 
-#include "Colors.h"
-#include "Exception.hpp"
-#include "WebServer.hpp"
-#include "LocationConfig.hpp"
-#include "Server.hpp"
-#include "ConfigParser.hpp"
-
-#define DEFAULT_CONFIG_PATH "./config/default.conf"
+class WebException : public std::exception
+{	
+	private:
+		std::string message;
+	public:
+		WebException(const std::string &message) : message(message) {}
+		virtual ~WebException() throw() {}
+		
+		virtual const char* what() const throw()
+		{
+			return this->message.c_str();
+		}
+};
 
 #endif
