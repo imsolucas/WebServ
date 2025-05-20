@@ -2,7 +2,7 @@ CXX = c++
 CXXFLAGS = -std=c++98 -g3 -Wall -Wextra -Werror -Wpedantic
 INCS = -Iinclude
 
-SRC_DIRS = src src/WebServer src/Config
+SRC_DIRS = src src/WebServer src/Config src/Listener
 OBJ_DIRS = $(sort $(dir $(OBJS)))
 
 vpath %.cpp $(SRC_DIRS)
@@ -15,17 +15,17 @@ EXE = webserv
 all : $(EXE)
 
 $(EXE) : $(OBJS)
-	$(CXX) $(CXXFLAGS) $(OBJS) -o $(EXE)
+	@$(CXX) $(CXXFLAGS) $(OBJS) -o $(EXE)
 
 obj/%.o : %.cpp $(HEADERS)
-	mkdir -p $(OBJ_DIRS)
-	$(CXX) $(CXXFLAGS) $(INCS) -c $< -o $@
+	@mkdir -p $(OBJ_DIRS)
+	@$(CXX) $(CXXFLAGS) $(INCS) -c $< -o $@
 
 clean:
-	rm -rf obj/
+	@rm -rf obj/
 
 fclean : clean
-	rm -f $(EXE)
+	@rm -f $(EXE)
 
 re : fclean all
 

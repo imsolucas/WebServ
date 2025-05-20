@@ -13,6 +13,18 @@ WebServer::WebServer(const string &config)
 
 void WebServer::run()
 {
+	_listener.setUpListener(8080);
+	std::cout << "Listener set up !\n";
+	// Event loop with poll()
+	while (true)
+	{
+		// poll() returns the number of file descriptors that have had an event occur on them.
+
+	}
+
+
+
+
 	cout << "Web Server started !\n";
 }
 

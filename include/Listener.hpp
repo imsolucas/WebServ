@@ -1,0 +1,48 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Listener.hpp                                       :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: etien <etien@student.42.fr>                +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/20 12:04:18 by etien             #+#    #+#             */
+/*   Updated: 2025/05/20 14:01:59 by etien            ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+# pragma once
+
+# include <fcntl.h> // fcntl
+# include <iostream>
+ #include <netinet/in.h> // sockaddr_in struct
+# include <poll.h>
+# include <sys/socket.h> // socket()
+# include <vector>
+
+class Listener
+{
+	public:
+		void setUpListener(int port);
+
+		class ListenerException : public std::exception
+		{
+			protected:
+				std::string _message;
+
+			public:
+				ListenerException(std::string err);
+				virtual ~ListenerException() throw();
+				const char *what() const throw();
+		};
+
+		class SocketCreationException : public ListenerException
+		{
+			public:
+				SocketCreationException(std::string err);
+		};
+
+	private:
+		int _listenerFd;
+		std::vector<pollfd> _fds;
+
+};

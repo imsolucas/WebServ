@@ -4,6 +4,8 @@
 
 # include "Config.hpp"
 
+# include "Listener.hpp"
+
 class WebServer
 {
 	public:
@@ -13,7 +15,10 @@ class WebServer
 
 	private:
 		Config _cfg;
+		Listener _listener;
 
 		void _init();
 		void _parse(const std::string &config);
+
+
 };
