@@ -19,6 +19,8 @@ void WebServer::run()
 {
 	cout << "Web Server started !\n";
 
+	int listenerFd = _listener.getListenerFd();
+
 	// Event loop with poll()
 	while (true)
 	{
@@ -37,39 +39,88 @@ void WebServer::run()
 		}
 
 		// for loop to service all file descriptors with events
-		for (std::vector<pollfd>::iterator it = _fds.begin(); it != _fds.end();)
+		for (size_t i = 0; i < _fds.size(); ++i)
 		{
+			pollfd & client = _fds[i];
+			// std::cout << "FD: " << client.fd << ", REVENTS: " << client.revents << "\n";
 			// no events detected on the fd
-			if (it->revents == 0)
-			{
-				++it;
+			if (client.revents == 0)
 				continue;
-			}
 
 			// drop problematic/disconnected clients
 			// POLLERR = socket error (I/O error or connection reset or unusable socket)
 			// POLLHUP = hang up (client disconnected)
 			// POLLNVAL = invalid fd (fd closed but still in _fds list)
-			if (it->revents & (POLLERR | POLLHUP | POLLNVAL))
+			if ((client.revents & (POLLERR | POLLHUP | POLLNVAL)) && client.fd != listenerFd)
 			{
-				close(it->fd);
-				cout << "Closed fd: " << it->fd << "\n";
-				// erase() will return the iterator to the next element.
-				it = _fds.erase(it);
+				cout << "Closed fd: " << client.fd << "\n";
+				close(client.fd);
+				_fds.erase(_fds.begin() + i);
+				// decrement to prevent skipping the element that just moved into position i.
+				--i;
 				continue;
 			}
 
-			if (it->revents)
+			// POLLIN on listener means client is attempting to connect to the server
+			if ((client.revents & POLLIN) && client.fd == listenerFd)
+			{
+				// create a socket for the client on our server.
+				// TODO: pass parameters to accept() to get the client's address and port for caching.
+				int clientFd = accept(listenerFd, NULL, NULL);
+				// if (clientFd < 0)
+				// 	throw SocketCreationException("Failed to create client socket.");
+				cout << "Accepted client connection. Client fd: " << clientFd << "\n";
+				// set the client's socket to be non-blocking.
+				fcntl(clientFd, F_SETFL, O_NONBLOCK);
+				_addToPoll(clientFd, POLLIN, 0);
+			}
 
+			// POLLIN on client means client is sending data to the server
+			else if ((client.revents & POLLIN) && client.fd != listenerFd)
+			{
+				char buffer[4096];
+				// recv() returns the number of bytes read.
+				// MSG_DONTWAIT is non-blocking and will return immediately if no data is available.
+				size_t bytesRead = recv(client.fd, buffer, sizeof(buffer), MSG_DONTWAIT);
+				// client POLLIN but 0 bytes read is the client's EOF signal when it closes its connection.
+				// a more reliable signal to detect for graceful closure than POLLHUP.
+				if (bytesRead == 0)
+				{
+					cout << "Closed fd: " << client.fd << "\n";
+					close(client.fd);
+					_fds.erase(_fds.begin() + i);
+					// decrement to prevent skipping the element that just moved into position i.
+					--i;
+					continue;
+				}
+				else if (bytesRead > 0)
+				{
+					// process data
+					cout << _YELLOW << "Request messages: " << buffer << "\n" << _RESET;
+				}
+				else
+				{
+					// handle error
+				}
 
+				// attempt to send a http response.
+				// Modern browsers will reuse persistent connections due to HTTP/1.1 keep-alive, which is on by default.
+				// So removing "Connection: close" will cause the browser to reuse the same client fd even across
+				// different tabs.
+				std::string response =
+					"HTTP/1.1 200 OK\r\n"
+					"Content-Type: text/html\r\n"
+					"Content-Length: 13\r\n"
+					"Connection: close\r\n"
+					"\r\n"
+					"Hello, world!";
 
+				// MSG_NOSIGNAL flag prevents SIGPIPE if the client has already closed the connection.
+				// Often used in server code to avoid crashes from broken pipes e.g. when client
+				// has closed their connection.
+				send(client.fd, response.c_str(), response.size(), 0);
+			}
 		}
-
-
-
-
-
-
 	}
 }
 

@@ -6,12 +6,15 @@
 /*   By: etien <etien@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/20 12:06:22 by etien             #+#    #+#             */
-/*   Updated: 2025/05/20 14:37:52 by etien            ###   ########.fr       */
+/*   Updated: 2025/05/20 18:37:16 by etien            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Listener.hpp"
 
+using std::cout;
+
+// TODO: Exception handling
 void Listener::setUpListener(int port)
 {
 	// Set up the listener socket
@@ -22,6 +25,7 @@ void Listener::setUpListener(int port)
 	_listenerFd = socket(AF_INET, SOCK_STREAM, 0);
 	// if (_listener_fd < 0)
 	// 	throw SocketCreationException("Failed to create listener socket.");
+	cout << "Listener fd: " << _listenerFd << "\n";
 
 	// fcntl is used to change the behaviour of the socket
 	// F_SETFL = set file status flags

@@ -6,7 +6,7 @@
 /*   By: etien <etien@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/20 12:04:18 by etien             #+#    #+#             */
-/*   Updated: 2025/05/20 15:05:01 by etien            ###   ########.fr       */
+/*   Updated: 2025/05/20 20:50:24 by etien            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,10 +14,10 @@
 
 # include <fcntl.h> // fcntl
 # include <iostream>
- #include <netinet/in.h> // sockaddr_in struct
+ #include <netinet/in.h> // htons, sockaddr_in struct
 # include <poll.h>
-# include <sys/socket.h> // socket()
-# include <unistd.h> // close()
+# include <sys/socket.h> // bind, listen, recv, socket
+# include <unistd.h> // close
 # include <vector>
 
 class Listener
