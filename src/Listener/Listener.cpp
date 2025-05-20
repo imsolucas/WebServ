@@ -6,7 +6,7 @@
 /*   By: etien <etien@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/20 12:06:22 by etien             #+#    #+#             */
-/*   Updated: 2025/05/20 14:09:27 by etien            ###   ########.fr       */
+/*   Updated: 2025/05/20 14:37:52 by etien            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@
 
 void Listener::setUpListener(int port)
 {
-	// PART 1: Set up the listener socket
+	// Set up the listener socket
 
 	// AF_INET = internet address (IPv4)
 	// SOCK_STREAM = TCP connection
@@ -36,7 +36,7 @@ void Listener::setUpListener(int port)
 	// Host byte order can be big or little endian. Network byte order is always big endian.
 	// htons() ensures that the port number is in the correct byte order for network transmission.
 	listenerAddress.sin_port = htons(port);
-	// bind to all available interfaces (all local IPs on the machine).
+	// INADDR_ANY means bind to all available interfaces (all local IPs on the machine).
 	// (e.g., 127.0.0.1, 192.168.x.x, etc.).
 	listenerAddress.sin_addr.s_addr = INADDR_ANY;
 
@@ -46,20 +46,11 @@ void Listener::setUpListener(int port)
 	// listener socket will listen for incoming connection requests.
 	// SOMAXCONN is the maximum possible queue size for pending connections.
 	listen(_listenerFd, SOMAXCONN);
+}
 
-	// PART 2: Set up the pollfd structure
-
-	// pollfd structure is used to monitor file descriptors for events.
-	// pollfd structure:
-	// 1) FD to monitor
-	// 2) EVENTS to monitor (POLLIN = incoming data, POLLOUT = outgoing data)
-	//    In case of error, poll() will set error flags in the revents field.
-	// 3) REVENTS (returned events which will be set by poll())
-	struct pollfd pfd;
-	pfd.fd = _listenerFd;
-	pfd.events = POLLIN;
-	pfd.revents = 0;
-	_fds.push_back(pfd);
+int Listener::getListenerFd() const
+{
+	return _listenerFd;
 }
 
 Listener::ListenerException::ListenerException(std::string err) : _message(err) {}

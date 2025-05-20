@@ -6,7 +6,7 @@
 /*   By: etien <etien@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/20 12:04:18 by etien             #+#    #+#             */
-/*   Updated: 2025/05/20 14:01:59 by etien            ###   ########.fr       */
+/*   Updated: 2025/05/20 15:05:01 by etien            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,12 +17,14 @@
  #include <netinet/in.h> // sockaddr_in struct
 # include <poll.h>
 # include <sys/socket.h> // socket()
+# include <unistd.h> // close()
 # include <vector>
 
 class Listener
 {
 	public:
 		void setUpListener(int port);
+		int getListenerFd() const;
 
 		class ListenerException : public std::exception
 		{
@@ -43,6 +45,4 @@ class Listener
 
 	private:
 		int _listenerFd;
-		std::vector<pollfd> _fds;
-
 };
