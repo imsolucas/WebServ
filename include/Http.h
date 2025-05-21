@@ -4,7 +4,7 @@
 # include <map>
 # include <vector>
 
-typedef char * ByteStream;
+typedef const char* ByteStream;
 
 enum MessageType
 {
@@ -48,21 +48,30 @@ namespace HttpHeaders {
 	const std::string SET_COOKIE = "Set-Cookie";
 }
 
+struct HttpMessage
+{
+	std::string startLine;
+	std::string headers;
+	std::string body;
+};
+
 struct HttpRequest
 {
 	HttpMethod	method;
-	std::string	URI;
-	std::string	httpVersion;
-	std::map<std::string, std::string> headers;
+	std::string	requestTarget;
+	std::string	protocol;
+	std::map<std::string, std::string> requestHeaders;
+	std::map<std::string, std::string> representationHeaders;
 	std::string	body;
 };
 
 struct HttpResponse
 {
-	std::string	httpVersion;
-	StatusCode	status;
-	std::string	reasonPhrase;
-	std::map<std::string, std::string> headers;
+	std::string	protocol;
+	StatusCode	statusCode;
+	std::string	statusText;
+	std::map<std::string, std::string> responseHeaders;
+	std::map<std::string, std::string> representationHeaders;
 	std::string	body;
 };
 
