@@ -6,19 +6,6 @@
 
 typedef const char* ByteStream;
 
-enum MessageType
-{
-	REQUEST,
-	RESPONSE
-};
-
-enum HttpMethod
-{
-	GET,
-	POST,
-	DELETE
-};
-
 enum StatusCode
 {
 	OK = 200,
@@ -33,7 +20,11 @@ enum StatusCode
 	BAD_GATEWAY = 502
 };
 
-namespace HttpHeaders {
+namespace Http
+{
+	const std::string GET = "GET";
+	const std::string POST = "POST";
+	const std::string DELETE = "DELETE";
 	const std::string HOST = "Host";
 	const std::string CONTENT_LENGTH = "Content-Length";
 	const std::string CONTENT_TYPE = "Content-Type";
@@ -57,7 +48,7 @@ struct HttpMessage
 
 struct HttpRequest
 {
-	HttpMethod	method;
+	std::string	method;
 	std::string	requestTarget;
 	std::string	protocol;
 	std::map<std::string, std::string> requestHeaders;
