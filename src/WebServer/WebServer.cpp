@@ -11,9 +11,8 @@ WebServer::WebServer(const string &config)
 	_parse(config);
 	_init();
 	// TO DO: link port number (8080) to config file
-	_listener.setUpListener(8080);
+	_setUpListener(8080);
 	std::cout << "Listener set up !\n";
-	_addToPoll(_listener.getListenerFd(), POLLIN, 0);
 }
 
 WebServer::~WebServer()
@@ -23,11 +22,16 @@ WebServer::~WebServer()
 	cout << "Closed all sockets.\n";
 }
 
+bool clientConnecting()
+{
+	return true;
+}
+
 void WebServer::run()
 {
 	cout << "Web Server started !\n";
 
-	int listenerFd = _listener.getListenerFd();
+	int listenerFd = _fds[0].fd;
 
 	// Event loop with poll()
 	while (!gStopLoop)
@@ -88,8 +92,8 @@ void WebServer::run()
 			{
 				char buffer[4096];
 				// recv() returns the number of bytes read.
-				// MSG_DONTWAIT is non-blocking and will return immediately if no data is available.
-				size_t bytesRead = recv(client.fd, buffer, sizeof(buffer), MSG_DONTWAIT);
+				// 0 flag because socket has already been set to be non-blocking
+				size_t bytesRead = recv(client.fd, buffer, sizeof(buffer), 0);
 				// client POLLIN but 0 bytes read is the client's EOF signal when it closes its connection.
 				// a more reliable signal to detect for graceful closure than POLLHUP.
 				if (bytesRead == 0)
@@ -111,22 +115,7 @@ void WebServer::run()
 					// handle error
 				}
 
-				// attempt to send a http response.
-				// Modern browsers will reuse persistent connections due to HTTP/1.1 keep-alive, which is on by default.
-				// So removing "Connection: close" will cause the browser to reuse the same client fd even across
-				// different tabs.
-				std::string response =
-					"HTTP/1.1 200 OK\r\n"
-					"Content-Type: text/html\r\n"
-					"Content-Length: 13\r\n"
-					"Connection: close\r\n"
-					"\r\n"
-					"Hello, world!";
-
-				// MSG_NOSIGNAL flag prevents SIGPIPE if the client has already closed the connection.
-				// Often used in server code to avoid crashes from broken pipes e.g. when client
-				// has closed their connection.
-				send(client.fd, response.c_str(), response.size(), MSG_NOSIGNAL);
+				_sendResponse(client.fd);
 			}
 		}
 	}
@@ -162,3 +151,85 @@ void WebServer::_addToPoll(int fd, short events, short revents)
 	pfd.revents = revents;
 	_fds.push_back(pfd);
 }
+
+// TODO: Exception handling
+void WebServer::_setUpListener(int port)
+{
+	// Set up the listener socket
+
+	// AF_INET = internet address (IPv4)
+	// SOCK_STREAM = TCP connection
+	// 0 = default protocol for the socket type
+	int listenerFd = socket(AF_INET, SOCK_STREAM, 0);
+	// if (_listener_fd < 0)
+	// 	throw SocketCreationException("Failed to create listener socket.");
+	cout << "Listener fd: " << listenerFd << "\n";
+
+	// fcntl is used to change the behaviour of the socket
+	// F_SETFL = set file status flags
+	// set socket to non-blocking mode (call returns immediately if no data in socket)
+	// prevent blocking accept/read/write calls
+	fcntl(listenerFd, F_SETFL, O_NONBLOCK);
+
+	// setsockopt modifies low-level networking behaviour of the socket.
+	// sockets can be modified at the socket (SOL_SOCKET), TCP (IPPROTO_TCP) and IP level (IPPROTO_IP).
+	// optval and optlen necessary because setsockopt is a generic API - doesn't always just handle int.
+	int opt = 1; // 1 to toggle true/on
+	// SO_REUSEADDR = allows a server to bind to an address/port that is in a TIME_WAIT state
+	// e.g. when restarting a server quickly and attempting to bind to the same port.
+	// OS will typically prevents port binding until the port is fully closed.
+	setsockopt(listenerFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+
+	// "socket address, internet" stores IP address, port, and family info.
+	sockaddr_in listenerAddress;
+	listenerAddress.sin_family = AF_INET; // IPv4
+	// htons() converts port from host byte order to network byte order
+	// Host byte order can be big or little endian. Network byte order is always big endian.
+	// htons() ensures that the port number is in the correct byte order for network transmission.
+	listenerAddress.sin_port = htons(port);
+	// INADDR_ANY means bind to all available interfaces (all local IPs on the machine).
+	// (e.g., 127.0.0.1, 192.168.x.x, etc.).
+	listenerAddress.sin_addr.s_addr = INADDR_ANY;
+
+	// associates the socket with an address and port on the local machine.
+	bind(listenerFd, (sockaddr *)&listenerAddress, sizeof(listenerAddress));
+
+	// listener socket will listen for incoming connection requests.
+	// SOMAXCONN is the maximum possible queue size for pending connections.
+	listen(listenerFd, SOMAXCONN);
+
+	_addToPoll(listenerFd, POLLIN, 0);
+}
+
+void WebServer::_sendResponse(int fd)
+{
+	// attempt to send a http response.
+	// Modern browsers will reuse persistent connections due to HTTP/1.1 keep-alive, which is on by default.
+	// So removing "Connection: close" will cause the browser to reuse the same client fd even across
+	// different tabs.
+	std::string response =
+		"HTTP/1.1 200 OK\r\n"
+		"Content-Type: text/html\r\n"
+		"Content-Length: 13\r\n"
+		"Connection: close\r\n"
+		"\r\n"
+		"Hello, world!";
+
+	// MSG_NOSIGNAL flag prevents SIGPIPE if the client has already closed the connection.
+	// Often used in server code to avoid crashes from broken pipes e.g. when client
+	// has closed their connection.
+	send(fd, response.c_str(), response.size(), MSG_NOSIGNAL);
+}
+
+
+WebServer::WebServerException::WebServerException(std::string err) : _message(err) {}
+
+WebServer::WebServerException::~WebServerException() throw() {}
+
+const char *WebServer::WebServerException::what() const throw()
+{
+	return _message.c_str();
+}
+
+WebServer::SocketCreationException::SocketCreationException(std::string err)
+: WebServer::WebServerException("Error: " + err) {}
