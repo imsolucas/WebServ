@@ -6,7 +6,7 @@
 /*   By: etien <etien@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/20 12:06:22 by etien             #+#    #+#             */
-/*   Updated: 2025/05/20 18:37:16 by etien            ###   ########.fr       */
+/*   Updated: 2025/05/21 10:54:33 by etien            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,15 @@ void Listener::setUpListener(int port)
 	// set socket to non-blocking mode (call returns immediately if no data in socket)
 	// prevent blocking accept/read/write calls
 	fcntl(_listenerFd, F_SETFL, O_NONBLOCK);
+
+	// setsockopt modifies low-level networking behaviour of the socket.
+	// sockets can be modified at the socket (SOL_SOCKET), TCP (IPPROTO_TCP) and IP level (IPPROTO_IP).
+	// optval and optlen necessary because setsockopt is a generic API - doesn't always just handle int.
+	int opt = 1; // 1 to toggle true/on
+	// SO_REUSEADDR = allows a server to bind to an address/port that is in a TIME_WAIT state
+	// e.g. when restarting a server quickly and attempting to bind to the same port.
+	// OS will typically prevents port binding until the port is fully closed.
+	setsockopt(_listenerFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
 	// "socket address, internet" stores IP address, port, and family info.
 	sockaddr_in listenerAddress;

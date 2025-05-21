@@ -12,6 +12,7 @@ class WebServer
 {
 	public:
 		WebServer(const std::string &config);
+		~WebServer();
 
 		void run();
 
@@ -23,6 +24,4 @@ class WebServer
 		void _init();
 		void _parse(const std::string &config);
 		void _addToPoll(int fd, short events, short revents);
-
-
 };

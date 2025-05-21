@@ -1,5 +1,6 @@
 # include <iostream>
 
+# include "signal.hpp"
 # include "WebServer.hpp"
 
 using std::string;
@@ -15,6 +16,13 @@ WebServer::WebServer(const string &config)
 	_addToPoll(_listener.getListenerFd(), POLLIN, 0);
 }
 
+WebServer::~WebServer()
+{
+	for (size_t i = 0; i < _fds.size(); ++i)
+		close(_fds[i].fd);
+	cout << "Closed all sockets.\n";
+}
+
 void WebServer::run()
 {
 	cout << "Web Server started !\n";
@@ -22,7 +30,7 @@ void WebServer::run()
 	int listenerFd = _listener.getListenerFd();
 
 	// Event loop with poll()
-	while (true)
+	while (!gStopLoop)
 	{
 		// poll() returns the number of file descriptors that have had an event occur on them.
 		// return value 0 = timeout, -1 = error
@@ -86,8 +94,8 @@ void WebServer::run()
 				// a more reliable signal to detect for graceful closure than POLLHUP.
 				if (bytesRead == 0)
 				{
-					cout << "Closed fd: " << client.fd << "\n";
 					close(client.fd);
+					cout << "Closed fd: " << client.fd << "\n";
 					_fds.erase(_fds.begin() + i);
 					// decrement to prevent skipping the element that just moved into position i.
 					--i;
@@ -118,7 +126,7 @@ void WebServer::run()
 				// MSG_NOSIGNAL flag prevents SIGPIPE if the client has already closed the connection.
 				// Often used in server code to avoid crashes from broken pipes e.g. when client
 				// has closed their connection.
-				send(client.fd, response.c_str(), response.size(), 0);
+				send(client.fd, response.c_str(), response.size(), MSG_NOSIGNAL);
 			}
 		}
 	}
