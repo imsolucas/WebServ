@@ -26,8 +26,6 @@ namespace Http
 	const std::string POST = "POST";
 	const std::string DELETE = "DELETE";
 	const std::string HOST = "Host";
-	const std::string CONTENT_LENGTH = "Content-Length";
-	const std::string CONTENT_TYPE = "Content-Type";
 	const std::string ACCEPT = "Accept";
 	const std::string AUTHORIZATION = "Authorization";
 	const std::string COOKIE = "Cookie";
@@ -37,6 +35,12 @@ namespace Http
 	const std::string LOCATION = "Location";
 	const std::string ALLOW = "Allow";
 	const std::string SET_COOKIE = "Set-Cookie";
+	const std::string CONTENT_LENGTH = "Content-Length";
+	const std::string CONTENT_TYPE = "Content-Type";
+	const std::string CONTENT_RANGE = "Content-Range";
+	const std::string CONTENT_ENCODING = "Content-Encoding";
+	const std::string CONTENT_LOCATION = "Content-Location";
+	const std::string CONTENT_LANGUAGE = "Content-Language";
 }
 
 struct HttpMessage
