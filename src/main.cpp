@@ -30,12 +30,7 @@ int main(int argc, char *argv[])
 
 		HttpRequest request = deserialize(stream);
 
-		// cout << request.method << '\n';
-		// cout << request.requestTarget << '\n';
-		// cout << request.protocol << '\n';
-		// for (map<string, string>::const_iterator it = request.requestHeaders.begin(); it != request.requestHeaders.end(); ++it)
-		// 	cout << (*it).first + ": " + (*it).second + '\n';
-		// cout << request.body << '\n';
+		cout << request;
 	}
 	cout << "\n\n";
 	// POST request
@@ -55,11 +50,6 @@ int main(int argc, char *argv[])
 
 		HttpRequest request = deserialize(stream);
 
-		// cout << request.method << '\n';
-		// cout << request.requestTarget << '\n';
-		// cout << request.protocol << '\n';
-		// for (map<string, string>::const_iterator it = request.requestHeaders.begin(); it != request.requestHeaders.end(); ++it)
-		// 	cout << (*it).first + ": " + (*it).second + '\n';
-		// cout << request.body << '\n';
+		cout << request;
 	}
 }

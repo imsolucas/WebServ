@@ -1,6 +1,7 @@
 # pragma once
 
-# include <iostream>
+# include <string>
+# include <ostream>
 # include <map>
 # include <vector>
 
@@ -70,3 +71,6 @@ struct HttpResponse
 
 ByteStream	serialize(HttpResponse response);
 HttpRequest	deserialize(ByteStream stream);
+
+std::ostream &operator << (std::ostream &os, const HttpRequest &r);
+std::ostream &operator << (std::ostream &os, const HttpResponse &r);

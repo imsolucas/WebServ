@@ -5,8 +5,10 @@
 # include "Http.h"
 
 using std::string;
+using std::ostream;
 using std::istringstream;
 using std::vector;
+using std::map;
 using std::cout;
 using std::getline;
 
@@ -79,4 +81,24 @@ HttpMessage decode(ByteStream stream)
 		msg.body += (line + "\n");
 
 	return msg;
+}
+
+ostream &operator << (ostream &os, const HttpRequest &r)
+{
+	string httpRequest;
+
+	httpRequest = r.method + " " + r.requestTarget + " " + r.protocol + "\n";
+	for (map<string, string>::const_iterator it = r.headers.begin();
+		it != r.headers.end(); ++it)
+		httpRequest += it->first + ": " + it->second + "\n";
+	httpRequest += r.body;
+	os << httpRequest;
+
+	return os;
+}
+
+ostream &operator << (ostream &os, const HttpResponse &r)
+{
+	(void)r;
+	return os;
 }
