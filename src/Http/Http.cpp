@@ -24,9 +24,11 @@ HttpRequest deserialize(ByteStream stream)
 	HttpRequest req;
 
 	msg = decode(stream);
-	cout << msg.startLine;
+
+	cout << msg.startLine + "\n";
 	cout << msg.headers;
 	cout << msg.body;
+
 	req = parse(msg);
 
 	return req;
@@ -46,7 +48,12 @@ HttpMessage decode(ByteStream stream)
 	HttpMessage msg;
 
 	// Read start line
-	getline(iss, msg.startLine);
+	if (getline(iss, line))
+	{
+		if (!line.empty() && line[line.length() - 1 == '\r'])
+			line.erase(line.length() - 1);
+		msg.startLine = line;
+	}
 
 	// Read headers until an empty line
 	while (getline(iss, line))
