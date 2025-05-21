@@ -42,7 +42,7 @@ namespace Http
 struct HttpMessage
 {
 	std::string startLine;
-	std::string headers;
+	std::vector<std::string> headers;
 	std::string body;
 };
 
