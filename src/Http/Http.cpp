@@ -1,12 +1,14 @@
 # include <iostream>
 # include <sstream>
 
+# include "utils.h"
 # include "Http.h"
 
-using std::cout;
-using std::getline;
 using std::string;
 using std::istringstream;
+using std::vector;
+using std::cout;
+using std::getline;
 
 static HttpRequest parse(HttpMessage message);
 static HttpMessage decode(ByteStream stream);
@@ -24,11 +26,6 @@ HttpRequest deserialize(ByteStream stream)
 	HttpRequest req;
 
 	msg = decode(stream);
-
-	cout << msg.startLine + "\n";
-	cout << msg.headers;
-	cout << msg.body;
-
 	req = parse(msg);
 
 	return req;
@@ -36,8 +33,22 @@ HttpRequest deserialize(ByteStream stream)
 
 HttpRequest parse(HttpMessage message)
 {
-	(void)message;
 	HttpRequest req;
+
+	vector<string> vec = utils::split(message.startLine, ' ');
+	req.method = vec[0];
+	req.requestTarget = vec[1];
+	req.protocol = vec[2];
+
+	for (vector<string>::iterator it = message.headers.begin();
+		it != message.headers.end(); ++it)
+	{
+		vec = utils::split(*it, ':');
+		req.headers[vec[0]] = vec[1].substr(1);
+	}
+
+	req.body = message.body;
+
 	return (req);
 }
 
@@ -48,12 +59,10 @@ HttpMessage decode(ByteStream stream)
 	HttpMessage msg;
 
 	// Read start line
-	if (getline(iss, line))
-	{
-		if (!line.empty() && line[line.length() - 1 == '\r'])
-			line.erase(line.length() - 1);
-		msg.startLine = line;
-	}
+	getline(iss, line);
+	if (!line.empty() && line[line.length() - 1 == '\r'])
+		line.erase(line.length() - 1);
+	msg.startLine = line;
 
 	// Read headers until an empty line
 	while (getline(iss, line))
@@ -62,7 +71,7 @@ HttpMessage decode(ByteStream stream)
 			line.erase(line.length() - 1);
 		if (line.empty())
 			break;
-		msg.headers += (line + "\n");
+		msg.headers.push_back(line);
 	}
 
 	// Read the body
