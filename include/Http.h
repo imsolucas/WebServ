@@ -55,8 +55,7 @@ struct HttpRequest
 	std::string	method;
 	std::string	requestTarget;
 	std::string	protocol;
-	std::map<std::string, std::string> requestHeaders;
-	std::map<std::string, std::string> representationHeaders;
+	std::map<std::string, std::string> headers;
 	std::string	body;
 };
 
@@ -65,8 +64,7 @@ struct HttpResponse
 	std::string	protocol;
 	StatusCode	statusCode;
 	std::string	statusText;
-	std::map<std::string, std::string> responseHeaders;
-	std::map<std::string, std::string> representationHeaders;
+	std::map<std::string, std::string> headers;
 	std::string	body;
 };
 
