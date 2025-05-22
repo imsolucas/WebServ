@@ -18,17 +18,10 @@ void Server::run()
 	if (listen(_listening.fd, SOMAXCONN) < 0)
 		throw runtime_error("Failed to listen on socket.");
 
-	while (_connected.size() != SOMAXCONN)
-	{
-		Socket client;
-		client.fd = accept(_listening.fd, reinterpret_cast<sockaddr *>(&client.addr), &client.len);
-		if (client.fd < 0)
-		{
-			perror("accept");
-			continue ;
-		}
-		_connected.push_back(client);
-	}
+	Socket client;
+	client.fd = accept(_listening.fd, reinterpret_cast<sockaddr *>(&client.addr), &client.len);
+	if (client.fd < 0)
+		throw runtime_error("Failed to connect to client.");
 
 	cout << "Server started.\n";
 }
@@ -36,9 +29,6 @@ void Server::run()
 void Server::init()
 {
 	cout << "Initializing server...\n";
-
-	if (_connected.size() == SOMAXCONN)
-		throw runtime_error("Connection limit reached.");
 
 	int			&fd = _listening.fd;
 	sockaddr_in	&addr = _listening.addr;
@@ -51,7 +41,22 @@ void Server::init()
 	addr.sin_addr.s_addr = INADDR_ANY;
 	addr.sin_port = htons(8080);
 	if (bind(fd, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) < 0)
-		throw runtime_error("Failed to bind socket.");
+	throw runtime_error("Failed to bind socket.");
 
 	cout << "Finish initializing server.\n";
+}
+
+void Server::_listen()
+{
+	while (_connected.size() != SOMAXCONN)
+	{
+		Socket client;
+		client.fd = accept(_listening.fd, reinterpret_cast<sockaddr *>(&client.addr), &client.len);
+		if (client.fd < 0)
+		{
+			perror("accept");
+			continue ;
+		}
+		_connected.push_back(client);
+	}
 }
