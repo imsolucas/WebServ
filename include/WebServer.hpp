@@ -8,11 +8,11 @@
 
 # include <map>
 
-# include <fcntl.h> // fcntl
+# include <fcntl.h>
 # include <iostream>
 # include <netinet/in.h> // htons, sockaddr_in struct
 # include <poll.h>
-# include <sys/socket.h> // bind, listen, recv, socket
+# include <sys/socket.h> // accept, bind, listen, recv, setsockopt, socket
 # include <unistd.h> // close
 # include <vector>
 
@@ -46,8 +46,8 @@ class WebServer
 
 		void _removeClient(const pollfd & socket, int i);
 		void _addClient(const pollfd & socket);
-		bool _readFromClient(const pollfd & socket, int i);
-		void _sendResponse(int fd);
+		bool _recvFromClient(const pollfd & socket, int i);
+		void _sendResponse(const pollfd & socket, int i);
 
 		void _setUpListener(int port);
 
@@ -63,8 +63,9 @@ class WebServer
 		bool _clientIsConnecting(const pollfd & socket, const SocketMeta & socketMeta) const;
 		bool _clientIsSendingData(const pollfd & socket, const SocketMeta & socketMeta) const;
 
-		void _debugPollAndSocketMap() const;
+		static void printError(std::string message);
 
+		void _debugPollAndSocketMap() const;
 
 	// exceptions
 	public:
@@ -75,21 +76,34 @@ class WebServer
 				const char *what() const throw();
 		};
 
-
-		class WebServerException : public std::exception
+		// inherit from runtime_error to customize error message
+		class SocketCreationException : public std::runtime_error
 		{
-			protected:
-				std::string _message;
-
 			public:
-				WebServerException(std::string err);
-				virtual ~WebServerException() throw();
-				const char *what() const throw();
+				SocketCreationException(const std::string& msg);
 		};
 
-		class SocketCreationException : public WebServerException
+		class SocketConfigException : public std::runtime_error
 		{
 			public:
-				SocketCreationException(std::string err);
+				SocketConfigException(const std::string& msg);
+		};
+
+		class SocketOptionException : public std::runtime_error
+		{
+			public:
+				SocketOptionException(const std::string& msg);
+		};
+
+		class BindException : public std::runtime_error
+		{
+			public:
+				BindException(const std::string& msg);
+		};
+
+		class ListenException : public std::runtime_error
+		{
+			public:
+				ListenException(const std::string& msg);
 		};
 };
