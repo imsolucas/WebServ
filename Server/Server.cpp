@@ -25,7 +25,7 @@ void Server::run()
 	char buffer[4096];
 	size_t len;
 	len = recv(client.fd, buffer, 4096, 0);
-	cout << "Received " << len << " bytes: \n-----" << buffer << "\n-----\n";
+	cout << "Received " << len << " bytes: \n-----\n" << buffer << "\n-----\n";
 
 }
 

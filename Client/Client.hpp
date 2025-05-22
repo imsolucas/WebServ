@@ -4,15 +4,14 @@
 # include <netinet/in.h>
 
 // Receiving and sending data between a single server
-struct Socket
+struct Server
 {
 	std::string	ip;
 	uint16_t	port;
-	int			fd;
 	sockaddr_in	addr;
 	socklen_t	len;
 
-	Socket();
+	Server();
 };
 
 class Client
@@ -20,6 +19,9 @@ class Client
 	public:
 		Client(const std::string &address);
 
+		void send(const std::string &msg);
+
 	private:
-		Socket _connecting;
+		int _socket;
+		Server _connecting;
 };

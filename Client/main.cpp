@@ -10,6 +10,7 @@ int main()
 	try
 	{
 		Client c("127.0.0.1:8080");
+		c.send("This is a message.");
 	}
 	catch(const exception& e)
 	{
