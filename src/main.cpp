@@ -2,6 +2,7 @@
 # include <ostream>
 
 # include "colors.h"
+# include "utils.hpp"
 # include "Http.h"
 # include "WebServer.hpp"
 
@@ -79,7 +80,7 @@ int main(int argc, char *argv[])
 		string body = "Hello World !";
 		map<string, string> headers;
 		headers["Content-Type"] = "text/plain; charset=UTF-8";
-		headers["Content-Length"] = (body.size());
+		headers["Content-Length"] = utils::toString(body.size());
 		headers["Connection"] = "close";
 		HttpResponse response =
 		{

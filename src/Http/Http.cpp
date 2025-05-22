@@ -1,7 +1,7 @@
 # include <iostream>
 # include <sstream>
 
-# include "utils.h"
+# include "utils.hpp"
 # include "Http.h"
 
 using std::string;
@@ -18,6 +18,8 @@ static HttpMessage decode(ByteStream stream);
 ByteStream serialize(HttpResponse response)
 {
 	(void)response;
+	cout << utils::toString(1);
+	cout << utils::toString("Hello world");
 	return NULL;
 }
 

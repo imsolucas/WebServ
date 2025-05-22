@@ -1,6 +1,6 @@
 # include <sstream>
 
-# include "utils.h"
+# include "utils.hpp"
 
 using std::string;
 using std::istringstream;
@@ -15,6 +15,6 @@ vector<string> utils::split(const string &str, char delimiter)
 
 	while (getline(iss, token, delimiter))
 		v.push_back(token);
-		
+
 	return v;
 }
