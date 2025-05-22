@@ -11,8 +11,6 @@ WebServer::WebServer(const string &config)
 {
 	_parse(config);
 	_init();
-	// TODO: link port number to config file
-	_setUpListener(8080);
 }
 
 WebServer::~WebServer()
@@ -23,6 +21,8 @@ WebServer::~WebServer()
 // Event loop with poll()
 void WebServer::run()
 {
+	// TODO: link port number to config file
+	_setUpListener(8080);
 	cout << "Web server started!\n";
 	while (!gStopLoop)
 	{
@@ -40,8 +40,6 @@ void WebServer::run()
 		{
 			pollfd & socket = _poll[i];
 			SocketMeta & socketMeta = _socketMap.find(socket.fd)->second;
-
-			// std::cout << "FD: " << socket.fd << ", REVENTS: " << socket.revents << "\n";
 
 			if (_noEvents(socket))
 				continue;
@@ -95,7 +93,7 @@ void WebServer::_removeClient(const pollfd & socket, int i)
 	close(clientFd);
 	_removeFromPoll(i);
 	_removeFromSocketMap(clientFd);
-	cout << RED << "\nClient with fd " << clientFd << " disconnected!\n" << RESET;
+	cout << RED << "Client with fd " << clientFd << " disconnected!\n" << RESET;
 }
 
 void WebServer::_addClient(const pollfd & socket)
@@ -111,13 +109,13 @@ void WebServer::_addClient(const pollfd & socket)
 	// set the client's socket to be non-blocking.
 	if (fcntl(clientFd, F_SETFL, O_NONBLOCK) < 0)
 	{
-		printError("Failed to set non-blocking mode for client with fd " + std::to_string(socket.fd) + ".\n");
+		printError("Failed to set non-blocking mode for client with fd " + toString(socket.fd) + ".\n");
 		close(clientFd);
 		return;
 	}
 	_addToPoll(clientFd, POLLIN, 0);
 	_addToSocketMap(clientFd, SocketMeta::CLIENT, socket.fd, -1);
-	cout << GREEN <<  "\nClient with fd " << clientFd << " connected!\n" << RESET;
+	cout << GREEN <<  "Client with fd " << clientFd << " connected!\n" << RESET;
 }
 
 // true boolean returned means client was removed.
@@ -126,7 +124,8 @@ bool WebServer::_recvFromClient(const pollfd & socket, int i)
 	char buffer[4096];
 	// recv() returns the number of bytes read.
 	// 0 flag because socket has already been set to be non-blocking.
-	size_t bytesReceived = recv(socket.fd, buffer, sizeof(buffer), 0);
+	// signed size_t can be negative.
+	ssize_t bytesReceived = recv(socket.fd, buffer, sizeof(buffer), 0);
 	// 0 bytes read is the client's EOF signal when it closes its connection.
 	// a more reliable signal to detect for graceful closure than POLLHUP.
 	if (bytesReceived == 0)
@@ -137,7 +136,7 @@ bool WebServer::_recvFromClient(const pollfd & socket, int i)
 	}
 	else if (bytesReceived < 0)
 	{
-		printError("Failed to receive request from client with fd " + std::to_string(socket.fd) + ".\n");
+		printError("Failed to receive request from client with fd " + toString(socket.fd) + ".\n");
 		_removeClient(socket, i);
 		return true;
 	}
@@ -170,29 +169,31 @@ void WebServer::_sendResponse(const pollfd & socket, int i)
 	// has closed their connection.
 	if (send(socket.fd, response.c_str(), response.size(), MSG_NOSIGNAL) <= 0)
 	{
-		printError("Failed to send response to client with fd " + std::to_string(socket.fd) + ".\n");
+		printError("Failed to send response to client with fd " + toString(socket.fd) + ".\n");
 		_removeClient(socket, i);
 	}
 }
 
-// TODO: Exception handling
 void WebServer::_setUpListener(int port)
 {
-	std::string portString = std::to_string(port);
+	std::string portString = toString(port);
 
 	// AF_INET = internet address (IPv4)
 	// SOCK_STREAM = TCP connection
 	// 0 = default protocol for the socket type
 	int listenerFd = socket(AF_INET, SOCK_STREAM, 0);
 	if (listenerFd < 0)
-		throw SocketCreationException("Failed to create listener socket for port " + portString + ".");
+		throw SocketCreationException(portString);
 
 	// fcntl is used to change the behaviour of the socket
 	// F_SETFL = set file status flags
 	// set socket to non-blocking mode (call returns immediately if no data in socket)
 	// prevent blocking accept/read/write calls
 	if (fcntl(listenerFd, F_SETFL, O_NONBLOCK) < 0)
-		throw SocketConfigException("Failed to set non-blocking mode for listener on port " + portString + ".");
+	{
+		close(listenerFd);
+		throw SocketConfigException(portString);
+	}
 
 	// setsockopt modifies low-level networking behaviour of the socket.
 	// sockets can be modified at the socket (SOL_SOCKET), TCP (IPPROTO_TCP) and IP level (IPPROTO_IP).
@@ -202,7 +203,10 @@ void WebServer::_setUpListener(int port)
 	// e.g. when restarting a server quickly and attempting to bind to the same port.
 	// OS will typically prevents port binding until the port is fully closed.
 	if (setsockopt(listenerFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
-		throw SocketOptionException("Failed to set socket option (SO_REUSEADDR) for listener on port " + portString + ".");
+	{
+		close(listenerFd);
+		throw SocketOptionException(portString);
+	}
 
 	// "socket address, internet" stores IP address, port, and family info.
 	sockaddr_in listenerAddress;
@@ -217,14 +221,18 @@ void WebServer::_setUpListener(int port)
 
 	// associates the socket with an address and port on the local machine.
 	if (bind(listenerFd, (sockaddr *)&listenerAddress, sizeof(listenerAddress)) < 0)
-		throw BindException("Failed to bind listener socket to port " + portString + ".");
-
+	{
+		close(listenerFd);
+		throw BindException(portString);
+	}
 
 	// listener socket will listen for incoming connection requests.
 	// SOMAXCONN is the maximum possible queue size for pending connections.
 	if (listen(listenerFd, SOMAXCONN) < 0)
-		throw ListenException("Failed to listen to socket on port " + portString + ".");
-
+	{
+		close(listenerFd);
+		throw ListenException(portString);
+	}
 	_addToPoll(listenerFd, POLLIN, 0);
 	_addToSocketMap(listenerFd, SocketMeta::LISTENER, -1, port);
 
@@ -308,7 +316,7 @@ bool WebServer::_clientIsSendingData(const pollfd & socket, const SocketMeta & s
 	return _isClient(socketMeta) && (socket.revents & POLLIN);
 }
 
-void printError(std::string message)
+void WebServer::printError(std::string message)
 {
 	cerr << RED << "Error: " << message << RESET;
 }
@@ -338,20 +346,20 @@ void WebServer::_debugPollAndSocketMap() const
 
 const char *WebServer::PollException::what() const throw()
 {
-	return "Poll failure: poll() < 0";
+	return "Failed to poll file descriptors.";
 }
 
-WebServer::SocketCreationException::SocketCreationException(const std::string& msg)
-: std::runtime_error(msg) {}
+WebServer::SocketCreationException::SocketCreationException(const std::string& portString)
+: std::runtime_error("Failed to create listener socket for port " + portString + ".") {}
 
-WebServer::SocketConfigException::SocketConfigException(const std::string& msg)
-: std::runtime_error(msg) {}
+WebServer::SocketConfigException::SocketConfigException(const std::string& portString)
+: std::runtime_error("Failed to set non-blocking mode for listener on port " + portString + ".") {}
 
-WebServer::SocketOptionException::SocketOptionException(const std::string& msg)
-: std::runtime_error(msg) {}
+WebServer::SocketOptionException::SocketOptionException(const std::string& portString)
+: std::runtime_error("Failed to set socket option (SO_REUSEADDR) for listener on port " + portString + ".") {}
 
-WebServer::BindException::BindException(const std::string& msg)
-: std::runtime_error(msg) {}
+WebServer::BindException::BindException(const std::string& portString)
+: std::runtime_error("Failed to bind listener socket to port " + portString + ".") {}
 
-WebServer::ListenException::ListenException(const std::string& msg)
-: std::runtime_error(msg) {}
+WebServer::ListenException::ListenException(const std::string& portString)
+: std::runtime_error("Failed to listen to socket on port " + portString + ".") {}

@@ -16,6 +16,19 @@
 # include <unistd.h> // close
 # include <vector>
 
+// REMOVE ONCE JUN YU'S BRANCH IS MERGED
+# include <sstream>
+# include <string>
+template<typename T>
+std::string toString(const T &any)
+{
+	std::ostringstream oss;
+
+	oss << any;
+
+	return oss.str();
+}
+
 class WebServer
 {
 	public:
