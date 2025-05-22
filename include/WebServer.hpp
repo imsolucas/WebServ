@@ -24,30 +24,57 @@ class WebServer
 		~WebServer();
 
 		void run();
+		void closeAllSockets();
 
 	private:
-		struct connectionMeta
+
+		Config _cfg;
+
+		std::vector<pollfd> _poll;
+
+		struct SocketMeta
 		{
-			enum type { LISTENER, CLIENT };
-			type type;
+			enum Role { LISTENER, CLIENT };
+			Role type;
 			int listenerFd; // only for clients
 			int port; // only for listeners
 		};
 
-		Config _cfg;
-		std::map<int, connectionMeta> fdMap;
-		std::vector<pollfd> _fds;
+		std::map<int, SocketMeta> _socketMap;
 
 		void _init();
 		void _parse(const std::string &config);
 
-		void _setUpListener(int port);
-		void _addToPoll(int fd, short events, short revents);
-
+		void _removeClient(const pollfd & socket, int i);
+		void _addClient(const pollfd & socket);
+		bool _readFromClient(const pollfd & socket, int i);
 		void _sendResponse(int fd);
+
+		void _setUpListener(int port);
+
+		void _addToPoll(int fd, short events, short revents);
+		void _removeFromPoll(int i);
+		void _addToSocketMap(int fd, SocketMeta::Role type, int listenerFd, int port);
+		void _removeFromSocketMap(int fd);
+
+		bool _isClient(const SocketMeta & socketMeta) const;
+		bool _isListener(const SocketMeta & socketMeta) const;
+		bool _noEvents(const pollfd & socket) const;
+		bool _clientIsDisconnected(const pollfd & socket, const SocketMeta & socketMeta) const;
+		bool _clientIsConnecting(const pollfd & socket, const SocketMeta & socketMeta) const;
+		bool _clientIsSendingData(const pollfd & socket, const SocketMeta & socketMeta) const;
+
 
 	// exceptions
 	public:
+
+		class PollException : public std::exception
+		{
+			public:
+				const char *what() const throw();
+		};
+
+
 		class WebServerException : public std::exception
 		{
 			protected:

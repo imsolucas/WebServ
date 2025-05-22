@@ -15,7 +15,7 @@ void handle_signal(int signum)
 {
 	if (signum == SIGINT)
 		gStopLoop = 1;
-	cout << "\nReceiving SIGNINT signal\n";
+	cout << "\nReceived SIGINT signal.\n";
 }
 
 int main(int argc, char *argv[])
@@ -30,5 +30,15 @@ int main(int argc, char *argv[])
 	}
 
 	WebServer wb(argv[1]);
-	wb.run();
+	try
+	{
+		wb.run();
+	}
+	catch(const std::exception& e)
+	{
+		wb.closeAllSockets();
+		cerr << RED << e.what() << '\n' << RESET;
+		return 1;
+	}
+	return 0;
 }
