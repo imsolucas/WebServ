@@ -1,5 +1,6 @@
 # include <iostream>
 # include <ostream>
+# include <cstring>
 
 # include "colors.h"
 # include "utils.hpp"
@@ -23,7 +24,7 @@ int main(int argc, char *argv[])
 
 	// GET request
 	{
-		ByteStream stream =
+		const char *stream =
 		"GET /index.html HTTP/1.1\r\n"
 		"Host: example.com\r\n"
 		"User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\n"
@@ -38,7 +39,7 @@ int main(int argc, char *argv[])
 	cout << "\n\n";
 	// POST request
 	{
-		ByteStream stream =
+		const char *stream =
 			"POST /api/v1/resource HTTP/1.1\r\n"
 			"Host: example.com\r\n"
 			"User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\n"
@@ -70,9 +71,11 @@ int main(int argc, char *argv[])
 			""
 		};
 
-		ByteStream stream = serialize(response);
-
+		string str = serialize(response);
+		char *stream = new char[str.size() + 1];
+		std::strcpy(stream, str.c_str());
 		cout << stream;
+		delete[] stream;
 	}
 	cout << "\n\n";
 	// HTTP response with body
@@ -91,8 +94,10 @@ int main(int argc, char *argv[])
 			body
 		};
 
-		ByteStream stream = serialize(response);
-
+		string str = serialize(response);
+		char *stream = new char[str.size() + 1];
+		std::strcpy(stream, str.c_str());
 		cout << stream;
+		delete[] stream;
 	}
 }

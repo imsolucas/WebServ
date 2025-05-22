@@ -13,18 +13,26 @@ using std::cout;
 using std::getline;
 
 static HttpRequest parse(HttpMessage message);
-static HttpMessage decode(ByteStream stream);
+static HttpMessage decode(string stream);
 
-ByteStream serialize(HttpResponse response)
+string serialize(HttpResponse response)
 {
-	(void)response;
-	cout << utils::toString(1);
-	cout << utils::toString("Hello world");
-	return NULL;
+	string stream;
+
+	stream = response.protocol + " ";
+	stream += utils::toString(response.statusCode) + " ";
+	stream += response.statusText + "\r\n";
+	for (map<string, string>::const_iterator it = response.headers.begin();
+		it != response.headers.end(); ++it)
+		stream += (*it).first + ": " + (*it).second + "\r\n";
+	stream += "\r\n";
+	stream += response.body;
+
+	return stream;
 }
 
 // assumes the byte stream is a valid HTTP request
-HttpRequest deserialize(ByteStream stream)
+HttpRequest deserialize(string stream)
 {
 	HttpMessage msg;
 	HttpRequest req;
@@ -56,7 +64,7 @@ HttpRequest parse(HttpMessage message)
 	return (req);
 }
 
-HttpMessage decode(ByteStream stream)
+HttpMessage decode(string stream)
 {
 	istringstream iss(stream);
 	string line;

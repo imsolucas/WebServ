@@ -5,8 +5,6 @@
 # include <map>
 # include <vector>
 
-typedef const char* ByteStream;
-
 enum StatusCode
 {
 	OK = 200,
@@ -69,8 +67,8 @@ struct HttpResponse
 	std::string	body;
 };
 
-ByteStream	serialize(HttpResponse response);
-HttpRequest	deserialize(ByteStream stream);
+std::string	serialize(HttpResponse response);
+HttpRequest	deserialize(std::string stream);
 
 std::ostream &operator << (std::ostream &os, const HttpRequest &r);
 std::ostream &operator << (std::ostream &os, const HttpResponse &r);
