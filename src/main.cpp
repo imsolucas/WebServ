@@ -1,11 +1,13 @@
 # include <iostream>
+# include <ostream>
 
 # include "colors.h"
 # include "Http.h"
 # include "WebServer.hpp"
 
-using std::map;
 using std::string;
+using std::map;
+using std::ostringstream;
 using std::cout;
 using std::cerr;
 
@@ -51,5 +53,45 @@ int main(int argc, char *argv[])
 		HttpRequest request = deserialize(stream);
 
 		cout << request;
+	}
+	cout << "\n\n";
+	// HTTP response with no body
+	{
+		map<string, string> headers;
+		headers["Content-Length"] = "0";
+		headers["Connection"] = "close";
+		HttpResponse response =
+		{
+			"HTTP/1.1",
+			NO_CONTENT,
+			"No Content",
+			headers,
+			""
+		};
+
+		ByteStream stream = serialize(response);
+
+		cout << stream;
+	}
+	cout << "\n\n";
+	// HTTP response with body
+	{
+		string body = "Hello World !";
+		map<string, string> headers;
+		headers["Content-Type"] = "text/plain; charset=UTF-8";
+		headers["Content-Length"] = (body.size());
+		headers["Connection"] = "close";
+		HttpResponse response =
+		{
+			"HTTP/1.1",
+			NO_CONTENT,
+			"No Content",
+			headers,
+			body
+		};
+
+		ByteStream stream = serialize(response);
+
+		cout << stream;
 	}
 }
