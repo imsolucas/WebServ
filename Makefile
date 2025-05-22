@@ -1,47 +1,44 @@
+# Compiler & Flags
 CXX = c++
 CXXFLAGS = -std=c++98 -g3 -Wall -Wextra -Werror -Wpedantic
-INCS = -Iinclude
 
-SRC_DIRS = src src/WebServer src/Config src/Http src/utils
-OBJ_DIRS = $(sort $(dir $(OBJS)))
+# Client
+CLIENT_SRCS = $(wildcard Client/*.cpp)
+CLIENT_OBJS = $(addprefix Client/obj/, $(notdir $(CLIENT_SRCS:.cpp=.o)))
+CLIENT_EXE = client
 
-vpath %.cpp $(SRC_DIRS)
+Client : $(CLIENT_EXE)
 
-SRCS = $(foreach module, $(SRC_DIRS), $(wildcard $(module)/*.cpp))
-OBJS = $(addprefix obj/, $(SRCS:.cpp=.o))
-HEADERS = $(wildcard include/*.hpp) $(wildcard include/*.h) $(foreach module, $(SRC_DIRS), $(wildcard $(module)/*.tpp))
-EXE = webserv
+$(CLIENT_EXE) : $(CLIENT_OBJS)
+	$(CXX) $(CXXFLAGS) $(CLIENT_OBJS) -o $(CLIENT_EXE)
 
-all : $(EXE)
+Client/obj/%.o : Client/%.cpp Client/Client.hpp
+	mkdir -p Client/obj/
+	$(CXX) $(CXXFLAGS) -IClient -c $< -o $@
 
-$(EXE) : $(OBJS)
-	$(CXX) $(CXXFLAGS) $(OBJS) -o $(EXE)
+# Server
+SERVER_SRCS = $(wildcard Server/*.cpp)
+SERVER_OBJS = $(addprefix Server/obj/, $(notdir $(SERVER_SRCS:.cpp=.o)))
+SERVER_EXE = server
 
-obj/%.o : %.cpp $(HEADERS)
-	mkdir -p $(OBJ_DIRS)
-	$(CXX) $(CXXFLAGS) $(INCS) -c $< -o $@
+Server : $(SERVER_EXE)
 
-TEST_SRCS = $(wildcard test/*.cpp)
-TEST_OBJS = $(addprefix obj/, $(TEST_SRCS:.cpp=.o))
-TEST_HEADERS = test/test.h
-TEST_EXE = unit-tests
+$(SERVER_EXE) : $(SERVER_OBJS)
+	$(CXX) $(CXXFLAGS) $(SERVER_OBJS) -o $(SERVER_EXE)
 
-test : fclean $(TEST_EXE)
-	./$(TEST_EXE)
+Server/obj/%.o : Server/%.cpp Server/Server.hpp
+	mkdir -p Server/obj/
+	$(CXX) $(CXXFLAGS) -IServer -c $< -o $@
 
-$(TEST_EXE) : $(filter-out obj/src/main.o, $(OBJS)) $(TEST_OBJS)
-	$(CXX) $(CXXFLAGS) $(INCS) $^ -o $@
-
-obj/test/%.o : test/%.cpp $(HEADERS) $(TEST_HEADERS)
-	mkdir -p obj/test
-	$(CXX) $(CXXFLAGS) $(INCS) -c $< -o $@
-
+# Misc.
 clean :
-	rm -rf obj/
+	rm -rf Client/obj/
+	rm -rf Server/obj/
 
 fclean : clean
-	rm -f $(EXE)
+	rm -f $(CLIENT_EXE)
+	rm -f $(SERVER_EXE)
 
-re : fclean all
+re : fclean client server
 
-.PHONY : all clean fclean re
+.PHONY : client server clean fclean re
