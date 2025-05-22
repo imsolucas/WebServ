@@ -12,46 +12,18 @@ using std::map;
 using std::cout;
 using std::cerr;
 
-// static void test_serialize();
-// static void test_deserialize();
+static void test_serialize();
+static void test_deserialize();
 
 void test_http()
 {
-	// GET request
-	{
-		const char *stream =
-		"GET /index.html HTTP/1.1\r\n"
-		"Host: example.com\r\n"
-		"User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\n"
-		"Accept: text/html,application/xhtml+xml,application/xml;q=0.9\r\n"
-		"Connection: keep-alive\r\n"
-		"\r\n";
+	test_serialize();
+	test_deserialize();
+}
 
-		HttpRequest request = deserialize(stream);
-
-		cout << request;
-	}
-	cout << "\n\n";
-	// POST request
-	{
-		const char *stream =
-			"POST /api/v1/resource HTTP/1.1\r\n"
-			"Host: example.com\r\n"
-			"User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\n"
-			"Content-Type: application/json\r\n"
-			"Content-Length: 34\r\n"
-			"Connection: keep-alive\r\n"
-			"\r\n"
-			"{\n"
-			"    \"name\": \"John Doe\",\n"
-			"    \"age\": 30\n"
-			"}";
-
-		HttpRequest request = deserialize(stream);
-
-		cout << request;
-	}
-	cout << "\n\n";
+void test_serialize()
+{
+	cout << "TEST SERIALIZE\n";
 	// HTTP response with no body
 	{
 		map<string, string> headers;
@@ -95,4 +67,45 @@ void test_http()
 		cout << stream;
 		delete[] stream;
 	}
+	cout << "\n\n";
+}
+
+void test_deserialize()
+{
+	cout << "TEST DESERIALIZE\n";
+	// GET request
+	{
+		const char *stream =
+		"GET /index.html HTTP/1.1\r\n"
+		"Host: example.com\r\n"
+		"User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\n"
+		"Accept: text/html,application/xhtml+xml,application/xml;q=0.9\r\n"
+		"Connection: keep-alive\r\n"
+		"\r\n";
+
+		HttpRequest request = deserialize(stream);
+
+		cout << request;
+	}
+	cout << "\n\n";
+	// POST request
+	{
+		const char *stream =
+			"POST /api/v1/resource HTTP/1.1\r\n"
+			"Host: example.com\r\n"
+			"User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\n"
+			"Content-Type: application/json\r\n"
+			"Content-Length: 34\r\n"
+			"Connection: keep-alive\r\n"
+			"\r\n"
+			"{\n"
+			"    \"name\": \"John Doe\",\n"
+			"    \"age\": 30\n"
+			"}";
+
+		HttpRequest request = deserialize(stream);
+
+		cout << request;
+	}
+	cout << "\n\n";
 }
