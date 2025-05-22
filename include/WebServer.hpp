@@ -8,7 +8,6 @@
 
 # include <map>
 
-// moved from Listener.hpp
 # include <fcntl.h> // fcntl
 # include <iostream>
 # include <netinet/in.h> // htons, sockaddr_in struct
@@ -63,6 +62,8 @@ class WebServer
 		bool _clientIsDisconnected(const pollfd & socket, const SocketMeta & socketMeta) const;
 		bool _clientIsConnecting(const pollfd & socket, const SocketMeta & socketMeta) const;
 		bool _clientIsSendingData(const pollfd & socket, const SocketMeta & socketMeta) const;
+
+		void _debugPollAndSocketMap() const;
 
 
 	// exceptions

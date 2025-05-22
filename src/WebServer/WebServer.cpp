@@ -5,6 +5,7 @@
 
 using std::string;
 using std::cout;
+using std::cerr;
 
 WebServer::WebServer(const string &config)
 {
@@ -30,7 +31,8 @@ void WebServer::run()
 		int ready = poll(_poll.data(), _poll.size(), -1);
 		// poll() returns the number of file descriptors that have had an event occur on them.
 		// return value: 0 = timeout (irrelavant with -1 timeout parameter); -1 = error
-		if (ready < 0)
+		// prevent double printing if SIGINT received
+		if (ready < 0 && !gStopLoop)
 			throw PollException();
 
 		// for loop to service all file descriptors with events
@@ -64,7 +66,6 @@ void WebServer::run()
 					continue;
 				}
 			}
-
 		}
 	}
 }
@@ -89,10 +90,12 @@ void WebServer::_parse(const string &config)
 
 void WebServer::_removeClient(const pollfd & socket, int i)
 {
-	close(socket.fd);
+	int clientFd = socket.fd;
+
+	close(clientFd);
 	_removeFromPoll(i);
-	_removeFromSocketMap(socket.fd);
-	cout << "Closed client socket with fd: " << socket.fd << "!\n";
+	_removeFromSocketMap(clientFd);
+	cout << RED << "\nClient with fd " << clientFd << " disconnected!\n" << RESET;
 }
 
 void WebServer::_addClient(const pollfd & socket)
@@ -100,16 +103,19 @@ void WebServer::_addClient(const pollfd & socket)
 	// create a socket for the client on our server.
 	// TODO: pass parameters to accept() to get the client's address and port for caching.
 	int clientFd = accept(socket.fd, NULL, NULL);
-	// if (clientFd < 0)
-	// 	throw SocketCreationException("Failed to create client socket.");
+	if (clientFd < 0)
+	{
+		cerr << RED << "Failed to add client." << RESET;
+		return;
+	}
 	// set the client's socket to be non-blocking.
 	fcntl(clientFd, F_SETFL, O_NONBLOCK);
 	_addToPoll(clientFd, POLLIN, 0);
 	_addToSocketMap(clientFd, SocketMeta::CLIENT, socket.fd, -1);
-	cout << "Created client socket with fd: " << clientFd << "!\n";
+	cout << GREEN <<  "\nClient with fd " << clientFd << " connected!\n" << RESET;
 }
 
-// true boolean means client was removed.
+// true boolean returned means client was removed.
 bool WebServer::_readFromClient(const pollfd & socket, int i)
 {
 	char buffer[4096];
@@ -121,16 +127,16 @@ bool WebServer::_readFromClient(const pollfd & socket, int i)
 	if (bytesRead == 0)
 	{
 		_removeClient(socket, i);
-			return true;
+		return true;
 	}
-	else if (bytesRead > 0)
+	else if (bytesRead < 0)
 	{
-		// process data
-		cout << _YELLOW << "Data from client: \n" << buffer << "\n" << _RESET;
+		// handle error
 	}
 	else
 	{
-		// handle error
+		// process data
+		cout << "\nData received from client with fd " << socket.fd <<  ":\n" << YELLOW << buffer << "\n" << _RESET;
 	}
 	_sendResponse(socket.fd);
 	return false;
@@ -165,7 +171,6 @@ void WebServer::_setUpListener(int port)
 	int listenerFd = socket(AF_INET, SOCK_STREAM, 0);
 	// if (_listener_fd < 0)
 	// 	throw SocketCreationException("Failed to create listener socket.");
-	cout << "Listener fd: " << listenerFd << "\n";
 
 	// fcntl is used to change the behaviour of the socket
 	// F_SETFL = set file status flags
@@ -203,7 +208,7 @@ void WebServer::_setUpListener(int port)
 	_addToPoll(listenerFd, POLLIN, 0);
 	_addToSocketMap(listenerFd, SocketMeta::LISTENER, -1, port);
 
-	std::cout << "Listener socket set up on port " << port << " !\n";
+	std::cout << BLUE << "Listener with fd " << listenerFd << " set up on port " << port << "!\n" << RESET;
 }
 
 // add a file descriptor and its event to be monitored by poll()
@@ -281,6 +286,26 @@ bool WebServer::_clientIsConnecting(const pollfd & socket, const SocketMeta & so
 bool WebServer::_clientIsSendingData(const pollfd & socket, const SocketMeta & socketMeta) const
 {
 	return _isClient(socketMeta) && (socket.revents & POLLIN);
+}
+
+void WebServer::_debugPollAndSocketMap() const
+{
+	std::cout << "\n===== DEBUG: Current Server State =====\n";
+
+	std::cout << ">> _poll contents:\n";
+	for (size_t i = 0; i < _poll.size(); ++i)
+	{
+		std::cout << "  [" << i << "] FD: " << _poll[i].fd
+		          << ", REVENTS: " << _poll[i].revents << "\n";
+	}
+
+	std::cout << ">> _socketMap contents:\n";
+	for (std::map<int, SocketMeta>::const_iterator it = _socketMap.begin(); it != _socketMap.end(); ++it)
+	{
+		std::cout << "  FD: " << it->first << ", TYPE: " << (it->second.type == SocketMeta::LISTENER ? "LISTENER" : "CLIENT") << "\n";
+	}
+
+	std::cout << "=======================================\n\n";
 }
 
 
