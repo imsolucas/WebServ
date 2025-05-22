@@ -21,7 +21,22 @@ obj/%.o : %.cpp $(HEADERS)
 	mkdir -p $(OBJ_DIRS)
 	$(CXX) $(CXXFLAGS) $(INCS) -c $< -o $@
 
-clean:
+TEST_SRCS = $(wildcard test/*.cpp)
+TEST_OBJS = $(addprefix obj/, $(TEST_SRCS:.cpp=.o))
+TEST_HEADERS = test/test.h
+TEST_EXE = unit-tests
+
+test : fclean $(TEST_EXE)
+	./$(TEST_EXE)
+
+$(TEST_EXE) : $(filter-out obj/src/main.o, $(OBJS)) $(TEST_OBJS)
+	$(CXX) $(CXXFLAGS) $(INCS) $^ -o $@
+
+obj/test/%.o : test/%.cpp $(HEADERS) $(TEST_HEADERS)
+	mkdir -p obj/test
+	$(CXX) $(CXXFLAGS) $(INCS) -c $< -o $@
+
+clean :
 	rm -rf obj/
 
 fclean : clean
