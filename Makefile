@@ -9,7 +9,7 @@ vpath %.cpp $(SRC_DIRS)
 
 SRCS = $(foreach module, $(SRC_DIRS), $(wildcard $(module)/*.cpp))
 OBJS = $(addprefix obj/, $(SRCS:.cpp=.o))
-HEADERS = $(wildcard include/*.hpp) $(wildcard include/*.h) $(foreach module, $(SRC_DIR), $(wildcard $(module)/*.tpp))
+HEADERS = $(wildcard include/*.hpp) $(wildcard include/*.h) $(foreach module, $(SRC_DIRS), $(wildcard $(module)/*.tpp))
 EXE = webserv
 
 all : $(EXE)
