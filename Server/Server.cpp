@@ -1,10 +1,6 @@
 # include <iostream>
-# include <exception>
 # include <cstdio>
 # include <cstring>
-# include <unistd.h>
-# include <cerrno>
-# include <sys/socket.h>
 
 # include "Server.hpp"
 
@@ -18,12 +14,19 @@ void Server::run()
 	if (listen(_listening.fd, SOMAXCONN) < 0)
 		throw runtime_error("Failed to listen on socket.");
 
+	cout << "Server started.\n";
+
 	Socket client;
 	client.fd = accept(_listening.fd, reinterpret_cast<sockaddr *>(&client.addr), &client.len);
 	if (client.fd < 0)
 		throw runtime_error("Failed to connect to client.");
+	cout << "Connected to client.\n";
 
-	cout << "Server started.\n";
+	char buffer[4096];
+	size_t len;
+	len = recv(client.fd, buffer, 4096, 0);
+	cout << "Received " << len << " bytes: \n-----" << buffer << "\n-----\n";
+
 }
 
 void Server::init()
@@ -35,13 +38,13 @@ void Server::init()
 
 	fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (fd < 0)
-	throw runtime_error("Failed to create socket.");
-	memset(&addr, 0, sizeof(addr));
+		throw runtime_error("Failed to create socket.");
+
 	addr.sin_family = AF_INET;
 	addr.sin_addr.s_addr = INADDR_ANY;
 	addr.sin_port = htons(8080);
 	if (bind(fd, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) < 0)
-	throw runtime_error("Failed to bind socket.");
+		throw runtime_error("Failed to bind socket.");
 
 	cout << "Finish initializing server.\n";
 }
@@ -60,3 +63,5 @@ void Server::_listen()
 		_connected.push_back(client);
 	}
 }
+
+Socket::Socket() : fd(0), len(sizeof(addr)) { memset(&addr, 0, len); }

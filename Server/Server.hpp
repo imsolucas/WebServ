@@ -10,7 +10,7 @@ struct Socket
 	sockaddr_in	addr;
 	socklen_t	len;
 
-	Socket() : fd(0), len(sizeof(addr)) {}
+	Socket();
 };
 
 // This is a TCP server
