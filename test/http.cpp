@@ -3,7 +3,7 @@
 
 # include "utils.hpp"
 # include "Http.h"
-# include "test.hpp"
+# include "Test.hpp"
 
 using std::string;
 using std::map;
@@ -13,7 +13,7 @@ using std::cerr;
 static void test_serialize();
 static void test_deserialize();
 
-void http()
+void test_http()
 {
 	test_serialize();
 	test_deserialize();
@@ -21,8 +21,10 @@ void http()
 
 void test_serialize()
 {
+	string message;
 	cout << "TEST SERIALIZE\n";
-	// HTTP response with no body
+
+	message = "HTTP response with no body";
 	{
 		map<string, string> headers;
 		headers["Content-Length"] = "0";
@@ -36,14 +38,19 @@ void test_serialize()
 			""
 		};
 
+		string expected =
+		"HTTP/1.1 204 No Content\r\n"
+		"Content-Length: 0\r\n"
+		"Connection: close\r\n"
+		"\r\n";
+
 		string str = serialize(response);
-		char *stream = new char[str.size() + 1];
-		std::strcpy(stream, str.c_str());
-		cout << stream;
-		delete[] stream;
+		const char *stream = str.c_str();
+
+		assertEqual(message, stream, expected.c_str());
 	}
 	cout << "\n\n";
-	// HTTP response with body
+	message = "HTTP response with body";
 	{
 		string body = "Hello World !";
 		map<string, string> headers;
@@ -59,11 +66,18 @@ void test_serialize()
 			body
 		};
 
+		string expected =
+		"HTTP/1.1 204 No Content\r\n"
+		"Content-Type: text/plain; charset=UTF-8\r\n"
+		"Content-Length: 13\r\n"
+		"Connection: close\r\n"
+		"\r\n"
+		"Hello World !";
+
 		string str = serialize(response);
-		char *stream = new char[str.size() + 1];
-		std::strcpy(stream, str.c_str());
-		cout << stream;
-		delete[] stream;
+		const char *stream = str.c_str();
+
+		assertEqual(message, stream, expected.c_str());
 	}
 	cout << "\n\n";
 }

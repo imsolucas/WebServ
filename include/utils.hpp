@@ -5,8 +5,8 @@
 
 struct utils
 {
-	template <typename T>
-	static std::string toString(const T &any);
+	template <typename Input>
+	static std::string toString(const Input &any);
 
 	static std::vector<std::string> split(const std::string &str, char delimiter);
 };
