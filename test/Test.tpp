@@ -1,20 +1,27 @@
 # include "colors.h"
 # include "Test.hpp"
 
-# define DIVIDER "\n--------------------\n"
-
 using std::string;
 using std::cout;
 
+// * `==` operator overload is required for class/struct objects
 template <typename Output>
 void assertEqual(const string &msg, const Output &actual, const Output &expected)
 {
 	if (actual == expected)
-		cout << "[PASS] " + msg + "\n";
+	{
+		cout << "[" << BG_GREEN << "PASS" << RESET << "] "
+			<< msg << RESET << "\n";
+	}
 	else
 	{
-		cout << "[FAIL] " + msg + "\n";
-		cout << "Expected:"DIVIDER << expected << DIVIDER;
-		cout << "Actual:"DIVIDER << actual << DIVIDER;
+		cout << "[" + BG_RED + "FAIL" + RESET + "] ";
+		cout << msg + RESET + "\n";
+		cout << YELLOW + "Expected:" + RESET;
+		cout << DIVIDER_THIN;
+		cout << RESET << expected << DIVIDER_THIN;
+		cout << YELLOW + "Actual:" + RESET;
+		cout << DIVIDER_THIN;
+		cout << RESET << actual << DIVIDER_THIN;
 	}
 }
