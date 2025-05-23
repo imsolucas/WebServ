@@ -1,10 +1,10 @@
 # include "test.hpp"
 
 using std::string;
-using std::cout;
+using std::cerr;
 
 void printHeader(const string &msg)
 {
-	cout << GREEN + msg + RESET;
-	cout << DIVIDER_THICK;
+	cerr << GREEN + msg + RESET;
+	cerr << DIVIDER_THICK;
 }

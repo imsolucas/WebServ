@@ -2,7 +2,7 @@
 # include "test.hpp"
 
 using std::string;
-using std::cout;
+using std::cerr;
 
 // * `==` & `<<` operator overload is required for class/struct objects
 template <typename Output>
@@ -10,18 +10,18 @@ void assertEqual(const string &msg, const Output &actual, const Output &expected
 {
 	if (actual == expected)
 	{
-		cout << "[" << BG_GREEN << "PASS" << RESET << "] "
+		cerr << "[" << BG_GREEN << "PASS" << RESET << "] "
 			<< msg << RESET << "\n";
 	}
 	else
 	{
-		cout << "[" + BG_RED + "FAIL" + RESET + "] ";
-		cout << msg + RESET + "\n";
-		cout << YELLOW + "Expected:" + RESET;
-		cout << DIVIDER_THIN;
-		cout << RESET << expected << DIVIDER_THIN;
-		cout << YELLOW + "Actual:" + RESET;
-		cout << DIVIDER_THIN;
-		cout << RESET << actual << DIVIDER_THIN;
+		cerr << "[" + BG_RED + "FAIL" + RESET + "] ";
+		cerr << msg + RESET + "\n";
+		cerr << YELLOW + "Expected:" + RESET;
+		cerr << DIVIDER_THIN;
+		cerr << RESET << expected << DIVIDER_THIN;
+		cerr << YELLOW + "Actual:" + RESET;
+		cerr << DIVIDER_THIN;
+		cerr << RESET << actual << DIVIDER_THIN;
 	}
 }
