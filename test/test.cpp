@@ -6,5 +6,5 @@ using std::cerr;
 void printHeader(const string &msg)
 {
 	cerr << GREEN + msg + RESET;
-	cerr << DIVIDER_THIN_BG;
+	cerr << DIVIDER_THICK;
 }
