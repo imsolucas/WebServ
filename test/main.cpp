@@ -1,7 +1,7 @@
 # include <iostream>
 
 # include "colors.h"
-# include "Test.hpp"
+# include "test.hpp"
 
 using std::cout;
 

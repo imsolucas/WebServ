@@ -8,6 +8,8 @@
 template <typename Output>
 void assertEqual(const std::string &msg, const Output &actual, const Output &expected);
 
+void printHeader(const std::string &msg);
+
 void test_http();
 
-# include "Test.tpp"
+# include "test.tpp"
