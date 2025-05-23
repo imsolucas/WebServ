@@ -56,6 +56,8 @@ struct HttpRequest
 	std::string	protocol;
 	std::map<std::string, std::string> headers;
 	std::string	body;
+
+	bool operator == (const HttpRequest &rhs) const;
 };
 
 struct HttpResponse
@@ -65,6 +67,8 @@ struct HttpResponse
 	std::string	statusText;
 	std::map<std::string, std::string> headers;
 	std::string	body;
+
+	bool operator == (const HttpResponse &rhs) const;
 };
 
 std::string	serialize(HttpResponse response);

@@ -112,3 +112,23 @@ ostream &operator << (ostream &os, const HttpResponse &r)
 	(void)r;
 	return os;
 }
+
+bool HttpRequest::operator == (const HttpRequest &rhs) const
+{
+	if (method != rhs.method) return false;
+	if (requestTarget != rhs.requestTarget) return false;
+	if (protocol != rhs.protocol) return false;
+	if (headers != rhs.headers) return false;
+	if (body != rhs.body) return false;
+	return true;
+}
+
+bool HttpResponse::operator == (const HttpResponse &rhs) const
+{
+	if (protocol != rhs.protocol) return false;
+	if (statusCode != rhs.statusCode) return false;
+	if (statusText != rhs.statusText) return false;
+	if (headers != rhs.headers) return false;
+	if (body != rhs.body) return false;
+	return true;
+}
