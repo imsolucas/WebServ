@@ -15,7 +15,7 @@ using std::getline;
 static HttpRequest parse(HttpMessage message);
 static HttpMessage decode(string stream);
 
-string serialize(HttpResponse response)
+string serialize(const HttpResponse &response)
 {
 	string stream;
 
@@ -32,7 +32,7 @@ string serialize(HttpResponse response)
 }
 
 // assumes the byte stream is a valid HTTP request
-HttpRequest deserialize(string stream)
+HttpRequest deserialize(const string &stream)
 {
 	HttpMessage msg;
 	HttpRequest req;

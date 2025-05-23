@@ -71,8 +71,8 @@ struct HttpResponse
 	bool operator == (const HttpResponse &rhs) const;
 };
 
-std::string	serialize(HttpResponse response);
-HttpRequest	deserialize(std::string stream);
+std::string	serialize(const HttpResponse &response);
+HttpRequest	deserialize(const std::string &stream);
 
 std::ostream &operator << (std::ostream &os, const HttpRequest &r);
 std::ostream &operator << (std::ostream &os, const HttpResponse &r);
