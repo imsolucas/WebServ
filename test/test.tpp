@@ -4,7 +4,7 @@
 using std::string;
 using std::cout;
 
-// * `==` operator overload is required for class/struct objects
+// * `==` & `<<` operator overload is required for class/struct objects
 template <typename Output>
 void assertEqual(const string &msg, const Output &actual, const Output &expected)
 {
