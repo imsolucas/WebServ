@@ -89,6 +89,8 @@ HttpMessage decode(string stream)
 	// Read the body
 	while (getline(iss, line))
 		msg.body += (line + "\n");
+	if (!msg.body.empty())
+		msg.body = msg.body.substr(0, msg.body.length() - 1);
 
 	return msg;
 }
