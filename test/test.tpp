@@ -10,18 +10,16 @@ void assertEqual(const string &msg, const Output &actual, const Output &expected
 {
 	if (actual == expected)
 	{
-		cerr << "[" << BG_GREEN << "PASS" << RESET << "] "
-			<< msg << RESET << "\n";
+		cerr << "[" << BG_GREEN << "PASS" << RESET << "] ";
+		cerr << BOLD + msg << RESET << "\n";
 	}
 	else
 	{
-		cerr << "[" + BG_RED + "FAIL" + RESET + "] ";
-		cerr << msg + RESET + "\n";
-		cerr << YELLOW + "Expected:" + RESET;
+		cerr << "[" + BG_RED + "FAIL" + RESET + "] " + BOLD + msg + RESET;
 		cerr << DIVIDER_THIN;
+		cerr << YELLOW + "Expected:\n" + RESET;
 		cerr << RESET << expected << DIVIDER_THIN;
-		cerr << YELLOW + "Actual:" + RESET;
-		cerr << DIVIDER_THIN;
+		cerr << YELLOW + "Actual:\n" + RESET;
 		cerr << RESET << actual << DIVIDER_THIN;
 	}
 }
