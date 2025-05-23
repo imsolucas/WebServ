@@ -36,7 +36,6 @@ int main(int argc, char *argv[])
 	}
 	catch(const std::exception& e)
 	{
-		wb.closeAllSockets();
 		cerr << RED << "Error: " << e.what() << '\n' << RESET;
 		return 1;
 	}

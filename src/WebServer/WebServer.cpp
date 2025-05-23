@@ -66,8 +66,7 @@ void WebServer::run()
 
 			else if (_clientIsSendingData(socket, socketMeta))
 			{
-				bool clientRemoved = _recvFromClient(socket, i);
-				if (clientRemoved)
+				if (!_recvFromClient(socket, i))
 				{
 					--i;
 					continue;
@@ -76,8 +75,7 @@ void WebServer::run()
 
 			else if (_clientIsReadyToReceive(socket, socketMeta))
 			{
-				bool clientRemoved = _sendToClient(socket, i);
-				if (clientRemoved)
+				if (!_sendToClient(socket, i))
 				{
 					--i;
 					continue;
@@ -138,7 +136,7 @@ void WebServer::_addClient(const pollfd &socket)
 	cout << GREEN <<  "Client with fd " << clientFd << " connected!\n" << RESET;
 }
 
-// true boolean returned means client was removed.
+// boolean reflects success of recv call().
 bool WebServer::_recvFromClient(const pollfd &socket, int i)
 {
 	char buffer[4096];
@@ -152,13 +150,13 @@ bool WebServer::_recvFromClient(const pollfd &socket, int i)
 	{
 		cout << "Client with fd " << socket.fd << " has hung up.\n";
 		_removeClient(socket, i);
-		return true;
+		return false;
 	}
 	else if (bytesReceived < 0)
 	{
 		printError("Failed to receive request from client with fd " + utils::toString(socket.fd) + ".\n");
 		_removeClient(socket, i);
-		return true;
+		return false;
 	}
 	else
 	{
@@ -166,9 +164,10 @@ bool WebServer::_recvFromClient(const pollfd &socket, int i)
 		buffer[bytesReceived] = '\0';
 		cout << "\nData received from client with fd " << socket.fd <<  ":\n" << YELLOW << buffer << "\n" << _RESET;
 	}
-	return false;
+	return true;
 }
 
+// boolean reflects success of send call().
 bool WebServer::_sendToClient(const pollfd &socket, int i)
 {
 	// attempt to send a http response.
@@ -190,9 +189,9 @@ bool WebServer::_sendToClient(const pollfd &socket, int i)
 	{
 		printError("Failed to send response to client with fd " + utils::toString(socket.fd) + ".\n");
 		_removeClient(socket, i);
-		return true;
+		return false;
 	}
-	return false;
+	return true;
 }
 
 void WebServer::_setUpListener(int port)
