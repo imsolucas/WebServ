@@ -47,8 +47,8 @@ void WebServer::run()
 		// for loop to service all file descriptors with events
 		for (size_t i = 0; i < _poll.size(); ++i)
 		{
-			const pollfd &socket = _poll[i];
-			const SocketMeta &socketMeta = _socketMap[socket.fd];
+			pollfd socket = _poll[i];
+			SocketMeta socketMeta = _socketMap[socket.fd];
 
 			if (_noEvents(socket))
 				continue;
