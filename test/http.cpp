@@ -38,14 +38,13 @@ void test_serialize()
 
 		string expected =
 		"HTTP/1.1 204 No Content\r\n"
-		"Content-Length: 0\r\n"
 		"Connection: close\r\n"
+		"Content-Length: 0\r\n"
 		"\r\n";
 
 		string str = serialize(response);
-		const char *stream = str.c_str();
 
-		assertEqual(message, stream, expected.c_str());
+		assertEqual(message, str, expected);
 	}
 	message = "serialize HTTP response with body";
 	{
@@ -65,16 +64,15 @@ void test_serialize()
 
 		string expected =
 		"HTTP/1.1 204 No Content\r\n"
-		"Content-Type: text/plain; charset=UTF-8\r\n"
-		"Content-Length: 13\r\n"
 		"Connection: close\r\n"
+		"Content-Length: 13\r\n"
+		"Content-Type: text/plain; charset=UTF-8\r\n"
 		"\r\n"
 		"Hello World !";
 
 		string str = serialize(response);
-		const char *stream = str.c_str();
 
-		assertEqual(message, stream, expected.c_str());
+		assertEqual(message, str, expected);
 	}
 }
 
