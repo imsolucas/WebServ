@@ -27,7 +27,7 @@ obj/%.o : %.cpp $(HEADERS)
 # Test
 TEST_SRCS = $(wildcard test/*.cpp)
 TEST_OBJS = $(addprefix obj/, $(TEST_SRCS:.cpp=.o))
-TEST_HEADERS = test/test.h $(wildcard test/*.tpp)
+TEST_HEADERS = $(wildcard test/*.hpp) $(wildcard test/*.h) $(wildcard test/*.tpp)
 TEST_EXE = unit-tests
 
 test : fclean $(TEST_EXE)
