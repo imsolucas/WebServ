@@ -1,11 +1,20 @@
 # include <iostream>
 
 # include "WebServer.hpp"
+# include "colors.h"
 # include "signal.hpp"
+# include "utils.hpp"
 
-using std::string;
-using std::cout;
+# include <fcntl.h>
+# include <iostream>
+# include <netinet/in.h> // htons, sockaddr_in struct
+# include <sys/socket.h> // accept, bind, listen, recv, setsockopt, socket
+# include <unistd.h> // close
+
 using std::cerr;
+using std::cout;
+using std::string;
+using std::runtime_error;
 
 WebServer::WebServer(const string &config)
 {
@@ -38,8 +47,8 @@ void WebServer::run()
 		// for loop to service all file descriptors with events
 		for (size_t i = 0; i < _poll.size(); ++i)
 		{
-			pollfd & socket = _poll[i];
-			SocketMeta & socketMeta = _socketMap.find(socket.fd)->second;
+			const pollfd &socket = _poll[i];
+			const SocketMeta &socketMeta = _socketMap[socket.fd];
 
 			if (_noEvents(socket))
 				continue;
@@ -64,6 +73,17 @@ void WebServer::run()
 					continue;
 				}
 			}
+
+			else if (_clientIsReadyToReceive(socket, socketMeta))
+			{
+				bool clientRemoved = _sendToClient(socket, i);
+				if (clientRemoved)
+				{
+					--i;
+					continue;
+				}
+			}
+
 		}
 	}
 }
@@ -86,7 +106,7 @@ void WebServer::_parse(const string &config)
 	cout << "Parsed configuration file!\n";
 }
 
-void WebServer::_removeClient(const pollfd & socket, int i)
+void WebServer::_removeClient(const pollfd &socket, int i)
 {
 	int clientFd = socket.fd;
 
@@ -96,7 +116,7 @@ void WebServer::_removeClient(const pollfd & socket, int i)
 	cout << RED << "Client with fd " << clientFd << " disconnected!\n" << RESET;
 }
 
-void WebServer::_addClient(const pollfd & socket)
+void WebServer::_addClient(const pollfd &socket)
 {
 	// create a socket for the client on our server.
 	// TODO: pass parameters to accept() to get the client's address and port for caching.
@@ -109,7 +129,7 @@ void WebServer::_addClient(const pollfd & socket)
 	// set the client's socket to be non-blocking.
 	if (fcntl(clientFd, F_SETFL, O_NONBLOCK) < 0)
 	{
-		printError("Failed to set non-blocking mode for client with fd " + toString(socket.fd) + ".\n");
+		printError("Failed to set non-blocking mode for client with fd " + utils::toString(socket.fd) + ".\n");
 		close(clientFd);
 		return;
 	}
@@ -119,7 +139,7 @@ void WebServer::_addClient(const pollfd & socket)
 }
 
 // true boolean returned means client was removed.
-bool WebServer::_recvFromClient(const pollfd & socket, int i)
+bool WebServer::_recvFromClient(const pollfd &socket, int i)
 {
 	char buffer[4096];
 	// recv() returns the number of bytes read.
@@ -136,27 +156,26 @@ bool WebServer::_recvFromClient(const pollfd & socket, int i)
 	}
 	else if (bytesReceived < 0)
 	{
-		printError("Failed to receive request from client with fd " + toString(socket.fd) + ".\n");
+		printError("Failed to receive request from client with fd " + utils::toString(socket.fd) + ".\n");
 		_removeClient(socket, i);
 		return true;
 	}
 	else
 	{
-		// process data
+		// process incoming data
 		buffer[bytesReceived] = '\0';
 		cout << "\nData received from client with fd " << socket.fd <<  ":\n" << YELLOW << buffer << "\n" << _RESET;
-		_sendResponse(socket, i);
 	}
 	return false;
 }
 
-void WebServer::_sendResponse(const pollfd & socket, int i)
+bool WebServer::_sendToClient(const pollfd &socket, int i)
 {
 	// attempt to send a http response.
 	// Modern browsers will reuse persistent connections due to HTTP/1.1 keep-alive, which is on by default.
 	// So removing "Connection: close" will cause the browser to reuse the same client fd even across
 	// different tabs.
-	std::string response =
+	string response =
 		"HTTP/1.1 200 OK\r\n"
 		"Content-Type: text/html\r\n"
 		"Content-Length: 13\r\n"
@@ -169,14 +188,16 @@ void WebServer::_sendResponse(const pollfd & socket, int i)
 	// has closed their connection.
 	if (send(socket.fd, response.c_str(), response.size(), MSG_NOSIGNAL) <= 0)
 	{
-		printError("Failed to send response to client with fd " + toString(socket.fd) + ".\n");
+		printError("Failed to send response to client with fd " + utils::toString(socket.fd) + ".\n");
 		_removeClient(socket, i);
+		return true;
 	}
+	return false;
 }
 
 void WebServer::_setUpListener(int port)
 {
-	std::string portString = toString(port);
+	string portString = utils::toString(port);
 
 	// AF_INET = internet address (IPv4)
 	// SOCK_STREAM = TCP connection
@@ -185,10 +206,10 @@ void WebServer::_setUpListener(int port)
 	if (listenerFd < 0)
 		throw SocketCreationException(portString);
 
-	// fcntl is used to change the behaviour of the socket
+	// fcntl is used to change the behaviour of the socket.
 	// F_SETFL = set file status flags
-	// set socket to non-blocking mode (call returns immediately if no data in socket)
-	// prevent blocking accept/read/write calls
+	// set socket to non-blocking mode (call returns immediately if no data in socket).
+	// prevent blocking accept/read/write calls.
 	if (fcntl(listenerFd, F_SETFL, O_NONBLOCK) < 0)
 	{
 		close(listenerFd);
@@ -211,7 +232,7 @@ void WebServer::_setUpListener(int port)
 	// "socket address, internet" stores IP address, port, and family info.
 	sockaddr_in listenerAddress;
 	listenerAddress.sin_family = AF_INET; // IPv4
-	// htons() converts port from host byte order to network byte order
+	// htons() converts port from host byte order to network byte order.
 	// Host byte order can be big or little endian. Network byte order is always big endian.
 	// htons() ensures that the port number is in the correct byte order for network transmission.
 	listenerAddress.sin_port = htons(port);
@@ -236,10 +257,10 @@ void WebServer::_setUpListener(int port)
 	_addToPoll(listenerFd, POLLIN, 0);
 	_addToSocketMap(listenerFd, SocketMeta::LISTENER, -1, port);
 
-	std::cout << BLUE << "Listener with fd " << listenerFd << " set up on port " << port << "!\n" << RESET;
+	cout << BLUE << "Listener with fd " << listenerFd << " set up on port " << port << "!\n" << RESET;
 }
 
-// add a file descriptor and its event to be monitored by poll()
+// add a file descriptor and its event to be monitored by poll().
 // short is a bitmask for the events to monitor.
 void WebServer::_addToPoll(int fd, short events, short revents)
 {
@@ -263,8 +284,8 @@ void WebServer::_removeFromPoll(int i)
 	_poll.erase(_poll.begin() + i);
 }
 
-// listeners: addToSocketMap(listenerFd, SocketMeta::LISTENER, -1, port);
-// clients: addToSocketMap(clientFd, SocketMeta::CLIENT, listenerFd, -1);
+// listeners: addToSocketMap(listenerFd, SocketMeta::LISTENER, -1, port)
+// clients: addToSocketMap(clientFd, SocketMeta::CLIENT, listenerFd, -1)
 void WebServer::_addToSocketMap(int fd, SocketMeta::Role type, int listenerFd, int port)
 {
 	SocketMeta meta;
@@ -280,17 +301,17 @@ void WebServer::_removeFromSocketMap(int fd)
 	_socketMap.erase(fd);
 }
 
-bool WebServer::_isClient(const SocketMeta & socketMeta) const
+bool WebServer::_isClient(const SocketMeta &socketMeta) const
 {
 	return (socketMeta.type == SocketMeta::CLIENT);
 }
 
-bool WebServer::_isListener(const SocketMeta & socketMeta) const
+bool WebServer::_isListener(const SocketMeta &socketMeta) const
 {
 	return (socketMeta.type == SocketMeta::LISTENER);
 }
 
-bool WebServer::_noEvents(const pollfd & socket) const
+bool WebServer::_noEvents(const pollfd &socket) const
 {
 	return socket.revents == 0;
 }
@@ -299,46 +320,53 @@ bool WebServer::_noEvents(const pollfd & socket) const
 // POLLERR = socket error (I/O error or connection reset or unusable socket)
 // POLLHUP = hang up (client disconnected)
 // POLLNVAL = invalid fd (fd closed but still in _poll list)
-bool WebServer::_clientIsDisconnected(const pollfd & socket, const SocketMeta & socketMeta) const
+bool WebServer::_clientIsDisconnected(const pollfd &socket, const SocketMeta &socketMeta) const
 {
 	return _isClient(socketMeta) && (socket.revents & (POLLERR | POLLHUP | POLLNVAL));
 }
 
 // POLLIN on listener means client is attempting to connect to the server
-bool WebServer::_clientIsConnecting(const pollfd & socket, const SocketMeta & socketMeta) const
+bool WebServer::_clientIsConnecting(const pollfd &socket, const SocketMeta &socketMeta) const
 {
 	return _isListener(socketMeta) && (socket.revents & POLLIN);
 }
 
 // POLLIN on client means client is sending data to the server
-bool WebServer::_clientIsSendingData(const pollfd & socket, const SocketMeta & socketMeta) const
+bool WebServer::_clientIsSendingData(const pollfd &socket, const SocketMeta &socketMeta) const
 {
 	return _isClient(socketMeta) && (socket.revents & POLLIN);
 }
 
-void WebServer::printError(std::string message)
+// POLLOUT on client means client is ready to receive data
+bool WebServer::_clientIsReadyToReceive(const pollfd &socket, const SocketMeta &socketMeta) const
+{
+	return _isClient(socketMeta) && (socket.revents & POLLOUT);
+}
+
+void WebServer::printError(string message)
 {
 	cerr << RED << "Error: " << message << RESET;
 }
 
 void WebServer::_debugPollAndSocketMap() const
 {
-	std::cout << "\n===== DEBUG: Current Server State =====\n";
+	cout << "\n===== DEBUG: Current Server State =====\n";
 
-	std::cout << ">> _poll contents:\n";
+	cout << ">> _poll contents:\n";
 	for (size_t i = 0; i < _poll.size(); ++i)
 	{
-		std::cout << "  [" << i << "] FD: " << _poll[i].fd
+		cout << "  [" << i << "] FD: " << _poll[i].fd
 		          << ", REVENTS: " << _poll[i].revents << "\n";
 	}
 
-	std::cout << ">> _socketMap contents:\n";
+	cout << ">> _socketMap contents:\n";
 	for (std::map<int, SocketMeta>::const_iterator it = _socketMap.begin(); it != _socketMap.end(); ++it)
 	{
-		std::cout << "  FD: " << it->first << ", TYPE: " << (it->second.type == SocketMeta::LISTENER ? "LISTENER" : "CLIENT") << "\n";
+		cout << "  FD: " << it->first << ", TYPE: " 
+		          << (it->second.type == SocketMeta::LISTENER ? "LISTENER" : "CLIENT") << "\n";
 	}
 
-	std::cout << "=======================================\n\n";
+	cout << "=======================================\n\n";
 }
 
 
@@ -349,17 +377,17 @@ const char *WebServer::PollException::what() const throw()
 	return "Failed to poll file descriptors.";
 }
 
-WebServer::SocketCreationException::SocketCreationException(const std::string& portString)
-: std::runtime_error("Failed to create listener socket for port " + portString + ".") {}
+WebServer::SocketCreationException::SocketCreationException(const string &portString)
+: runtime_error("Failed to create listener socket for port " + portString + ".") {}
 
-WebServer::SocketConfigException::SocketConfigException(const std::string& portString)
-: std::runtime_error("Failed to set non-blocking mode for listener on port " + portString + ".") {}
+WebServer::SocketConfigException::SocketConfigException(const string &portString)
+: runtime_error("Failed to set non-blocking mode for listener on port " + portString + ".") {}
 
-WebServer::SocketOptionException::SocketOptionException(const std::string& portString)
-: std::runtime_error("Failed to set socket option (SO_REUSEADDR) for listener on port " + portString + ".") {}
+WebServer::SocketOptionException::SocketOptionException(const string &portString)
+: runtime_error("Failed to set socket option (SO_REUSEADDR) for listener on port " + portString + ".") {}
 
-WebServer::BindException::BindException(const std::string& portString)
-: std::runtime_error("Failed to bind listener socket to port " + portString + ".") {}
+WebServer::BindException::BindException(const string &portString)
+: runtime_error("Failed to bind listener socket to port " + portString + ".") {}
 
-WebServer::ListenException::ListenException(const std::string& portString)
-: std::runtime_error("Failed to listen to socket on port " + portString + ".") {}
+WebServer::ListenException::ListenException(const string &portString)
+: runtime_error("Failed to listen to socket on port " + portString + ".") {}

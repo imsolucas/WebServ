@@ -1,33 +1,10 @@
 # pragma once
 
-# include <iostream>
-
 # include "Config.hpp"
 
-# include "colors.h"
-
 # include <map>
-
-# include <fcntl.h>
-# include <iostream>
-# include <netinet/in.h> // htons, sockaddr_in struct
 # include <poll.h>
-# include <sys/socket.h> // accept, bind, listen, recv, setsockopt, socket
-# include <unistd.h> // close
 # include <vector>
-
-// REMOVE ONCE JUN YU'S BRANCH IS MERGED
-# include <sstream>
-# include <string>
-template<typename T>
-std::string toString(const T &any)
-{
-	std::ostringstream oss;
-
-	oss << any;
-
-	return oss.str();
-}
 
 class WebServer
 {
@@ -57,10 +34,10 @@ class WebServer
 		void _init();
 		void _parse(const std::string &config);
 
-		void _removeClient(const pollfd & socket, int i);
-		void _addClient(const pollfd & socket);
-		bool _recvFromClient(const pollfd & socket, int i);
-		void _sendResponse(const pollfd & socket, int i);
+		void _removeClient(const pollfd &socket, int i);
+		void _addClient(const pollfd &socket);
+		bool _recvFromClient(const pollfd &socket, int i);
+		bool _sendToClient(const pollfd &socket, int i);
 
 		void _setUpListener(int port);
 
@@ -69,12 +46,13 @@ class WebServer
 		void _addToSocketMap(int fd, SocketMeta::Role type, int listenerFd, int port);
 		void _removeFromSocketMap(int fd);
 
-		bool _isClient(const SocketMeta & socketMeta) const;
-		bool _isListener(const SocketMeta & socketMeta) const;
-		bool _noEvents(const pollfd & socket) const;
-		bool _clientIsDisconnected(const pollfd & socket, const SocketMeta & socketMeta) const;
-		bool _clientIsConnecting(const pollfd & socket, const SocketMeta & socketMeta) const;
-		bool _clientIsSendingData(const pollfd & socket, const SocketMeta & socketMeta) const;
+		bool _isClient(const SocketMeta &socketMeta) const;
+		bool _isListener(const SocketMeta &socketMeta) const;
+		bool _noEvents(const pollfd &socket) const;
+		bool _clientIsDisconnected(const pollfd &socket, const SocketMeta &socketMeta) const;
+		bool _clientIsConnecting(const pollfd &socket, const SocketMeta &socketMeta) const;
+		bool _clientIsSendingData(const pollfd &socket, const SocketMeta &socketMeta) const;
+		bool _clientIsReadyToReceive(const pollfd &socket, const SocketMeta &socketMeta) const;
 
 		static void printError(std::string message);
 
@@ -93,30 +71,30 @@ class WebServer
 		class SocketCreationException : public std::runtime_error
 		{
 			public:
-				SocketCreationException(const std::string& msg);
+				SocketCreationException(const std::string &portString);
 		};
 
 		class SocketConfigException : public std::runtime_error
 		{
 			public:
-				SocketConfigException(const std::string& msg);
+				SocketConfigException(const std::string &portString);
 		};
 
 		class SocketOptionException : public std::runtime_error
 		{
 			public:
-				SocketOptionException(const std::string& msg);
+				SocketOptionException(const std::string &portString);
 		};
 
 		class BindException : public std::runtime_error
 		{
 			public:
-				BindException(const std::string& msg);
+				BindException(const std::string &portString);
 		};
 
 		class ListenException : public std::runtime_error
 		{
 			public:
-				ListenException(const std::string& msg);
+				ListenException(const std::string &portString);
 		};
 };
