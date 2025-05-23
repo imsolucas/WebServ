@@ -1,11 +1,9 @@
-# include <iostream>
+# include "test.hpp"
 
-# include "colors.h"
-# include "test.h"
-
+using std::string;
 using std::cout;
 
-int main()
+void printHeader(const string &msg)
 {
-	test_http();
+
 }

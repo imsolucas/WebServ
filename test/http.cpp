@@ -1,11 +1,9 @@
-# include <iostream>
 # include <ostream>
 # include <cstring>
 
-# include "colors.h"
 # include "utils.hpp"
 # include "Http.h"
-# include "test.h"
+# include "test.hpp"
 
 using std::string;
 using std::map;
@@ -15,7 +13,7 @@ using std::cerr;
 static void test_serialize();
 static void test_deserialize();
 
-void test_http()
+void http()
 {
 	test_serialize();
 	test_deserialize();
