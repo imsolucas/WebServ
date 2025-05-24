@@ -4,7 +4,9 @@ using std::string;
 using std::vector;
 using std::cerr;
 
-TestSuite::TestSuite()
+TestSuite::TestSuite() :
+	_passes(0),
+	_fails(0)
 {
 	printHeader("TEST SUITE");
 }
