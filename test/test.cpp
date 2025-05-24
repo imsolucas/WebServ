@@ -32,16 +32,14 @@ void TestSuite::run()
 
 void printHeader(const string &msg)
 {
-	cerr << BLUE + "============================== " + GREEN + msg + BLUE + " ==============================\n" + RESET;
+	cerr << DIVIDER_THICK + GREEN + " " + msg + " " + DIVIDER_THICK + "\n" + RESET;
 }
 
 void printSummary(unsigned int tests, unsigned int passes, unsigned int fails)
 {
-	cerr << DIVIDER_THICK;
-	cerr << BOLD << "Test Summary" << RESET << "\n";
-	cerr << DIVIDER_THIN;
-	cerr << "Total:   " << tests << " ";
-	cerr << "Passed:  " << GREEN << passes << RESET << " ";
-	cerr << "Failed:  " << RED << fails << RESET << "\n";
-	cerr << DIVIDER_THICK;
+	cerr << DIVIDER_NORMAL + GREEN + " Summary " + DIVIDER_NORMAL + "\n" + RESET;
+	cerr << "Total: " << BOLD << tests << RESET + " ";
+	cerr << "Passed: " << GREEN << passes << RESET + " ";
+	cerr << "Failed: " << RED << fails << RESET;
+	cerr << "\n"DIVIDER_THICK"\n";
 }
