@@ -29,6 +29,6 @@ bool assertEqual(const std::string &msg, const Output &actual, const Output &exp
 void printHeader(const std::string &msg);
 void printSummary(unsigned int tests, unsigned int passes, unsigned int fails);
 
-void test_http();
+void test_http(TestSuite &t);
 
 # include "test.tpp"
