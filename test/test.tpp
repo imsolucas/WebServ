@@ -5,6 +5,7 @@ using std::string;
 using std::cerr;
 
 // * `==` & `<<` operator overload is required for class/struct objects
+// ! this function does not work with pointers
 template <typename Output>
 void assertEqual(const string &msg, const Output &actual, const Output &expected)
 {
