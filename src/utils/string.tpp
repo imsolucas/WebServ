@@ -5,8 +5,8 @@
 using std::string;
 using std::ostringstream;
 
-template<typename Input>
-string utils::toString(const Input &any)
+template<typename T>
+string utils::toString(const T &any)
 {
 	ostringstream oss;
 
