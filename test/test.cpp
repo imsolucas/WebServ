@@ -6,9 +6,7 @@ using std::cerr;
 
 TestSuite::TestSuite()
 {
-	cerr << DIVIDER_THICK_BG;
-	cerr << BOLD << "TEST SUITE" << RESET;
-	cerr << DIVIDER_THICK_BG;
+	printHeader("TEST SUITE");
 }
 
 void TestSuite::addTest(bool (*t)())
@@ -32,8 +30,7 @@ void TestSuite::run()
 
 void printHeader(const string &msg)
 {
-	cerr << GREEN + msg + RESET;
-	cerr << DIVIDER_THICK;
+	cerr << BLUE + "============================== " + GREEN + msg + BLUE + " ==============================\n" + RESET;
 }
 
 void printSummary(unsigned int tests, unsigned int passes, unsigned int fails)
