@@ -30,14 +30,14 @@ TEST_HEADERS = $(wildcard test/*.hpp) $(wildcard test/*.h) $(wildcard test/*.tpp
 TEST_EXE = unit-tests
 
 test : fclean $(TEST_EXE)
-	./$(TEST_EXE)
+	@./$(TEST_EXE)
 
 $(TEST_EXE) : $(filter-out obj/src/main.o, $(OBJS)) $(TEST_OBJS)
-	$(CXX) $(CXXFLAGS) $(INCS) $^ -o $@
+	@$(CXX) $(CXXFLAGS) $(INCS) $^ -o $@
 
 obj/test/%.o : test/%.cpp $(HEADERS) $(TEST_HEADERS)
-	mkdir -p obj/test
-	$(CXX) $(CXXFLAGS) $(INCS) -c $< -o $@
+	@mkdir -p obj/test
+	@$(CXX) $(CXXFLAGS) $(INCS) -c $< -o $@
 
 # Misc.
 clean :
