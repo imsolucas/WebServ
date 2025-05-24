@@ -45,6 +45,7 @@ clean :
 
 fclean : clean
 	@rm -f $(EXE)
+	@rm -f $(TEST_EXE)
 
 re : fclean all
 
