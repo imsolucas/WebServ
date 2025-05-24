@@ -7,12 +7,13 @@ using std::cerr;
 // * `==` & `<<` operator overload is required for class/struct objects
 // ! this function does not work with pointers
 template <typename Output>
-void assertEqual(const string &msg, const Output &actual, const Output &expected)
+bool assertEqual(const string &msg, const Output &actual, const Output &expected)
 {
 	if (actual == expected)
 	{
 		cerr << "[" << BG_GREEN << "PASS" << RESET << "] ";
 		cerr << BOLD + msg << RESET << "\n";
+		return true;
 	}
 	else
 	{
@@ -22,5 +23,6 @@ void assertEqual(const string &msg, const Output &actual, const Output &expected
 		cerr << RESET << expected << DIVIDER_THIN;
 		cerr << YELLOW + "Actual:\n" + RESET;
 		cerr << RESET << actual << DIVIDER_THIN;
+		return false;
 	}
 }

@@ -24,7 +24,7 @@ class TestSuite
 };
 
 template <typename Output>
-void assertEqual(const std::string &msg, const Output &actual, const Output &expected);
+bool assertEqual(const std::string &msg, const Output &actual, const Output &expected);
 
 void printHeader(const std::string &msg);
 void printSummary(unsigned int tests, unsigned int passes, unsigned int fails);
