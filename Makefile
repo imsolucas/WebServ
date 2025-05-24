@@ -18,11 +18,11 @@ EXE = webserv
 all : $(EXE)
 
 $(EXE) : $(OBJS)
-	$(CXX) $(CXXFLAGS) $(OBJS) -o $(EXE)
+	@$(CXX) $(CXXFLAGS) $(OBJS) -o $(EXE)
 
 obj/%.o : %.cpp $(HEADERS)
-	mkdir -p $(OBJ_DIRS)
-	$(CXX) $(CXXFLAGS) $(INCS) -c $< -o $@
+	@mkdir -p $(OBJ_DIRS)
+	@$(CXX) $(CXXFLAGS) $(INCS) -c $< -o $@
 
 # Test
 TEST_SRCS = $(wildcard test/*.cpp)
@@ -42,10 +42,10 @@ obj/test/%.o : test/%.cpp $(HEADERS) $(TEST_HEADERS)
 
 # Misc.
 clean :
-	rm -rf obj/
+	@rm -rf obj/
 
 fclean : clean
-	rm -f $(EXE)
+	@rm -f $(EXE)
 
 re : fclean all
 
