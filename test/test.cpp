@@ -23,7 +23,7 @@ void TestSuite::run()
 	for (vector<bool (*)()>::iterator it = _tests.begin();
 		it != _tests.end(); ++it)
 	{
-		result = *it;
+		result = (*it)();
 		if (result == true) _passes += 1;
 		else _fails += 1;
 	}
