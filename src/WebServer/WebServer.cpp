@@ -71,6 +71,8 @@ void WebServer::run()
 					--i;
 					continue;
 				}
+				// change poll from POLLIN to POLLOUT to send response to client
+				_poll[i].events = POLLOUT;
 			}
 
 			else if (_clientIsReadyToReceive(socket, socketMeta))
@@ -80,8 +82,10 @@ void WebServer::run()
 					--i;
 					continue;
 				}
+				// remove client after sending response to them
+				_removeClient(socket, i);
+				--i;
 			}
-
 		}
 	}
 }
@@ -361,7 +365,7 @@ void WebServer::_debugPollAndSocketMap() const
 	cout << ">> _socketMap contents:\n";
 	for (std::map<int, SocketMeta>::const_iterator it = _socketMap.begin(); it != _socketMap.end(); ++it)
 	{
-		cout << "  FD: " << it->first << ", TYPE: " 
+		cout << "  FD: " << it->first << ", TYPE: "
 		          << (it->second.type == SocketMeta::LISTENER ? "LISTENER" : "CLIENT") << "\n";
 	}
 
