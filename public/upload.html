@@ -13,7 +13,7 @@
 <body>
 	<h1>Submit a Bug Report</h1>
 	<p>You can upload a screenshot, a log file, or a description of the issue.</p>
-	<form method="POST" action="/uploads/" enctype="multipart/form-data">
+	<form method="POST" action="/cgi-bin/submit_report.py" enctype="multipart/form-data">
 		<input type="file" name="bugfile" required /><br />
 		<button type="submit">Upload</button>
 	</form>
