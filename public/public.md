@@ -82,8 +82,8 @@ public/
 
 ### Scripts:
 
-#### 1. `submit_report.py`
-- see **submit_report.md**
+#### 1. `submit_report.py` 
+- (see `submit_report.md`)
 - Used to **confirm a bug report was received** by processing the uploaded file sent via a POST request.
 - Extracts and saves the **first uploaded file** (e.g., a screenshot or log) to the server’s ../uploads directory.
 - Returns a simple **thank-you HTML message** confirming the successful upload or an error message if the upload failed.
