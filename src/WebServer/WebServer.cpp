@@ -6,6 +6,7 @@
 # include "utils.hpp"
 
 # include <fcntl.h>
+# include <fstream> // TODO: DELETE
 # include <iostream>
 # include <netinet/in.h> // htons, sockaddr_in struct
 # include <sys/socket.h> // accept, bind, listen, recv, setsockopt, socket
@@ -174,6 +175,14 @@ bool WebServer::_recvFromClient(const pollfd &socket, int i)
 // boolean reflects success of send call().
 bool WebServer::_sendToClient(const pollfd &socket, int i)
 {
+	// TODO: DELETE - ONLY FOR TESTING PURPOSES
+	// -----------------------------------------------------------------------------------
+	std::ifstream page("public/error/404.html");
+	string line, body;
+
+	while (std::getline(page, line))
+	body += line + "\n";
+
 	// attempt to send a http response.
 	// Modern browsers will reuse persistent connections due to HTTP/1.1 keep-alive, which is on by default.
 	// So removing "Connection: close" will cause the browser to reuse the same client fd even across
@@ -181,10 +190,11 @@ bool WebServer::_sendToClient(const pollfd &socket, int i)
 	string response =
 		"HTTP/1.1 200 OK\r\n"
 		"Content-Type: text/html\r\n"
-		"Content-Length: 13\r\n"
+		"Content-Length: " + utils::toString(body.size()) + "\r\n"
 		"Connection: close\r\n"
-		"\r\n"
-		"Hello, world!";
+		"\r\n" +
+		body;
+	// -----------------------------------------------------------------------------------
 
 	// MSG_NOSIGNAL flag prevents SIGPIPE if the client has already closed the connection.
 	// Often used in server code to avoid crashes from broken pipes e.g. when client
