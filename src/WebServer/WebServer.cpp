@@ -177,7 +177,7 @@ bool WebServer::_sendToClient(const pollfd &socket, int i)
 {
 	// TODO: DELETE - ONLY FOR TESTING PURPOSES
 	// -----------------------------------------------------------------------------------
-	std::ifstream page("public/error/404.html");
+	std::ifstream page("public/index.html");
 	string line, body;
 
 	while (std::getline(page, line))
