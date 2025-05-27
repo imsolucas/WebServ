@@ -19,7 +19,6 @@ using std::runtime_error;
 WebServer::WebServer(const string &config)
 {
 	_parse(config);
-	_init();
 }
 
 WebServer::~WebServer()
@@ -97,15 +96,10 @@ void WebServer::closeAllSockets()
 	cout << "Closed all sockets!\n";
 }
 
-void WebServer::_init()
-{
-	cout << "Initialized web server!\n";
-}
-
 void WebServer::_parse(const string &config)
 {
-	_cfg = Config(config);
 	cout << "Parsed configuration file!\n";
+	_cfg = Config(config);
 }
 
 void WebServer::_removeClient(const pollfd &socket, int i)
