@@ -13,9 +13,15 @@ class WebServer
 		~WebServer();
 
 		void run();
+		void stop();
+		void reload();
 		void closeAllSockets();
 
 	private:
+
+		private:
+		int port;
+		std::string server_name;
 
 		Config _cfg;
 
