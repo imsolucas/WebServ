@@ -6,7 +6,7 @@
 /*   By: imsolucas <imsolucas@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/26 15:43:47 by imsolucas         #+#    #+#             */
-/*   Updated: 2025/05/27 00:58:29 by imsolucas        ###   ########.fr       */
+/*   Updated: 2025/05/27 18:12:40 by imsolucas        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,5 +58,7 @@ private:
 	std::vector<LocationConfig> locations;	// All `location {}` blocks
 	std::map<int, std::string> error_pages; // Error code -> page path
 };
+
+
 
 #endif // SERVER_HPP

@@ -19,7 +19,6 @@ using std::runtime_error;
 WebServer::WebServer(const string &config)
 {
 	_parse(config);
-	_init();
 }
 
 WebServer::~WebServer()
@@ -95,11 +94,6 @@ void WebServer::closeAllSockets()
 	for (size_t i = 0; i < _poll.size(); ++i)
 		close(_poll[i].fd);
 	cout << "Closed all sockets!\n";
-}
-
-void WebServer::_init()
-{
-	cout << "Initialized web server!\n";
 }
 
 void WebServer::_parse(const string &config)

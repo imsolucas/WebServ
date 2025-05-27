@@ -6,7 +6,7 @@
 /*   By: imsolucas <imsolucas@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/19 17:12:28 by imsolucas         #+#    #+#             */
-/*   Updated: 2025/05/27 17:48:39 by imsolucas        ###   ########.fr       */
+/*   Updated: 2025/05/27 17:54:10 by imsolucas        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,8 @@
 # include <map>
 # include <algorithm>
 # include <fstream>
+#include <sstream>
+#include <stdexcept>
 
 // 🧩 Project Headers
 # include "Http.h"

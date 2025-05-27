@@ -4,11 +4,15 @@
 using std::cout;
 using std::string;
 
+Config::Config() : _servers() {}
+
 Config::Config(const string &config)
 {
 	readConfig(config);
 	cout << "Configuration file read successfully!\n";
 }
+
+Config::~Config() {}
 
 void Config::readConfig(const string &filePath)
 {
@@ -31,7 +35,7 @@ void Config::readConfig(const string &filePath)
 	}
 	file.close();
 	std::istringstream buffer(_buffer.str());
-	std::vector<std::string> tokens = tokenize(_buffer.str());
+	std::vector<std::string> tokens = tokenize(buffer.str());
 	// printTokens(tokens);
 	parseTokens(tokens);
 }
