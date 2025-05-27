@@ -6,7 +6,7 @@
 /*   By: imsolucas <imsolucas@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/19 17:12:28 by imsolucas         #+#    #+#             */
-/*   Updated: 2025/05/26 16:15:03 by imsolucas        ###   ########.fr       */
+/*   Updated: 2025/05/27 17:48:39 by imsolucas        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,9 +25,12 @@
 # include <fstream>
 
 // 🧩 Project Headers
+# include "Http.h"
 # include "colors.h"
+# include "utils.hpp"
 # include "Exception.hpp"
 # include "Config.hpp"
+# include "signal.hpp"
 # include "WebServer.hpp"
 # include "Server.hpp"
 # include "LocationConfig.hpp"

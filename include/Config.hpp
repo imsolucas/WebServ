@@ -1,16 +1,19 @@
 #pragma once
 
-#include "Includes.h"
 #include "Server.hpp"
 #include "LocationConfig.hpp"
 #include <iostream>
+#include <fstream>
+#include <sstream>
+#include <stdexcept>
+#include <fstream>
+#include <sstream>
+#include <stdexcept>
 
 class Config
 {
 public:
-	Config() {};
 	Config(const std::string &filePath);
-	~Config() {};
 
 	void readConfig(const std::string &filePath);
 

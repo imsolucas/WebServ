@@ -1,12 +1,5 @@
 
-#include "Includes.h"
-#include <fstream>
-#include <sstream>
-#include <stdexcept>
-#include <iostream>
 #include "Config.hpp"
-
-#include <iostream>
 
 using std::cout;
 using std::string;
@@ -41,11 +34,6 @@ void Config::readConfig(const string &filePath)
 	std::vector<std::string> tokens = tokenize(_buffer.str());
 	// printTokens(tokens);
 	parseTokens(tokens);
-}
-
-void Config::printline(const std::string &line) const
-{
-	std::cout << line << std::endl;
 }
 
 void Config::printTokens(const std::vector<std::string> &tokens) const
