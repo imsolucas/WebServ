@@ -41,5 +41,5 @@ void printSummary(unsigned int tests, unsigned int passes, unsigned int fails)
 	cerr << "Total: " << BOLD << tests << RESET + " ";
 	cerr << "Passed: " << GREEN << passes << RESET + " ";
 	cerr << "Failed: " << RED << fails << RESET;
-	cerr << "\n"DIVIDER_THICK"\n";
+	cerr << "\n" DIVIDER_THICK DIVIDER_THICK "\n";
 }

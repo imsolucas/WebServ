@@ -17,9 +17,9 @@ bool assertEqual(const string &msg, const Output &actual, const Output &expected
 	else
 	{
 		cerr << "[" + BG_RED + "FAIL" + RESET + "] " + BOLD + msg + "\n" + RESET;
-		cerr << DIVIDER_THIN + YELLOW + " Expected " + DIVIDER_THIN"\n" + RESET;
+		cerr << DIVIDER_THIN + YELLOW + " Expected " + DIVIDER_THIN + "\n" + RESET;
 		cerr << expected << "\n";
-		cerr << DIVIDER_THIN + YELLOW + " Actual " + DIVIDER_THIN"\n" + RESET;
+		cerr << DIVIDER_THIN + YELLOW + " Actual " + DIVIDER_THIN + "\n" + RESET;
 		cerr << actual << "\n";
 		return false;
 	}
