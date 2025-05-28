@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Submit a Bug Report</title>
+	<style>
+		body { font-family: Arial, sans-serif; padding: 2rem; text-align: center; background: #fcfcfc; color: #333; }
+		form { margin-top: 2rem; }
+		input[type="file"] { margin-bottom: 1rem; }
+	</style>
+</head>
+<body>
+	<h1>Submit a Bug Report</h1>
+	<p>You can upload a screenshot, a log file, or a description of the issue.</p>
+	<form method="POST" action="/cgi-bin/submit_report.py" enctype="multipart/form-data">
+		<input type="file" name="bugfile" required /><br />
+		<button type="submit">Upload</button>
+	</form>
+	<p><a href="/">← Back to Home</a></p>
+</body>
+</html>
