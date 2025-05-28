@@ -3,12 +3,12 @@
 # include <iostream>
 # include <vector>
 
-# define DIVIDER_THICK_BG "\n"_BG_BLUE"=============================="_RESET"\n"
-# define DIVIDER_THIN_BG "\n"_BG_CYAN"------------------------------"_RESET"\n"
+# define DIVIDER_THICK_BG "\n" _BG_BLUE "==============================" _RESET "\n"
+# define DIVIDER_THIN_BG "\n" _BG_CYAN "------------------------------" _RESET "\n"
 
-# define DIVIDER_THICK _BLUE"==============================="_RESET
-# define DIVIDER_NORMAL _CYAN"-------------------------------"_RESET
-# define DIVIDER_THIN _CYAN"- - - - - - - - - - - - - - - -"_RESET
+# define DIVIDER_THICK _BLUE "===============================" _RESET
+# define DIVIDER_NORMAL _CYAN "-------------------------------" _RESET
+# define DIVIDER_THIN _CYAN "- - - - - - - - - - - - - - - -" _RESET
 
 class TestSuite
 {
