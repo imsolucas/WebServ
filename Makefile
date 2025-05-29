@@ -31,6 +31,8 @@ Server/obj/%.o : Server/%.cpp Server/Server.hpp
 	$(CXX) $(CXXFLAGS) -IServer -c $< -o $@
 
 # Misc.
+all : Server Client
+
 clean :
 	rm -rf Client/obj/
 	rm -rf Server/obj/
