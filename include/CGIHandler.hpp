@@ -8,19 +8,18 @@
 
 class CGIHandler {
 public:
-	CGIHandler(struct HttpRequest);
-	// CGIHandler(const Request& req, const ServerConfig& config);
+	static void testCGIHandler(); // TODO: DELETE
+	CGIHandler(const HttpRequest &req);
 	std::string execute();
-	static void testCGIHandler();
 
 private:
 	HttpRequest _req;
 	int _stdinPipe[2];
 	int _stdoutPipe[2];
+	// environment variables for execve
+	std::vector<char *> _env;
 	pid_t _childPid;
 	std::string _cgiOutput;
-	std::vector<std::string> _envString;
-	std::vector<char *> _envp;
 
 	void _setupPipes();
 	void _setupEnv();
