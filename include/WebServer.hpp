@@ -15,11 +15,6 @@ class WebServer
 		void run();
 
 	private:
-
-		private:
-		int port;
-		std::string server_name;
-
 		Config _cfg;
 
 		std::vector<pollfd> _poll;

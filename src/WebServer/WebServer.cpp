@@ -1,12 +1,10 @@
-# include <iostream>
-
 # include "WebServer.hpp"
+# include "CGIHandler.hpp" // TODO: DELETE
 # include "colors.h"
 # include "signal.hpp"
 # include "utils.hpp"
 
 # include <fcntl.h>
-# include <fstream> // TODO: DELETE
 # include <iostream>
 # include <netinet/in.h> // htons, sockaddr_in struct
 # include <sys/socket.h> // accept, bind, listen, recv, setsockopt, socket
@@ -162,6 +160,7 @@ bool WebServer::_recvFromClient(const pollfd &socket, int i)
 		// process incoming data
 		buffer[bytesReceived] = '\0';
 		cout << "\nData received from client with fd " << socket.fd <<  ":\n" << YELLOW << buffer << "\n" << _RESET;
+		CGIHandler::testCGIHandler(); // TODO: DELETE
 	}
 	return true;
 }
