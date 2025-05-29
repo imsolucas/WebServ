@@ -105,14 +105,22 @@ void CGIHandler::_cgiChildProcess()
 	dup2(_stdinPipe[0], STDIN_FILENO);
 	// writing output to stdoutPipe
 	dup2(_stdoutPipe[1], STDOUT_FILENO);
+	// closing pipe ends after dup2
+	close(_stdinPipe[0]);
+	close(_stdoutPipe[1]);
 
-
-	const char * path;
-	char **args;
+	// TODO: MODIFY - DO NOT HARD CODE
+	// TODO: SANITIZE PATH TO PREVENT PATH TRAVERSAL AND VALIDATE THAT PATH EXISTS.
+	std::string cgiBinPath = "public/cgi-bin/";
+	std::string scriptPath = cgiBinPath + _req.requestTarget;
+	const char *path = scriptPath.c_str();
+	// CGI scripts usually don’t expect command-line arguments
+	char *arg[] = { (char *)path, NULL };
 	char * const *envp = &_env[0];
 
-	if (execve(path, args, envp) < 0)
-		throw ExecveException();
+	execve(path, arg, envp);
+	// exit with status code 1 if execve fails
+	exit(1);
 }
 
 void CGIHandler::_cgiParentProcess()
@@ -121,7 +129,10 @@ void CGIHandler::_cgiParentProcess()
 	close(_stdinPipe[0]);
 	close(_stdoutPipe[1]);
 
+
 	waitpid(_childPid, NULL, 0);
+
+	// if child returns 1, throw execveException
 }
 
 CGIHandler::PipeException::PipeException(string pipe)
