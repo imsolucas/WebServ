@@ -4,6 +4,7 @@
 
 # include "Server.hpp"
 
+using std::string;
 using std::runtime_error;
 using std::cout;
 
@@ -22,13 +23,22 @@ void Server::run()
 		throw runtime_error("Failed to connect to client.");
 	cout << "Connected to client.\n";
 
+	_connected.push_back(client);
+
 	char buffer[4096];
 	size_t len;
 	len = recv(client.fd, buffer, 4096, 0);
 	cout << "Received " << len << " bytes: \n-----\n" << buffer << "\n-----\n";
 
+	cout << "Sending response...\n";
+	_response("This is a response.");
+	cout << "Response sent.\n";
+
+	cout << "Closing server...\n";
+	cout << "Server closed.\n";
 }
 
+// initialize listening socket
 void Server::init()
 {
 	cout << "Initializing server...\n";
@@ -47,6 +57,13 @@ void Server::init()
 		throw runtime_error("Failed to bind socket.");
 
 	cout << "Finish initializing server.\n";
+}
+
+void Server::_response(const string &msg)
+{
+	ssize_t bytesSent = send(_connected[0].fd, msg.c_str(), msg.size(), 0);
+	if (bytesSent < 0)
+		throw (runtime_error("Failed to send response."));
 }
 
 void Server::_listen()

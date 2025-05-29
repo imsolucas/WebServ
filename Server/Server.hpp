@@ -24,5 +24,6 @@ class Server
 		Socket _listening;
 		std::vector<Socket> _connected;
 
+		void _response(const std::string &msg);
 		void _listen();
 };
