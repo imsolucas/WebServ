@@ -13,9 +13,6 @@ class WebServer
 		~WebServer();
 
 		void run();
-		void stop();
-		void reload();
-		void closeAllSockets();
 
 	private:
 
@@ -37,8 +34,9 @@ class WebServer
 
 		std::map<int, SocketMeta> _socketMap;
 
-		void _init();
 		void _parse(const std::string &config);
+
+		void _closeAllSockets();
 
 		void _removeClient(const pollfd &socket, int i);
 		void _addClient(const pollfd &socket);

@@ -24,7 +24,7 @@ WebServer::WebServer(const string &config)
 
 WebServer::~WebServer()
 {
-	closeAllSockets();
+	_closeAllSockets();
 }
 
 // Event loop with poll()
@@ -90,17 +90,17 @@ void WebServer::run()
 	}
 }
 
-void WebServer::closeAllSockets()
+void WebServer::_parse(const string &config)
+{
+	_cfg = Config(config);
+	cout << "Parsed configuration file!\n";
+}
+
+void WebServer::_closeAllSockets()
 {
 	for (size_t i = 0; i < _poll.size(); ++i)
 		close(_poll[i].fd);
 	cout << "Closed all sockets!\n";
-}
-
-void WebServer::_parse(const string &config)
-{
-	cout << "Parsed configuration file!\n";
-	_cfg = Config(config);
 }
 
 void WebServer::_removeClient(const pollfd &socket, int i)
