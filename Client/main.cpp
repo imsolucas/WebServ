@@ -10,11 +10,10 @@ int main()
 	try
 	{
 		Client c("127.0.0.1:8080");
-		c.send("This is a message.");
+		c.request("This is a request.");
 	}
 	catch(const exception& e)
 	{
 		cerr << e.what() << '\n';
 	}
-
 }

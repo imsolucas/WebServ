@@ -1,6 +1,7 @@
 # include <iostream>
 # include <cstdio>
 # include <cstring>
+# include <unistd.h>
 
 # include "Server.hpp"
 
@@ -11,12 +12,11 @@ using std::cout;
 void Server::run()
 {
 	cout  << "Starting server...\n";
-
 	if (listen(_listening.fd, SOMAXCONN) < 0)
 		throw runtime_error("Failed to listen on socket.");
-
 	cout << "Server started.\n";
 
+	// accepts client connection
 	Socket client;
 	client.fd = accept(_listening.fd, reinterpret_cast<sockaddr *>(&client.addr), &client.len);
 	if (client.fd < 0)
@@ -25,16 +25,21 @@ void Server::run()
 
 	_connected.push_back(client);
 
+	// receives client request
 	char buffer[4096];
-	size_t len;
-	len = recv(client.fd, buffer, 4096, 0);
-	cout << "Received " << len << " bytes: \n-----\n" << buffer << "\n-----\n";
+	size_t bytesReceived = recv(client.fd, buffer, 4096, 0);
+	if (bytesReceived < 0)
+		throw runtime_error("Failed to receive request.");
+	cout << "Received " << bytesReceived << " bytes: \n-----\n" << buffer << "\n-----\n";
 
+	// sends response to cleint
 	cout << "Sending response...\n";
-	_response("This is a response.");
+	_respond(client, "This is a response.");
 	cout << "Response sent.\n";
 
+	// close client connection
 	cout << "Closing server...\n";
+	close(client.fd);
 	cout << "Server closed.\n";
 }
 
@@ -59,11 +64,11 @@ void Server::init()
 	cout << "Finish initializing server.\n";
 }
 
-void Server::_response(const string &msg)
+void Server::_respond(const Socket &client, const string &msg)
 {
-	ssize_t bytesSent = send(_connected[0].fd, msg.c_str(), msg.size(), 0);
+	ssize_t bytesSent = send(client.fd, msg.c_str(), msg.size(), 0);
 	if (bytesSent < 0)
-		throw (runtime_error("Failed to send response."));
+		throw runtime_error("Failed to send response.");
 }
 
 void Server::_listen()
