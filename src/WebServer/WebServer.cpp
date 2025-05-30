@@ -307,17 +307,17 @@ void WebServer::_removeFromSocketMap(int fd)
 	_socketMap.erase(fd);
 }
 
-bool WebServer::_isClient(const SocketMeta &socketMeta) const
+bool WebServer::_isClient(const SocketMeta &socketMeta)
 {
 	return (socketMeta.type == SocketMeta::CLIENT);
 }
 
-bool WebServer::_isListener(const SocketMeta &socketMeta) const
+bool WebServer::_isListener(const SocketMeta &socketMeta)
 {
 	return (socketMeta.type == SocketMeta::LISTENER);
 }
 
-bool WebServer::_noEvents(const pollfd &socket) const
+bool WebServer::_noEvents(const pollfd &socket)
 {
 	return socket.revents == 0;
 }
@@ -326,25 +326,25 @@ bool WebServer::_noEvents(const pollfd &socket) const
 // POLLERR = socket error (I/O error or connection reset or unusable socket)
 // POLLHUP = hang up (client disconnected)
 // POLLNVAL = invalid fd (fd closed but still in _poll list)
-bool WebServer::_clientIsDisconnected(const pollfd &socket, const SocketMeta &socketMeta) const
+bool WebServer::_clientIsDisconnected(const pollfd &socket, const SocketMeta &socketMeta)
 {
 	return _isClient(socketMeta) && (socket.revents & (POLLERR | POLLHUP | POLLNVAL));
 }
 
 // POLLIN on listener means client is attempting to connect to the server
-bool WebServer::_clientIsConnecting(const pollfd &socket, const SocketMeta &socketMeta) const
+bool WebServer::_clientIsConnecting(const pollfd &socket, const SocketMeta &socketMeta)
 {
 	return _isListener(socketMeta) && (socket.revents & POLLIN);
 }
 
 // POLLIN on client means client is sending data to the server
-bool WebServer::_clientIsSendingData(const pollfd &socket, const SocketMeta &socketMeta) const
+bool WebServer::_clientIsSendingData(const pollfd &socket, const SocketMeta &socketMeta)
 {
 	return _isClient(socketMeta) && (socket.revents & POLLIN);
 }
 
 // POLLOUT on client means client is ready to receive data
-bool WebServer::_clientIsReadyToReceive(const pollfd &socket, const SocketMeta &socketMeta) const
+bool WebServer::_clientIsReadyToReceive(const pollfd &socket, const SocketMeta &socketMeta)
 {
 	return _isClient(socketMeta) && (socket.revents & POLLOUT);
 }

@@ -45,13 +45,13 @@ class WebServer
 		void _addToSocketMap(int fd, SocketMeta::Role type, int listenerFd, int port);
 		void _removeFromSocketMap(int fd);
 
-		bool _isClient(const SocketMeta &socketMeta) const;
-		bool _isListener(const SocketMeta &socketMeta) const;
-		bool _noEvents(const pollfd &socket) const;
-		bool _clientIsDisconnected(const pollfd &socket, const SocketMeta &socketMeta) const;
-		bool _clientIsConnecting(const pollfd &socket, const SocketMeta &socketMeta) const;
-		bool _clientIsSendingData(const pollfd &socket, const SocketMeta &socketMeta) const;
-		bool _clientIsReadyToReceive(const pollfd &socket, const SocketMeta &socketMeta) const;
+		static bool _isClient(const SocketMeta &socketMeta);
+		static bool _isListener(const SocketMeta &socketMeta);
+		static bool _noEvents(const pollfd &socket);
+		static bool _clientIsDisconnected(const pollfd &socket, const SocketMeta &socketMeta);
+		static bool _clientIsConnecting(const pollfd &socket, const SocketMeta &socketMeta);
+		static bool _clientIsSendingData(const pollfd &socket, const SocketMeta &socketMeta);
+		static bool _clientIsReadyToReceive(const pollfd &socket, const SocketMeta &socketMeta);
 
 		static void printError(std::string message);
 
