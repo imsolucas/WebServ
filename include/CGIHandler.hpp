@@ -11,7 +11,6 @@ class CGIHandler {
 		CGIHandler(const HttpRequest &req);
 		std::string execute();
 
-
 	private:
 		HttpRequest _req;
 		int _stdinPipe[2];
@@ -24,8 +23,8 @@ class CGIHandler {
 		std::string _cgiOutput;
 
 		void _setupPipes();
-		void _parseRequestTarget();
 		void _setupEnv();
+		void _parseRequestTarget();
 		void _cgiChildProcess();
 		void _cgiParentProcess();
 

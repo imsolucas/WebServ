@@ -31,29 +31,6 @@ void CGIHandler::_setupPipes()
 		throw PipeException("_stdoutPipe");
 }
 
-// Parses requestTarget and sets the SCRIPT_NAME and
-// QUERY_STRING environment variables.
-void CGIHandler::_parseRequestTarget()
-{
-	string requestTarget = _req.requestTarget;
-	string queryString = "";
-
-	// check whether requestTarget has a '?' that will demarcate
-	// the beginning of the query string
-	std::size_t pos = requestTarget.find("?");
-	if (pos != std::string::npos)
-	{
-		_scriptName = requestTarget.substr(0, pos);
-		queryString = requestTarget.substr(pos + 1);
-	}
-	else
-		_scriptName = requestTarget;
-
-	_envStrings.push_back("SCRIPT_NAME=" + _scriptName);
-	if (queryString != "")
-		_envStrings.push_back("QUERY_STRING=" + queryString);
-}
-
 // Environment variables may remain unused, but our job is to emulate the
 // standard environment expected by CGI scripts based on the RFC.
 void CGIHandler::_setupEnv()
@@ -88,6 +65,29 @@ void CGIHandler::_setupEnv()
 		// use const_cast to drop the const so that push_back works on the char * vector.
 		_env.push_back(const_cast<char *>(it->c_str()));
 	_env.push_back(NULL);
+}
+
+// Parses requestTarget and sets the SCRIPT_NAME and
+// QUERY_STRING environment variables.
+void CGIHandler::_parseRequestTarget()
+{
+	string requestTarget = _req.requestTarget;
+	string queryString = "";
+
+	// check whether requestTarget has a '?' that will demarcate
+	// the beginning of the query string
+	std::size_t pos = requestTarget.find("?");
+	if (pos != std::string::npos)
+	{
+		_scriptName = requestTarget.substr(0, pos);
+		queryString = requestTarget.substr(pos + 1);
+	}
+	else
+		_scriptName = requestTarget;
+
+	_envStrings.push_back("SCRIPT_NAME=" + _scriptName);
+	if (queryString != "")
+		_envStrings.push_back("QUERY_STRING=" + queryString);
 }
 
 // Child will call execve to execute the CGI script.
