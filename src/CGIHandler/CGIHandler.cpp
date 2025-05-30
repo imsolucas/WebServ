@@ -2,7 +2,7 @@
 # include "utils.hpp"
 
 # include <sys/wait.h> // waitpid
-# include <unistd.h> // close, dup2, execve, fork, pipe
+# include <unistd.h> // close, dup2, execve, _exit, fork, pipe
 # include <iostream> // TODO: DELETE
 
 using std::string;
@@ -23,20 +23,32 @@ void printRequest(const HttpRequest& req) {
 // TODO: DELETE
 void CGIHandler::testCGIHandler()
 {
-	const char *stream =
-		"GET /index.html HTTP/1.1\r\n"
-		"Host: example.com\r\n"
-		"User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\n"
-		"Accept: text/html,application/xhtml+xml,application/xml;q=0.9\r\n"
-		"Connection: keep-alive\r\n"
-		"\r\n"
-		"name=John+Doe&age=30&email=john.doe%40example.com";
+	// // GET request with query string
+	// const char *getStream =
+	// 	"GET /test_cgi.py?name=Alice&age=25 HTTP/1.1\r\n"
+	// 	"Host: example.com\r\n"
+	// 	"User-Agent: TestClient/1.0\r\n"
+	// 	"Accept: */*\r\n"
+	// 	"Connection: close\r\n"
+	// 	"\r\n";
 
-	HttpRequest request = deserialize(stream);
+	//  POST request with form data in body
+	const char *postStream =
+		"POST /echo_env.py HTTP/1.1\r\n"
+		"Host: example.com\r\n"
+		"User-Agent: TestClient/1.0\r\n"
+		"Content-Type: application/x-www-form-urlencoded\r\n"
+		"Content-Length: 42\r\n"
+		"Connection: close\r\n"
+		"\r\n"
+		"name=Bob+Smith&email=bob.smith%40mail.com";
+
+	HttpRequest request = deserialize(postStream);
 	printRequest(request);
 
 	CGIHandler cgi(request);
-	cgi.execute();
+	string cgiOutput = cgi.execute();
+	std::cout << "\nCGI Output: " << cgiOutput << std::endl;
 }
 
 CGIHandler::CGIHandler(const HttpRequest &req) : _req(req) {}
@@ -67,32 +79,28 @@ void CGIHandler::_setupPipes()
 // standard environment expected by CGI scripts based on the RFC.
 void CGIHandler::_setupEnv()
 {
-	std::vector<string> envStrings;
-
 	// required CGI variables
-	envStrings.push_back("REQUEST_METHOD=" + _req.method);
-	envStrings.push_back("SCRIPT_NAME=" + _req.requestTarget);
-	envStrings.push_back("SERVER_PROTOCOL=" + _req.protocol);
-	envStrings.push_back("CONTENT_LENGTH=" + utils::toString(_req.body.length()));
+	_envStrings.push_back("REQUEST_METHOD=" + _req.method);
+	_envStrings.push_back("SCRIPT_NAME=" + _req.requestTarget);
+	_envStrings.push_back("SERVER_PROTOCOL=" + _req.protocol);
+	_envStrings.push_back("CONTENT_LENGTH=" + utils::toString(_req.body.length()));
 
 	// optional but common CGI variables
 	// some headers are optional so count() will check that the header key exists
 	// before trying to access its value with at().
 	// count value will either be 0 or 1 in a map.
 	if (_req.headers.count("Content-Type"))
-		envStrings.push_back("CONTENT_TYPE=" + _req.headers.at("Content-Type"));
+		_envStrings.push_back("CONTENT_TYPE=" + _req.headers.at("Content-Type"));
 	if (_req.headers.count("Host"))
-		envStrings.push_back("HTTP_HOST=" + _req.headers.at("Host"));
+		_envStrings.push_back("HTTP_HOST=" + _req.headers.at("Host"));
 	if (_req.headers.count("User-Agent"))
-		envStrings.push_back("HTTP_USER_AGENT=" + _req.headers.at("User-Agent"));
+		_envStrings.push_back("HTTP_USER_AGENT=" + _req.headers.at("User-Agent"));
 
-	// convert envStrings to C-style char* array for execve.
-	for (std::vector<string>::iterator it = envStrings.begin(); it != envStrings.end(); ++it)
-	{
+	// convert _envStrings to C-style char* array for execve.
+	for (std::vector<string>::iterator it = _envStrings.begin(); it != _envStrings.end(); ++it)
 		// c_str() returns const char *.
 		// use const_cast to drop the const so that push_back works on the char * vector.
 		_env.push_back(const_cast<char *>(it->c_str()));
-	}
 	_env.push_back(NULL);
 }
 
@@ -111,7 +119,7 @@ void CGIHandler::_cgiChildProcess()
 
 	// TODO: MODIFY - DO NOT HARD CODE
 	// TODO: SANITIZE PATH TO PREVENT PATH TRAVERSAL AND VALIDATE THAT PATH EXISTS.
-	std::string cgiBinPath = "public/cgi-bin/";
+	std::string cgiBinPath = "public/cgi-bin";
 	std::string scriptPath = cgiBinPath + _req.requestTarget;
 	const char *path = scriptPath.c_str();
 	// CGI scripts usually don’t expect command-line arguments
@@ -120,7 +128,10 @@ void CGIHandler::_cgiChildProcess()
 
 	execve(path, arg, envp);
 	// exit with status code 1 if execve fails
-	exit(1);
+	// exit and _exit are different in C++.
+	// exit will call destructors for global/static objects and may cause double-closing of fds.
+	// _exit will terminate the child process without touching the parent's runtime state.
+	_exit(1);
 }
 
 void CGIHandler::_cgiParentProcess()
@@ -137,8 +148,9 @@ void CGIHandler::_cgiParentProcess()
 	close(_stdinPipe[1]);
 
 	char buffer[1024];
+	ssize_t bytesRead;
 	// actively drain the pipe otherwise child will block on write() when pipe is full.
-	while (ssize_t bytesRead = read(_stdoutPipe[0], buffer, sizeof(buffer)) > 0)
+	while ((bytesRead = read(_stdoutPipe[0], buffer, sizeof(buffer))) > 0)
 		// string& append (const char* s, size_t n);
 		_cgiOutput.append(buffer, bytesRead);
 	// close pipe after reading complete.

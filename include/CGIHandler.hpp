@@ -17,6 +17,7 @@ private:
 	int _stdinPipe[2];
 	int _stdoutPipe[2];
 	// environment variables for execve
+	std::vector<std::string> _envStrings;
 	std::vector<char *> _env;
 	pid_t _childPid;
 	std::string _cgiOutput;
