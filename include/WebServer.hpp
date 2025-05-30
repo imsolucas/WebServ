@@ -28,8 +28,10 @@ class WebServer
 		};
 
 		std::map<int, SocketMeta> _socketMap;
-
+		
 		void _parse(const std::string &config);
+		void _setupAllListeners();
+		void _setUpListener(int port);
 
 		void _closeAllSockets();
 
@@ -37,8 +39,6 @@ class WebServer
 		void _addClient(const pollfd &socket);
 		bool _recvFromClient(const pollfd &socket, int i);
 		bool _sendToClient(const pollfd &socket, int i);
-
-		void _setUpListener(int port);
 
 		void _addToPoll(int fd, short events, short revents);
 		void _removeFromPoll(int i);
