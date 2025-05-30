@@ -129,10 +129,30 @@ void CGIHandler::_cgiParentProcess()
 	close(_stdinPipe[0]);
 	close(_stdoutPipe[1]);
 
+	// if the request method is POST, write the request body to the pipe
+	// to pass it as STDIN to execve.
+	if (_req.method == "POST")
+		write(_stdinPipe[1], _req.body.c_str(), _req.body.length());
+	// signal EOF for child process to start reading.
+	close(_stdinPipe[1]);
 
-	waitpid(_childPid, NULL, 0);
+	char buffer[1024];
+	// actively drain the pipe otherwise child will block on write() when pipe is full.
+	while (ssize_t bytesRead = read(_stdoutPipe[0], buffer, sizeof(buffer)) > 0)
+		// string& append (const char* s, size_t n);
+		_cgiOutput.append(buffer, bytesRead);
+	// close pipe after reading complete.
+	close(_stdoutPipe[0]);
 
-	// if child returns 1, throw execveException
+	int status;
+	// wait for child's exit status to check that CGI script was successfully executed.
+	waitpid(_childPid, &status, 0);
+
+	// if child returns 1, throw exception.
+	// WIFEXITED(status) returns true if the child terminated normally via exit().
+	// WEXITSTATUS(status) only gives the actual exit code if WIFEXITED(status) is true.
+	if (WIFEXITED(status) && WEXITSTATUS(status) == 1)
+		throw ExecveException();
 }
 
 CGIHandler::PipeException::PipeException(string pipe)
