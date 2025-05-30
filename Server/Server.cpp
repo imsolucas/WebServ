@@ -8,12 +8,13 @@
 using std::string;
 using std::vector;
 using std::runtime_error;
-using std::cout;
+using std::cerr;
 
 // initialize listening socket
-Server::Server()
+Server::Server() :
+	_state(RUNNING)
 {
-	cout << "Initializing server...\n";
+	cerr << "Initializing server...\n";
 
 	int			&fd = _listening.fd;
 	sockaddr_in	&addr = _listening.addr;
@@ -28,46 +29,56 @@ Server::Server()
 	if (bind(fd, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) < 0)
 		throw runtime_error("Failed to bind socket.");
 
-	cout << "Finish initializing server.\n";
+	cerr << "Finish initializing server.\n";
 }
 
 Server::~Server()
 {
 	// close client connections
-	cout << "Closing server...\n";
+	cerr << "Closing server...\n";
 	for (vector<Socket>::iterator it = _connected.begin(); it != _connected.end(); ++it)
 		if (close((*it).fd) < 0)
 			perror("Failed to close socket");
-	cout << "Server closed.\n";
+	cerr << "Server closed.\n";
 }
 
 void Server::run()
 {
-	cout  << "Starting server...\n";
+	// activates the listening socket
+	cerr  << "Starting server...\n";
 	if (listen(_listening.fd, SOMAXCONN) < 0)
 		throw runtime_error("Failed to listen on socket.");
-	cout << "Server started.\n";
+	cerr << "Server started.\n";
 
 	// accepts client connection
 	Socket client;
 	client.fd = accept(_listening.fd, reinterpret_cast<sockaddr *>(&client.addr), &client.len);
 	if (client.fd < 0)
 		throw runtime_error("Failed to connect to client.");
-	cout << "Connected to client.\n";
-
 	_connected.push_back(client);
+	cerr << "Connected to client.\n";
 
-	// receives client request
-	char buffer[4096];
-	size_t bytesReceived = recv(client.fd, buffer, 4096, 0);
-	if (bytesReceived < 0)
-		throw runtime_error("Failed to receive request.");
-	cout << "Received " << bytesReceived << " bytes: \n-----\n" << buffer << "\n-----\n";
+	while (_state == RUNNING)
+	{
+		// receives client request
+		char buffer[4096];
+		size_t bytesReceived = recv(client.fd, buffer, 4096, 0);
+		if (bytesReceived < 0)
+			throw runtime_error("Failed to receive request.");
+		cerr << "Received " << bytesReceived << " bytes: \n-----\n" << buffer << "\n-----\n";
 
-	// sends response to cleint
-	cout << "Sending response...\n";
-	_respond(client, "This is a response.");
-	cout << "Response sent.\n";
+		// sends response to cleint
+		cerr << "Sending response...\n";
+		try
+		{
+			_respond(client, "This is a response.");
+		}
+		catch (const runtime_error &e)
+		{
+			cerr << "Error: " << e.what() << '\n';
+		}
+		cerr << "Response sent.\n";
+	}
 }
 
 void Server::_respond(const Socket &client, const string &msg)
@@ -75,6 +86,8 @@ void Server::_respond(const Socket &client, const string &msg)
 	ssize_t bytesSent = send(client.fd, msg.c_str(), msg.size(), 0);
 	if (bytesSent < 0)
 		throw runtime_error("Failed to send response.");
+	if (bytesSent == 0)
+		throw runtime_error("Client closed the connection.");
 }
 
 void Server::_listen()
@@ -91,5 +104,3 @@ void Server::_listen()
 		_connected.push_back(client);
 	}
 }
-
-Socket::Socket() : fd(0), len(sizeof(addr)) { memset(&addr, 0, len); }

@@ -1,16 +1,13 @@
 # pragma once
 
 # include <vector>
-# include <netinet/in.h>
 
-// Receiving and sending data between a single client
-struct Socket
+# include "Socket.hpp"
+
+enum ServerState
 {
-	int			fd;
-	sockaddr_in	addr;
-	socklen_t	len;
-
-	Socket();
+	RUNNING,
+	TERMINATE
 };
 
 // This is a TCP server
@@ -25,6 +22,7 @@ class Server
 	private:
 		Socket _listening;
 		std::vector<Socket> _connected;
+		ServerState _state;
 
 		static void _respond(const Socket &client, const std::string &msg);
 
