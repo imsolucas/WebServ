@@ -13,4 +13,3 @@ elif method == "POST":
     post_data = sys.stdin.read(length)
     print("Received POST")
     print("Data:", post_data)
-sys.stdout.flush()

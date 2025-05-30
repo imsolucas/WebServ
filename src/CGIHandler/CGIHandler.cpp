@@ -1,55 +1,11 @@
 # include "CGIHandler.hpp"
 # include "utils.hpp"
 
+# include <iostream>
 # include <sys/wait.h> // waitpid
 # include <unistd.h> // close, dup2, execve, _exit, fork, pipe
-# include <iostream> // TODO: DELETE
 
 using std::string;
-
-// TODO: DELETE
-void printRequest(const HttpRequest& req) {
-	std::cout << "Method: " << req.method << std::endl;
-	std::cout << "Request Target: " << req.requestTarget << std::endl;
-	std::cout << "Protocol: " << req.protocol << std::endl;
-	std::cout << "Headers:" << std::endl;
-	for (std::map<std::string, std::string>::const_iterator it = req.headers.begin(); it != req.headers.end(); ++it) {
-		std::cout << "  " << it->first << ": " << it->second << std::endl;
-	}
-	std::cout << "Body:" << std::endl;
-	std::cout << req.body << std::endl;
-}
-
-// TODO: DELETE
-void CGIHandler::testCGIHandler()
-{
-	// // GET request with query string
-	// const char *getStream =
-	// 	"GET /test_cgi.py?name=Alice&age=25 HTTP/1.1\r\n"
-	// 	"Host: example.com\r\n"
-	// 	"User-Agent: TestClient/1.0\r\n"
-	// 	"Accept: */*\r\n"
-	// 	"Connection: close\r\n"
-	// 	"\r\n";
-
-	//  POST request with form data in body
-	const char *postStream =
-		"POST /echo_env.py HTTP/1.1\r\n"
-		"Host: example.com\r\n"
-		"User-Agent: TestClient/1.0\r\n"
-		"Content-Type: application/x-www-form-urlencoded\r\n"
-		"Content-Length: 42\r\n"
-		"Connection: close\r\n"
-		"\r\n"
-		"name=Bob+Smith&email=bob.smith%40mail.com";
-
-	HttpRequest request = deserialize(postStream);
-	printRequest(request);
-
-	CGIHandler cgi(request);
-	string cgiOutput = cgi.execute();
-	std::cout << "\nCGI Output: " << cgiOutput << std::endl;
-}
 
 CGIHandler::CGIHandler(const HttpRequest &req) : _req(req) {}
 
@@ -75,22 +31,52 @@ void CGIHandler::_setupPipes()
 		throw PipeException("_stdoutPipe");
 }
 
-// environment variables may remain unused, but our job is to emulate the
+// Parses requestTarget and sets the SCRIPT_NAME and
+// QUERY_STRING environment variables.
+void CGIHandler::_parseRequestTarget()
+{
+	string requestTarget = _req.requestTarget;
+	string queryString = "";
+
+	// check whether requestTarget has a '?' that will demarcate
+	// the beginning of the query string
+	std::size_t pos = requestTarget.find("?");
+	if (pos != std::string::npos)
+	{
+		_scriptName = requestTarget.substr(0, pos);
+		queryString = requestTarget.substr(pos + 1);
+	}
+	else
+		_scriptName = requestTarget;
+
+	_envStrings.push_back("SCRIPT_NAME=" + _scriptName);
+	if (queryString != "")
+		_envStrings.push_back("QUERY_STRING=" + queryString);
+}
+
+// Environment variables may remain unused, but our job is to emulate the
 // standard environment expected by CGI scripts based on the RFC.
 void CGIHandler::_setupEnv()
 {
 	// required CGI variables
 	_envStrings.push_back("REQUEST_METHOD=" + _req.method);
-	_envStrings.push_back("SCRIPT_NAME=" + _req.requestTarget);
 	_envStrings.push_back("SERVER_PROTOCOL=" + _req.protocol);
-	_envStrings.push_back("CONTENT_LENGTH=" + utils::toString(_req.body.length()));
+
+	_parseRequestTarget();
+
+	// CONTENT_LENGTH AND CONTENT_TYPE are only relevant for POST requests.
+	if (_req.method == "POST")
+	{
+		if (_req.headers.count("Content-Length"))
+			_envStrings.push_back("CONTENT_LENGTH=" + _req.headers.at("Content-Length"));
+		if (_req.headers.count("Content-Type"))
+			_envStrings.push_back("CONTENT_TYPE=" + _req.headers.at("Content-Type"));
+	}
 
 	// optional but common CGI variables
 	// some headers are optional so count() will check that the header key exists
 	// before trying to access its value with at().
 	// count value will either be 0 or 1 in a map.
-	if (_req.headers.count("Content-Type"))
-		_envStrings.push_back("CONTENT_TYPE=" + _req.headers.at("Content-Type"));
 	if (_req.headers.count("Host"))
 		_envStrings.push_back("HTTP_HOST=" + _req.headers.at("Host"));
 	if (_req.headers.count("User-Agent"))
@@ -104,6 +90,7 @@ void CGIHandler::_setupEnv()
 	_env.push_back(NULL);
 }
 
+// Child will call execve to execute the CGI script.
 void CGIHandler::_cgiChildProcess()
 {
 	// closing unused pipe ends
@@ -120,7 +107,7 @@ void CGIHandler::_cgiChildProcess()
 	// TODO: MODIFY - DO NOT HARD CODE
 	// TODO: SANITIZE PATH TO PREVENT PATH TRAVERSAL AND VALIDATE THAT PATH EXISTS.
 	std::string cgiBinPath = "public/cgi-bin";
-	std::string scriptPath = cgiBinPath + _req.requestTarget;
+	std::string scriptPath = cgiBinPath + _scriptName;
 	const char *path = scriptPath.c_str();
 	// CGI scripts usually don’t expect command-line arguments
 	char *arg[] = { (char *)path, NULL };
@@ -134,6 +121,7 @@ void CGIHandler::_cgiChildProcess()
 	_exit(1);
 }
 
+// Parent will pipe POST request body to stdin of child then assemble CGI output from stdout of child.
 void CGIHandler::_cgiParentProcess()
 {
 	// closing unused pipe ends
@@ -175,3 +163,32 @@ CGIHandler::ForkException::ForkException()
 
 CGIHandler::ExecveException::ExecveException()
 : runtime_error("CGI: Failed to execute script.") {}
+
+void CGIHandler::testCGIHandler()
+{
+	// GET request with query string
+	const char *stream =
+		"GET /test_cgi.py?name=Alice&age=25 HTTP/1.1\r\n"
+		"Host: example.com\r\n"
+		"User-Agent: TestClient/1.0\r\n"
+		"Accept: */*\r\n"
+		"Connection: close\r\n"
+		"\r\n";
+
+	// //  POST request with form data in body
+	// const char *stream =
+	// 	"POST /test_cgi.py HTTP/1.1\r\n"
+	// 	"Host: example.com\r\n"
+	// 	"User-Agent: TestClient/1.0\r\n"
+	// 	"Content-Type: application/x-www-form-urlencoded\r\n"
+	// 	"Content-Length: 42\r\n"
+	// 	"Connection: close\r\n"
+	// 	"\r\n"
+	// 	"name=Bob+Smith&email=bob.smith%40mail.com";
+
+	HttpRequest request = deserialize(stream);
+
+	CGIHandler cgi(request);
+	string cgiOutput = cgi.execute();
+	std::cout << "\nCGI Output: \n" << cgiOutput << std::endl;
+}
