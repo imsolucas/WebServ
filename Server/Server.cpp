@@ -6,8 +6,40 @@
 # include "Server.hpp"
 
 using std::string;
+using std::vector;
 using std::runtime_error;
 using std::cout;
+
+// initialize listening socket
+Server::Server()
+{
+	cout << "Initializing server...\n";
+
+	int			&fd = _listening.fd;
+	sockaddr_in	&addr = _listening.addr;
+
+	fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (fd < 0)
+		throw runtime_error("Failed to create socket.");
+
+	addr.sin_family = AF_INET;
+	addr.sin_addr.s_addr = INADDR_ANY;
+	addr.sin_port = htons(8080);
+	if (bind(fd, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) < 0)
+		throw runtime_error("Failed to bind socket.");
+
+	cout << "Finish initializing server.\n";
+}
+
+Server::~Server()
+{
+	// close client connections
+	cout << "Closing server...\n";
+	for (vector<Socket>::iterator it = _connected.begin(); it != _connected.end(); ++it)
+		if (close((*it).fd) < 0)
+			perror("Failed to close socket");
+	cout << "Server closed.\n";
+}
 
 void Server::run()
 {
@@ -36,32 +68,6 @@ void Server::run()
 	cout << "Sending response...\n";
 	_respond(client, "This is a response.");
 	cout << "Response sent.\n";
-
-	// close client connection
-	cout << "Closing server...\n";
-	close(client.fd);
-	cout << "Server closed.\n";
-}
-
-// initialize listening socket
-void Server::init()
-{
-	cout << "Initializing server...\n";
-
-	int			&fd = _listening.fd;
-	sockaddr_in	&addr = _listening.addr;
-
-	fd = socket(AF_INET, SOCK_STREAM, 0);
-	if (fd < 0)
-		throw runtime_error("Failed to create socket.");
-
-	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = INADDR_ANY;
-	addr.sin_port = htons(8080);
-	if (bind(fd, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) < 0)
-		throw runtime_error("Failed to bind socket.");
-
-	cout << "Finish initializing server.\n";
 }
 
 void Server::_respond(const Socket &client, const string &msg)

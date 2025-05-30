@@ -18,6 +18,7 @@ class Client
 {
 	public:
 		Client(const std::string &address);
+		~Client();
 
 		void request(const std::string &msg);
 

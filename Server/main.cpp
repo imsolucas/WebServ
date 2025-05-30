@@ -7,11 +7,9 @@ using std::cerr;
 
 int main()
 {
-	Server s;
-
 	try
 	{
-		s.init();
+		Server s;
 		s.run();
 	}
 	catch(const exception& e)

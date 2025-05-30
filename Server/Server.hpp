@@ -17,14 +17,16 @@ struct Socket
 class Server
 {
 	public:
+		Server();
+		~Server();
+
 		void run();
-		void init();
 
 	private:
 		Socket _listening;
 		std::vector<Socket> _connected;
 
 		static void _respond(const Socket &client, const std::string &msg);
-		
+
 		void _listen();
 };

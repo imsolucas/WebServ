@@ -1,6 +1,7 @@
 # include <iostream>
 # include <cstring>
 # include <cstdlib>
+# include <unistd.h>
 # include <arpa/inet.h>
 # include <sys/socket.h>
 
@@ -34,8 +35,13 @@ Client::Client(const string &address)
 	// connect to server
 	if (connect(_socket, reinterpret_cast<sockaddr *>(&addr), len) < 0)
 		throw runtime_error("Failed to connect to server.");
+}
 
-	}
+Client::~Client()
+{
+	if (close(_socket) < 0)
+		throw runtime_error("Failed to close socket.");
+}
 
 void Client::request(const string &msg)
 {
