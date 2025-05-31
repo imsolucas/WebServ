@@ -23,8 +23,10 @@ class WebServer
 		{
 			enum Role { LISTENER, CLIENT };
 			Role type;
+			int port;
 			int listenerFd; // only for clients
-			int port; // only for listeners
+			std::string requestBuffer; // only for clients
+			bool requestComplete; // only for clients;
 		};
 
 		std::map<int, SocketMeta> _socketMap;
@@ -38,11 +40,12 @@ class WebServer
 		void _removeClient(const pollfd &socket, int i);
 		void _addClient(const pollfd &socket);
 		bool _recvFromClient(const pollfd &socket, int i);
+		bool _requestIsComplete(SocketMeta &client);
 		bool _sendToClient(const pollfd &socket, int i);
 
 		void _addToPoll(int fd, short events, short revents);
 		void _removeFromPoll(int i);
-		void _addToSocketMap(int fd, SocketMeta::Role type, int listenerFd, int port);
+		void _addToSocketMap(int fd, SocketMeta::Role type, int port, int listenerFd);
 		void _removeFromSocketMap(int fd);
 
 		static bool _isClient(const SocketMeta &socketMeta);
@@ -51,6 +54,7 @@ class WebServer
 		static bool _clientIsDisconnected(const pollfd &socket, const SocketMeta &socketMeta);
 		static bool _clientIsConnecting(const pollfd &socket, const SocketMeta &socketMeta);
 		static bool _clientIsSendingData(const pollfd &socket, const SocketMeta &socketMeta);
+		static bool _clientRequestComplete(const SocketMeta &socketMeta);
 		static bool _clientIsReadyToReceive(const pollfd &socket, const SocketMeta &socketMeta);
 
 		static void printError(std::string message);

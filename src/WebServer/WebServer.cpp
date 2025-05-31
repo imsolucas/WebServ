@@ -69,7 +69,8 @@ void WebServer::run()
 					continue;
 				}
 				// change poll from POLLIN to POLLOUT to send response to client
-				_poll[i].events = POLLOUT;
+				if (_clientRequestComplete(socketMeta))
+					_poll[i].events = POLLOUT;
 			}
 
 			else if (_clientIsReadyToReceive(socket, socketMeta))
@@ -166,7 +167,7 @@ void WebServer::_setUpListener(int port)
 		throw ListenException(portString);
 	}
 	_addToPoll(listenerFd, POLLIN, 0);
-	_addToSocketMap(listenerFd, SocketMeta::LISTENER, -1, port);
+	_addToSocketMap(listenerFd, SocketMeta::LISTENER, port, -1);
 
 	cout << BLUE << "Listener with fd " << listenerFd << " set up on port " << port << "!\n" << RESET;
 }
@@ -207,7 +208,7 @@ void WebServer::_addClient(const pollfd &socket)
 	}
 	int listenerPort =  _socketMap[socket.fd].port;
 	_addToPoll(clientFd, POLLIN, 0);
-	_addToSocketMap(clientFd, SocketMeta::CLIENT, socket.fd, listenerPort);
+	_addToSocketMap(clientFd, SocketMeta::CLIENT, listenerPort, socket.fd);
 	cout << GREEN <<  "Client with fd " << clientFd << " connected on " 
 			"port " << listenerPort << "!\n" << RESET;
 }
@@ -236,12 +237,20 @@ bool WebServer::_recvFromClient(const pollfd &socket, int i)
 	}
 	else
 	{
-		// process incoming data
-		buffer[bytesReceived] = '\0';
-		cout << "\nData received from client with fd " << socket.fd <<  ":\n" << YELLOW << buffer << "\n" << _RESET;
-		CGIHandler::testCGIHandler(); // TODO: DELETE
+		SocketMeta &client = _socketMap[socket.fd];
+		client.requestBuffer.append(buffer, bytesReceived);
+		// // process incoming data
+		// cout << "\nData received from client with fd " << socket.fd <<  ":\n" << YELLOW << buffer << "\n" << _RESET;
+		// CGIHandler::testCGIHandler(); // TODO: DELETE
+		if (_requestIsComplete(client))
+			client.requestComplete = true;
 	}
 	return true;
+}
+
+bool WebServer::_requestIsComplete(SocketMeta &client)
+{
+
 }
 
 // boolean reflects success of send call().
@@ -304,15 +313,17 @@ void WebServer::_removeFromPoll(int i)
 	_poll.erase(_poll.begin() + i);
 }
 
-// listeners: addToSocketMap(listenerFd, SocketMeta::LISTENER, -1, port)
-// clients: addToSocketMap(clientFd, SocketMeta::CLIENT, listenerFd, listenerPort)
-void WebServer::_addToSocketMap(int fd, SocketMeta::Role type, int listenerFd, int port)
+// listeners: addToSocketMap(listenerFd, SocketMeta::LISTENER, port, -1)
+// clients: addToSocketMap(clientFd, SocketMeta::CLIENT, listenerPort, listenerFd)
+void WebServer::_addToSocketMap(int fd, SocketMeta::Role type, int port, int listenerFd)
 {
 	SocketMeta meta;
 
 	meta.type = type;
-	meta.listenerFd = listenerFd;
 	meta.port = port;
+	meta.listenerFd = listenerFd;
+	meta.requestBuffer = "";
+	meta.requestComplete = false;
 	_socketMap[fd] = meta;
 }
 
@@ -355,6 +366,11 @@ bool WebServer::_clientIsConnecting(const pollfd &socket, const SocketMeta &sock
 bool WebServer::_clientIsSendingData(const pollfd &socket, const SocketMeta &socketMeta)
 {
 	return _isClient(socketMeta) && (socket.revents & POLLIN);
+}
+
+bool WebServer::_clientRequestComplete(const SocketMeta &socketMeta)
+{
+	return socketMeta.requestComplete;
 }
 
 // POLLOUT on client means client is ready to receive data
