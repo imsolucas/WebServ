@@ -2,7 +2,7 @@
 
 # include <vector>
 
-# include "Socket.hpp"
+# include "Connection.hpp"
 
 enum ServerState
 {
@@ -20,11 +20,7 @@ class Server
 		void run();
 
 	private:
-		Socket _listening;
-		std::vector<Socket> _connected;
+		Socket _listener;
+		std::vector<Connection> _clients;
 		ServerState _state;
-
-		static void _respond(const Socket &client, const std::string &msg);
-
-		void _listen();
 };
