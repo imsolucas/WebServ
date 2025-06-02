@@ -103,17 +103,19 @@ void CGIHandler::_cgiChildProcess()
 	// closing pipe ends after dup2
 	close(_stdinPipe[0]);
 	close(_stdoutPipe[1]);
-
+	
 	// TODO: MODIFY - DO NOT HARD CODE
 	// TODO: SANITIZE PATH TO PREVENT PATH TRAVERSAL AND VALIDATE THAT PATH EXISTS.
-	std::string cgiBinPath = "public/cgi-bin";
-	std::string scriptPath = cgiBinPath + _scriptName;
-	const char *path = scriptPath.c_str();
-	// CGI scripts usually don’t expect command-line arguments
-	char *arg[] = { (char *)path, NULL };
-	char * const *envp = &_env[0];
+	chdir("public/cgi-bin");
 
-	execve(path, arg, envp);
+	// ensure scriptName is not an absolute path (strip '/').
+	if (!_scriptName.empty() && _scriptName[0] == '/')
+		_scriptName = _scriptName.substr(1);
+
+	// CGI scripts usually don’t expect command-line arguments
+	char *arg[] = { (char *)_scriptName.c_str(), NULL };
+	char * const *envp = &_env[0];
+	execve(_scriptName.c_str(), arg, envp);
 	// exit with status code 1 if execve fails
 	// exit and _exit are different in C++.
 	// exit will call destructors for global/static objects and may cause double-closing of fds.
@@ -131,7 +133,7 @@ void CGIHandler::_cgiParentProcess()
 	// if the request method is POST, write the request body to the pipe
 	// to pass it as STDIN to execve.
 	if (_req.method == "POST")
-		write(_stdinPipe[1], _req.body.c_str(), _req.body.length());
+		write(_stdinPipe[1], _req.body.c_str(), _req.body.size());
 	// signal EOF for child process to start reading.
 	close(_stdinPipe[1]);
 
@@ -164,19 +166,19 @@ CGIHandler::ForkException::ForkException()
 CGIHandler::ExecveException::ExecveException()
 : runtime_error("CGI: Failed to execute script.") {}
 
-void CGIHandler::testCGIHandler()
+void CGIHandler::testCGIHandler(const string &stream)
 {
-	// GET request with query string
-	const char *stream =
-		"GET /test_cgi.py?name=Alice&age=25 HTTP/1.1\r\n"
-		"Host: example.com\r\n"
-		"User-Agent: TestClient/1.0\r\n"
-		"Accept: */*\r\n"
-		"Connection: close\r\n"
-		"\r\n";
+	// // GET request with query string
+	// string stream =
+	// 	"GET /test_cgi.py?name=Alice&age=25 HTTP/1.1\r\n"
+	// 	"Host: example.com\r\n"
+	// 	"User-Agent: TestClient/1.0\r\n"
+	// 	"Accept: */*\r\n"
+	// 	"Connection: close\r\n"
+	// 	"\r\n";
 
-	// //  POST request with form data in body
-	// const char *stream =
+	// // POST request with form data in body
+	// string stream =
 	// 	"POST /test_cgi.py HTTP/1.1\r\n"
 	// 	"Host: example.com\r\n"
 	// 	"User-Agent: TestClient/1.0\r\n"

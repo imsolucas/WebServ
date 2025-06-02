@@ -243,8 +243,8 @@ bool WebServer::_recvFromClient(const pollfd &socket, int i)
 		// process incoming data
 		SocketMeta &client = _socketMap[socket.fd];
 		client.requestBuffer.append(buffer, bytesReceived);
-		cout << "\nData received from client with fd " << socket.fd <<  ":\n" << YELLOW << buffer << "\n" << _RESET;
-		// CGIHandler::testCGIHandler(); // TODO: DELETE
+		cout << "\nData received from client with fd " << socket.fd <<  ":\n" << YELLOW << client.requestBuffer << "\n" << _RESET;
+		CGIHandler::testCGIHandler(client.requestBuffer); // TODO: DELETE
 	}
 	return true;
 }
@@ -314,7 +314,7 @@ bool WebServer::_sendToClient(const pollfd &socket, int i)
 {
 	// TODO: DELETE - ONLY FOR TESTING PURPOSES
 	// -----------------------------------------------------------------------------------
-	std::ifstream page("public/index.html");
+	std::ifstream page("public/upload.html");
 	string line, body;
 
 	while (std::getline(page, line))

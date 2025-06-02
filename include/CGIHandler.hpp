@@ -47,5 +47,5 @@ class CGIHandler {
 				ExecveException();
 		};
 
-		static void testCGIHandler();
+		static void testCGIHandler(const std::string &stream);
 };
