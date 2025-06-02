@@ -26,7 +26,9 @@ class WebServer
 			int port;
 			int listenerFd; // only for clients
 			std::string requestBuffer; // only for clients
-			bool requestComplete; // only for clients;
+			bool headersParsed; // only for clients;
+			bool chunkedRequest; // only for clients
+			int contentLength; // only for clients;
 		};
 
 		std::map<int, SocketMeta> _socketMap;
@@ -54,7 +56,6 @@ class WebServer
 		static bool _clientIsDisconnected(const pollfd &socket, const SocketMeta &socketMeta);
 		static bool _clientIsConnecting(const pollfd &socket, const SocketMeta &socketMeta);
 		static bool _clientIsSendingData(const pollfd &socket, const SocketMeta &socketMeta);
-		static bool _clientRequestComplete(const SocketMeta &socketMeta);
 		static bool _clientIsReadyToReceive(const pollfd &socket, const SocketMeta &socketMeta);
 
 		static void printError(std::string message);

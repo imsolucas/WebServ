@@ -45,7 +45,7 @@ void WebServer::run()
 		for (size_t i = 0; i < _poll.size(); ++i)
 		{
 			pollfd socket = _poll[i];
-			SocketMeta socketMeta = _socketMap[socket.fd];
+			SocketMeta &socketMeta = _socketMap[socket.fd];
 
 			if (_noEvents(socket))
 				continue;
@@ -69,8 +69,11 @@ void WebServer::run()
 					continue;
 				}
 				// change poll from POLLIN to POLLOUT to send response to client
-				if (_clientRequestComplete(socketMeta))
+				if (_requestIsComplete(socketMeta))
+				{
+					cout << "Received complete request from fd " << socket.fd << ".\n";
 					_poll[i].events = POLLOUT;
+				}
 			}
 
 			else if (_clientIsReadyToReceive(socket, socketMeta))
@@ -237,20 +240,73 @@ bool WebServer::_recvFromClient(const pollfd &socket, int i)
 	}
 	else
 	{
+		// process incoming data
 		SocketMeta &client = _socketMap[socket.fd];
 		client.requestBuffer.append(buffer, bytesReceived);
-		// // process incoming data
-		// cout << "\nData received from client with fd " << socket.fd <<  ":\n" << YELLOW << buffer << "\n" << _RESET;
+		cout << "\nData received from client with fd " << socket.fd <<  ":\n" << YELLOW << buffer << "\n" << _RESET;
 		// CGIHandler::testCGIHandler(); // TODO: DELETE
-		if (_requestIsComplete(client))
-			client.requestComplete = true;
 	}
 	return true;
 }
 
+// This function will check the http request headers for either the
+// "Content-Length" or "Transfer-Encoding" field to determine when
+// the http request has been fully received.
+// GET requests are complete when the headers are received.
 bool WebServer::_requestIsComplete(SocketMeta &client)
 {
+	// in a http request, the end of headers is demarcated by "\r\n\r\n".
+	size_t headersEnd = client.requestBuffer.find("\r\n\r\n");
+	// cout << "[DEBUG] Buffer size: " << client.requestBuffer.size() << ", headersEnd: " << headersEnd << "\n";
+	// cout << "[DEBUG] Buffer: " << client.requestBuffer << "\n";
+	
+	// headersParsed check to ensure code block is only entered once.
+	if (!client.headersParsed && headersEnd != string::npos)
+	{
+		client.headersParsed = true;
+		string headers = client.requestBuffer.substr(0, headersEnd);
 
+		// GET requests do not have a body, so they are complete when the headers are received.
+		if (headers.find("GET ") == 0)
+			return true;
+
+		if (headers.find("Transfer-Encoding: chunked") != string::npos)
+			client.chunkedRequest = true;
+		else
+		{
+			string nonChunkedMarker = "Content-Length:";
+			size_t pos = headers.find(nonChunkedMarker);
+			if (pos != string::npos)
+			{
+				pos += nonChunkedMarker.size();
+				// create a stringstream to extract the content length as an integer
+				std::stringstream ss(headers.substr(pos));
+				// set content length to 0 if fail to parse a valid number
+				if (!(ss >> client.contentLength))
+					client.contentLength = 0;
+			}
+			else
+				client.contentLength = 0;
+		}
+	}
+	
+	if (client.headersParsed)
+	{
+		if (client.chunkedRequest)
+		{
+			// a chunked request ends with "0\r\n\r\n".
+			if (client.requestBuffer.find("0\r\n\r\n", headersEnd) != string::npos)
+				return true;
+		}
+		else
+		{
+			// a non-chunked request is complete when the buffer can contain
+			// the header length + "\r\n\r\n" + content length.
+			if (client.requestBuffer.size() >= headersEnd + 4 + client.contentLength)
+				return true;
+		}
+	}
+	return false;
 }
 
 // boolean reflects success of send call().
@@ -323,7 +379,9 @@ void WebServer::_addToSocketMap(int fd, SocketMeta::Role type, int port, int lis
 	meta.port = port;
 	meta.listenerFd = listenerFd;
 	meta.requestBuffer = "";
-	meta.requestComplete = false;
+	meta.headersParsed = false;
+	meta.chunkedRequest = false;
+	meta.contentLength = -1; // default to -1 to avoid confusion
 	_socketMap[fd] = meta;
 }
 
@@ -366,11 +424,6 @@ bool WebServer::_clientIsConnecting(const pollfd &socket, const SocketMeta &sock
 bool WebServer::_clientIsSendingData(const pollfd &socket, const SocketMeta &socketMeta)
 {
 	return _isClient(socketMeta) && (socket.revents & POLLIN);
-}
-
-bool WebServer::_clientRequestComplete(const SocketMeta &socketMeta)
-{
-	return socketMeta.requestComplete;
 }
 
 // POLLOUT on client means client is ready to receive data
