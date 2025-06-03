@@ -18,49 +18,51 @@ class WebServer
 		Config _cfg;
 
 		std::vector<pollfd> _poll;
+		size_t _pollIndex;
 
-		struct SocketMeta
+		// maps listener fd to listener port
+		std::map<int, int> _listenerMap;
+
+		struct ClientMeta
 		{
-			enum Role { LISTENER, CLIENT };
-			Role type;
 			int port;
-			int listenerFd; // only for clients
-			std::string requestBuffer; // only for clients
-			bool headersParsed; // only for clients;
-			bool chunkedRequest; // only for clients
-			int contentLength; // only for clients;
+			int listenerFd;
+			std::string requestBuffer;
+			bool headersParsed;
+			bool chunkedRequest;
+			int contentLength;
 		};
 
-		std::map<int, SocketMeta> _socketMap;
-		
-		void _parse(const std::string &config);
+		// maps client fd to client meta
+		std::map<int, ClientMeta> _clientMap;
+
 		void _setupAllListeners();
 		void _setUpListener(int port);
 
-		void _closeAllSockets();
+		void _handleListenerEvents(const pollfd &listener);
+		void _handleClientEvents(const pollfd &client);
 
-		void _removeClient(const pollfd &socket, int i);
-		void _addClient(const pollfd &socket);
-		bool _recvFromClient(const pollfd &socket, int i);
-		bool _requestIsComplete(SocketMeta &client);
-		bool _sendToClient(const pollfd &socket, int i);
+		void _addClient(int listenerFd);
+		void _removeClient(int fd);
+		void _recvFromClient(int fd);
+		bool _requestIsComplete(ClientMeta &client);
+		void _sendToClient(int fd);
 
 		void _addToPoll(int fd, short events, short revents);
 		void _removeFromPoll(int i);
-		void _addToSocketMap(int fd, SocketMeta::Role type, int port, int listenerFd);
-		void _removeFromSocketMap(int fd);
+		void _addToClientMap(int fd, int port, int listenerFd);
+		void _removeFromClientMap(int fd);
 
-		static bool _isClient(const SocketMeta &socketMeta);
-		static bool _isListener(const SocketMeta &socketMeta);
-		static bool _noEvents(const pollfd &socket);
-		static bool _clientIsDisconnected(const pollfd &socket, const SocketMeta &socketMeta);
-		static bool _clientIsConnecting(const pollfd &socket, const SocketMeta &socketMeta);
-		static bool _clientIsSendingData(const pollfd &socket, const SocketMeta &socketMeta);
-		static bool _clientIsReadyToReceive(const pollfd &socket, const SocketMeta &socketMeta);
+		bool _isClient(int fd);
+		bool _isListener(int fd);
+
+		static bool _noEvents(const pollfd &pollfd);
+		static bool _clientIsConnecting(const pollfd &listener);
+		static bool _clientIsDisconnected(const pollfd &client);
+		static bool _clientIsSendingData(const pollfd &client);
+		static bool _clientIsReadyToReceive(const pollfd &client);
 
 		static void printError(std::string message);
-
-		void _debugPollAndSocketMap() const;
 
 	// exceptions
 	public:
