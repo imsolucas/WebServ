@@ -1,5 +1,4 @@
 # include "Clients.hpp"
-# include "CGIHandler.hpp" // TODO: DELETE
 # include "colors.h"
 # include "utils.hpp"
 
@@ -70,12 +69,11 @@ void Clients::recvFromClient(int fd)
 	{
 		ClientMeta &client = _clientMap[fd];
 		client.requestBuffer.append(buffer, bytesReceived);
-		// change poll from POLLIN to POLLOUT to send response to client
 		cout << "\nData received from client with fd " << fd <<  ":\n" << YELLOW << client.requestBuffer << "\n" << _RESET;
 		if (requestIsComplete(client))
 		{
 			cout << "Received complete request from fd " << fd << ".\n";
-			CGIHandler::testCGIHandler(client.requestBuffer); // TODO: DELETE
+			// change poll from POLLIN to POLLOUT to send response to client
 			_poll[_pollIndex].events = POLLOUT;
 		}
 	}
