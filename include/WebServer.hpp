@@ -6,6 +6,8 @@
 # include <poll.h>
 # include <vector>
 
+struct HttpRequest;
+
 class WebServer
 {
 	public:
@@ -39,6 +41,11 @@ class WebServer
 
 		void _init();
 		void _parse(const std::string &config);
+
+		void _handleRequest(const HttpRequest &request);
+		void _handleGET();
+		void _handlePOST();
+		void _handleDELETE();
 
 		void _removeClient(const pollfd &socket, int i);
 		void _addClient(const pollfd &socket);
