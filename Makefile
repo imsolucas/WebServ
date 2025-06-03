@@ -3,7 +3,8 @@ CXX = c++
 CXXFLAGS = -std=c++98 -g3 -Wall -Wextra -Werror -Wpedantic
 INCS = -Iinclude
 
-SRC_DIRS = src src/CGIHandler src/Http src/parse src/signal src/utils src/WebServer
+SRC_DIRS = src src/CGIHandler src/ClientManager src/Http src/ListenerManager \
+			src/parse src/signal src/utils src/WebServer
 OBJ_DIRS = $(sort $(dir $(OBJS)))
 
 vpath %.cpp $(SRC_DIRS)
