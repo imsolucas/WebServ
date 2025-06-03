@@ -4,8 +4,6 @@
 # include "utils.hpp"
 
 # include <iostream>
-
-# include <sys/socket.h> // accept, bind, listen, recv, setsockopt, socket
 # include <unistd.h> // close
 
 using std::cerr;
@@ -13,11 +11,11 @@ using std::cout;
 using std::string;
 using std::runtime_error;
 
-WebServer::WebServer(const string &config) : _listenerManager(_poll), _clientManager(_poll)
+WebServer::WebServer(const string &config) : _listeners(_poll), _clients(_poll, _pollIndex)
 {
 	_cfg = Config(config);
 	cout << "Parsed configuration file!\n";
-	_listenerManager.setupAllListeners(_cfg.getServers());
+	_listeners.setupAllListeners(_cfg.getServers());
 }
 
 WebServer::~WebServer()
@@ -49,9 +47,9 @@ void WebServer::run()
 
 			if (_noEvents(pfd))
 				continue;
-			if (_listenerManager.isListener(pfd.fd))
+			if (_listeners.isListener(pfd.fd))
 				_handleListenerEvents(pfd);
-			if (_clientManager.isClient(pfd.fd))
+			if (_clients.isClient(pfd.fd))
 				_handleClientEvents(pfd);
 		}
 	}
@@ -59,20 +57,20 @@ void WebServer::run()
 
 void WebServer::_handleListenerEvents(const pollfd &listener)
 {
-	if (_listenerManager.clientIsConnecting(listener))
-		_clientManager.addClient(listener.fd, _listenerManager.getPort(listener.fd));
+	if (_listeners.clientIsConnecting(listener))
+		_clients.addClient(listener.fd, _listeners.getPort(listener.fd));
 }
 
 void WebServer::_handleClientEvents(const pollfd &client)
 {
 	int fd = client.fd;
 
-	if (_clientManager.clientIsDisconnected(client))
-		_clientManager.removeClient(fd);
-	else if (_clientManager.clientIsSendingData(client))
-		_clientManager.recvFromClient(fd);
-	else if (_clientManager.clientIsReadyToReceive(client))
-		_clientManager.sendToClient(fd);
+	if (_clients.clientIsDisconnected(client))
+		_clients.removeClient(fd);
+	else if (_clients.clientIsSendingData(client))
+		_clients.recvFromClient(fd);
+	else if (_clients.clientIsReadyToReceive(client))
+		_clients.sendToClient(fd);
 }
 
 bool WebServer::_noEvents(const pollfd &pfd)
@@ -80,9 +78,5 @@ bool WebServer::_noEvents(const pollfd &pfd)
 	return pfd.revents == 0;
 }
 
-// EXCEPTIONS
-
-const char *WebServer::PollException::what() const throw()
-{
-	return "Failed to poll file descriptors.";
-}
+WebServer::PollException::PollException()
+: runtime_error("Failed to poll file descriptors.") {}

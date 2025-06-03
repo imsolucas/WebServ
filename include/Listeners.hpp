@@ -7,8 +7,18 @@
 
 class Server;
 
-class ListenerManager
+class Listeners
 {
+	public:
+		Listeners(std::vector<pollfd> &_poll);
+		
+		void setupAllListeners(std::vector<Server>servers);
+		
+		bool isListener(int fd);
+		static bool clientIsConnecting(const pollfd &listener);
+		
+		int getPort(int listenerFd) const;
+
 	private:
 		// maps listener fd to listener port
 		std::map<int, int> _listenerMap;
@@ -17,15 +27,6 @@ class ListenerManager
 		void _setUpListener(int port);
 
 	public:
-		ListenerManager(std::vector<pollfd> &_poll);
-
-		void setupAllListeners(std::vector<Server>servers);
-
-		bool isListener(int fd);
-		static bool clientIsConnecting(const pollfd &listener);
-
-		int getPort(int listenerFd) const;
-
 		// inherit from runtime_error to customize error message
 		class SocketCreationException : public std::runtime_error
 		{
@@ -56,5 +57,4 @@ class ListenerManager
 			public:
 				ListenException(const std::string &portString);
 		};
-
-}
+};

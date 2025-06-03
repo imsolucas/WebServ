@@ -6,7 +6,8 @@
 # include <string>
 # include <vector>
 
-class CGIHandler {
+class CGIHandler 
+{
 	public:
 		CGIHandler(const HttpRequest &req);
 		std::string execute();

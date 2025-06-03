@@ -1,9 +1,10 @@
-# include "ClientManager.hpp"
+# include "Clients.hpp"
 # include "CGIHandler.hpp" // TODO: DELETE
 # include "colors.h"
 # include "utils.hpp"
 
 # include <fcntl.h>
+# include <fstream> // TODO: DELETE
 # include <iostream>
 # include <sys/socket.h> // accept, recv, send
 # include <unistd.h> // close
@@ -11,7 +12,10 @@
 using std::cout;
 using std::string;
 
-void ClientManager::addClient(int listenerFd, int port)
+Clients::Clients(std::vector<pollfd> &poll, size_t &pollIndex) 
+: _poll(poll), _pollIndex(pollIndex) {}
+
+void Clients::addClient(int listenerFd, int port)
 {
 	// create a socket for the client on our server.
 	int clientFd = accept(listenerFd, NULL, NULL);
@@ -28,22 +32,22 @@ void ClientManager::addClient(int listenerFd, int port)
 		return;
 	}
 	utils::addToPoll(_poll, clientFd, POLLIN, 0);
-	addToClientMap(clientFd, port, listenerFd);
+	_addToClientMap(clientFd, port, listenerFd);
 	cout << GREEN <<  "Client with fd " << clientFd << " connected on port " << port << "!\n" << RESET;
 }
 
-void ClientManager::removeClient(int fd)
+void Clients::removeClient(int fd)
 {
 	close(fd);
 	utils::removeFromPoll(_poll, _pollIndex);
-	removeFromClientMap(fd);
+	_removeFromClientMap(fd);
 	// decrement to prevent skipping the element that just moved into position i.
 	_pollIndex--;
 	cout << RED << "Client with fd " << fd << " disconnected!\n" << RESET;
 }
 
 // boolean reflects success of recv call().
-void ClientManager::recvFromClient(int fd)
+void Clients::recvFromClient(int fd)
 {
 	char buffer[4096];
 	// recv() returns the number of bytes read.
@@ -81,7 +85,7 @@ void ClientManager::recvFromClient(int fd)
 // "Content-Length" or "Transfer-Encoding" field to determine when
 // the http request has been fully received.
 // GET requests are complete when the headers are received.
-bool ClientManager::requestIsComplete(ClientMeta &client)
+bool Clients::requestIsComplete(ClientMeta &client)
 {
 	// in a http request, the end of headers is demarcated by "\r\n\r\n".
 	size_t headersEnd = client.requestBuffer.find("\r\n\r\n");
@@ -137,7 +141,7 @@ bool ClientManager::requestIsComplete(ClientMeta &client)
 	return false;
 }
 
-void ClientManager::sendToClient(int fd)
+void Clients::sendToClient(int fd)
 {
 	// TODO: DELETE - ONLY FOR TESTING PURPOSES
 	// -----------------------------------------------------------------------------------
@@ -169,7 +173,33 @@ void ClientManager::sendToClient(int fd)
 	removeClient(fd);
 }
 
-void ClientManager::addToClientMap(int fd, int port, int listenerFd)
+bool Clients::isClient(int fd)
+{
+	return _clientMap.count(fd);
+}
+
+// problematic/disconnected clients
+// POLLERR = socket error (I/O error or connection reset or unusable socket)
+// POLLHUP = hang up (client disconnected)
+// POLLNVAL = invalid fd (fd closed but still in _poll list)
+bool Clients::clientIsDisconnected(const pollfd &client)
+{
+	return client.revents & (POLLERR | POLLHUP | POLLNVAL);
+}
+
+// POLLIN on client means client is sending data to the server
+bool Clients::clientIsSendingData(const pollfd &client)
+{
+	return client.revents & POLLIN;
+}
+
+// POLLOUT on client means client is ready to receive data
+bool Clients::clientIsReadyToReceive(const pollfd &client)
+{
+	return client.revents & POLLOUT;
+}
+
+void Clients::_addToClientMap(int fd, int port, int listenerFd)
 {
 	ClientMeta meta;
 
@@ -182,34 +212,7 @@ void ClientManager::addToClientMap(int fd, int port, int listenerFd)
 	_clientMap[fd] = meta;
 }
 
-void ClientManager::removeFromClientMap(int fd)
+void Clients::_removeFromClientMap(int fd)
 {
 	_clientMap.erase(fd);
 }
-
-bool ClientManager::isClient(int fd)
-{
-	return _clientMap.count(fd);
-}
-
-// problematic/disconnected clients
-// POLLERR = socket error (I/O error or connection reset or unusable socket)
-// POLLHUP = hang up (client disconnected)
-// POLLNVAL = invalid fd (fd closed but still in _poll list)
-bool ClientManager::clientIsDisconnected(const pollfd &client)
-{
-	return client.revents & (POLLERR | POLLHUP | POLLNVAL);
-}
-
-// POLLIN on client means client is sending data to the server
-bool ClientManager::clientIsSendingData(const pollfd &client)
-{
-	return client.revents & POLLIN;
-}
-
-// POLLOUT on client means client is ready to receive data
-bool ClientManager::clientIsReadyToReceive(const pollfd &client)
-{
-	return client.revents & POLLOUT;
-}
-

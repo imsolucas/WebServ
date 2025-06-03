@@ -1,4 +1,4 @@
-# include "ListenerManager.hpp"
+# include "Listeners.hpp"
 # include "colors.h"
 # include "Server.hpp"
 # include "utils.hpp"
@@ -12,12 +12,38 @@
 using std::cout;
 using std::string;
 
-ListenerManager::ListenerManager(std::vector<pollfd> &poll) : _poll(poll)
-{
+Listeners::Listeners(std::vector<pollfd> &poll) 
+: _poll(poll) {}
 
+void Listeners::setupAllListeners(std::vector<Server>servers)
+{
+	std::vector<Server>::const_iterator serverIt = servers.begin();
+	for (; serverIt != servers.end(); ++serverIt)
+	{
+		std::vector<int>ports = serverIt->getPorts();
+		std::vector<int>::const_iterator portIt = ports.begin();
+		for (; portIt != ports.end(); ++portIt)
+			_setUpListener(*portIt);
+	}
 }
 
-void ListenerManager::_setUpListener(int port)
+bool Listeners::isListener(int fd)
+{
+	return _listenerMap.count(fd);
+}
+
+// POLLIN on listener means client is attempting to connect to the server
+bool Listeners::clientIsConnecting(const pollfd &listener)
+{
+	return listener.revents & POLLIN;
+}
+
+int Listeners::getPort(int listenerFd) const
+{
+	return _listenerMap.at(listenerFd);
+}
+
+void Listeners::_setUpListener(int port)
 {
 	string portString = utils::toString(port);
 
@@ -82,45 +108,17 @@ void ListenerManager::_setUpListener(int port)
 	cout << BLUE << "Listener with fd " << listenerFd << " set up on port " << port << "!\n" << RESET;
 }
 
-void ListenerManager::setupAllListeners(std::vector<Server>servers)
-{
-	std::vector<Server>::const_iterator serverIt = servers.begin();
-	for (; serverIt != servers.end(); ++serverIt)
-	{
-		std::vector<int>ports = serverIt->getPorts();
-		std::vector<int>::const_iterator portIt = ports.begin();
-		for (; portIt != ports.end(); ++portIt)
-			_setUpListener(*portIt);
-	}
-}
-
-bool ListenerManager::isListener(int fd)
-{
-	return _listenerMap.count(fd);
-}
-
-// POLLIN on listener means client is attempting to connect to the server
-bool ListenerManager::clientIsConnecting(const pollfd &listener)
-{
-	return listener.revents & POLLIN;
-}
-
-int ListenerManager::getPort(int listenerFd) const
-{
-	return _listenerMap.at(listenerFd);
-}
-
-ListenerManager::SocketCreationException::SocketCreationException(const string &portString)
+Listeners::SocketCreationException::SocketCreationException(const string &portString)
 : runtime_error("Failed to create listener socket for port " + portString + ".") {}
 
-ListenerManager::SocketConfigException::SocketConfigException(const string &portString)
+Listeners::SocketConfigException::SocketConfigException(const string &portString)
 : runtime_error("Failed to set non-blocking mode for listener on port " + portString + ".") {}
 
-ListenerManager::SocketOptionException::SocketOptionException(const string &portString)
+Listeners::SocketOptionException::SocketOptionException(const string &portString)
 : runtime_error("Failed to set socket option (SO_REUSEADDR) for listener on port " + portString + ".") {}
 
-ListenerManager::BindException::BindException(const string &portString)
+Listeners::BindException::BindException(const string &portString)
 : runtime_error("Failed to bind listener socket to port " + portString + ".") {}
 
-ListenerManager::ListenException::ListenException(const string &portString)
+Listeners::ListenException::ListenException(const string &portString)
 : runtime_error("Failed to listen to socket on port " + portString + ".") {}
