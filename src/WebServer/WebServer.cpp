@@ -11,11 +11,11 @@ using std::cout;
 using std::string;
 using std::runtime_error;
 
-WebServer::WebServer(const string &config) : _listeners(_poll), _clients(_poll, _pollIndex)
+WebServer::WebServer(const string &config) : _listenerManager(_poll), _clientManager(_poll, _pollIndex)
 {
 	_cfg = Config(config);
 	cout << "Parsed configuration file!\n";
-	_listeners.setupAllListeners(_cfg.getServers());
+	_listenerManager._setupAllListeners(_cfg.getServers());
 }
 
 WebServer::~WebServer()
@@ -47,9 +47,9 @@ void WebServer::run()
 
 			if (_noEvents(pfd))
 				continue;
-			if (_listeners.isListener(pfd.fd))
+			if (_listenerManager.isListener(pfd.fd))
 				_handleListenerEvents(pfd);
-			if (_clients.isClient(pfd.fd))
+			if (_clientManager.isClient(pfd.fd))
 				_handleClientEvents(pfd);
 		}
 	}
@@ -57,20 +57,20 @@ void WebServer::run()
 
 void WebServer::_handleListenerEvents(const pollfd &listener)
 {
-	if (_listeners.clientIsConnecting(listener))
-		_clients.addClient(listener.fd, _listeners.getPort(listener.fd));
+	if (_listenerManager.clientIsConnecting(listener))
+		_clientManager.addClient(listener.fd, _listenerManager.getPort(listener.fd));
 }
 
 void WebServer::_handleClientEvents(const pollfd &client)
 {
 	int fd = client.fd;
 
-	if (_clients.clientIsDisconnected(client))
-		_clients.removeClient(fd);
-	else if (_clients.clientIsSendingData(client))
-		_clients.recvFromClient(fd);
-	else if (_clients.clientIsReadyToReceive(client))
-		_clients.sendToClient(fd);
+	if (_clientManager.clientIsDisconnected(client))
+		_clientManager.removeClient(fd);
+	else if (_clientManager.clientIsSendingData(client))
+		_clientManager.recvFromClient(fd);
+	else if (_clientManager.clientIsReadyToReceive(client))
+		_clientManager.sendToClient(fd);
 }
 
 bool WebServer::_noEvents(const pollfd &pfd)

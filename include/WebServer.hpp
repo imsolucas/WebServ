@@ -1,8 +1,8 @@
 # pragma once
 
-# include "Clients.hpp"
+# include "ClientManager.hpp"
 # include "Config.hpp"
-# include "Listeners.hpp"
+# include "ListenerManager.hpp"
 
 # include <map>
 # include <poll.h>
@@ -18,8 +18,8 @@ class WebServer
 
 	private:
 		Config _cfg;
-		Listeners _listeners;
-		Clients _clients;
+		ListenerManager _listenerManager;
+		ClientManager _clientManager;
 
 		std::vector<pollfd> _poll;
 		size_t _pollIndex;

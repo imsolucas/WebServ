@@ -1,4 +1,4 @@
-# include "Listeners.hpp"
+# include "ListenerManager.hpp"
 # include "colors.h"
 # include "Server.hpp"
 # include "utils.hpp"
@@ -12,10 +12,10 @@
 using std::cout;
 using std::string;
 
-Listeners::Listeners(std::vector<pollfd> &poll) 
+ListenerManager::ListenerManager(std::vector<pollfd> &poll)
 : _poll(poll) {}
 
-void Listeners::setupAllListeners(std::vector<Server>servers)
+void ListenerManager::_setupAllListeners(const std::vector<Server>&servers)
 {
 	std::vector<Server>::const_iterator serverIt = servers.begin();
 	for (; serverIt != servers.end(); ++serverIt)
@@ -27,23 +27,23 @@ void Listeners::setupAllListeners(std::vector<Server>servers)
 	}
 }
 
-bool Listeners::isListener(int fd)
+bool ListenerManager::isListener(int fd)
 {
 	return _listenerMap.count(fd);
 }
 
 // POLLIN on listener means client is attempting to connect to the server
-bool Listeners::clientIsConnecting(const pollfd &listener)
+bool ListenerManager::clientIsConnecting(const pollfd &listener)
 {
 	return listener.revents & POLLIN;
 }
 
-int Listeners::getPort(int listenerFd) const
+int ListenerManager::getPort(int listenerFd) const
 {
 	return _listenerMap.at(listenerFd);
 }
 
-void Listeners::_setUpListener(int port)
+void ListenerManager::_setUpListener(int port)
 {
 	string portString = utils::toString(port);
 
@@ -108,17 +108,17 @@ void Listeners::_setUpListener(int port)
 	cout << BLUE << "Listener with fd " << listenerFd << " set up on port " << port << "!\n" << RESET;
 }
 
-Listeners::SocketCreationException::SocketCreationException(const string &portString)
+ListenerManager::SocketCreationException::SocketCreationException(const string &portString)
 : runtime_error("Failed to create listener socket for port " + portString + ".") {}
 
-Listeners::SocketConfigException::SocketConfigException(const string &portString)
+ListenerManager::SocketConfigException::SocketConfigException(const string &portString)
 : runtime_error("Failed to set non-blocking mode for listener on port " + portString + ".") {}
 
-Listeners::SocketOptionException::SocketOptionException(const string &portString)
+ListenerManager::SocketOptionException::SocketOptionException(const string &portString)
 : runtime_error("Failed to set socket option (SO_REUSEADDR) for listener on port " + portString + ".") {}
 
-Listeners::BindException::BindException(const string &portString)
+ListenerManager::BindException::BindException(const string &portString)
 : runtime_error("Failed to bind listener socket to port " + portString + ".") {}
 
-Listeners::ListenException::ListenException(const string &portString)
+ListenerManager::ListenException::ListenException(const string &portString)
 : runtime_error("Failed to listen to socket on port " + portString + ".") {}

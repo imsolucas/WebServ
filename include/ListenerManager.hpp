@@ -7,16 +7,16 @@
 
 class Server;
 
-class Listeners
+class ListenerManager
 {
 	public:
-		Listeners(std::vector<pollfd> &_poll);
-		
-		void setupAllListeners(std::vector<Server>servers);
-		
+		ListenerManager(std::vector<pollfd> &_poll);
+
+		void _setupAllListeners(const std::vector<Server>&servers);
+
 		bool isListener(int fd);
 		static bool clientIsConnecting(const pollfd &listener);
-		
+
 		int getPort(int listenerFd) const;
 
 	private:
