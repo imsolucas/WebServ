@@ -28,6 +28,10 @@ class WebServer
 		void _handleClientEvents(const pollfd &client);
 
 		static bool _noEvents(const pollfd &pollfd);
+		static bool _clientIsConnecting(const pollfd &listener);
+		static bool _clientIsDisconnected(const pollfd &client);
+		static bool _clientIsSendingData(const pollfd &client);
+		static bool _clientIsReadyToReceive(const pollfd &client);
 
 	public:
 		class PollException : public std::runtime_error

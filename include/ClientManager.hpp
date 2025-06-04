@@ -27,9 +27,6 @@ class ClientManager
 		void sendToClient(int fd);
 
 		bool isClient(int fd);
-		static bool clientIsDisconnected(const pollfd &client);
-		static bool clientIsSendingData(const pollfd &client);
-		static bool clientIsReadyToReceive(const pollfd &client);
 
 	private:
 		// maps client fd to client meta

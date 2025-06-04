@@ -15,7 +15,6 @@ class ListenerManager
 		void _setupAllListeners(const std::vector<Server>&servers);
 
 		bool isListener(int fd);
-		static bool clientIsConnecting(const pollfd &listener);
 
 		int getPort(int listenerFd) const;
 

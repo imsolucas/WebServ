@@ -32,12 +32,6 @@ bool ListenerManager::isListener(int fd)
 	return _listenerMap.count(fd);
 }
 
-// POLLIN on listener means client is attempting to connect to the server
-bool ListenerManager::clientIsConnecting(const pollfd &listener)
-{
-	return listener.revents & POLLIN;
-}
-
 int ListenerManager::getPort(int listenerFd) const
 {
 	return _listenerMap.at(listenerFd);

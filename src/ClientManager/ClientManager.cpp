@@ -176,27 +176,6 @@ bool ClientManager::isClient(int fd)
 	return _clientMap.count(fd);
 }
 
-// problematic/disconnected clients
-// POLLERR = socket error (I/O error or connection reset or unusable socket)
-// POLLHUP = hang up (client disconnected)
-// POLLNVAL = invalid fd (fd closed but still in _poll list)
-bool ClientManager::clientIsDisconnected(const pollfd &client)
-{
-	return client.revents & (POLLERR | POLLHUP | POLLNVAL);
-}
-
-// POLLIN on client means client is sending data to the server
-bool ClientManager::clientIsSendingData(const pollfd &client)
-{
-	return client.revents & POLLIN;
-}
-
-// POLLOUT on client means client is ready to receive data
-bool ClientManager::clientIsReadyToReceive(const pollfd &client)
-{
-	return client.revents & POLLOUT;
-}
-
 void ClientManager::_addToClientMap(int fd, int port, int listenerFd)
 {
 	ClientMeta meta;
