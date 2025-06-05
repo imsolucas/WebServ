@@ -11,11 +11,11 @@ using std::cout;
 using std::string;
 using std::runtime_error;
 
-WebServer::WebServer(const string &config) : _listeners(_poll), _clients(_poll, _pollIndex)
+WebServer::WebServer(const string &config) : _listenerManager(_poll), _clientManager(_poll, _pollIndex)
 {
 	_cfg = Config(config);
 	cout << "Parsed configuration file!\n";
-	_listeners.setupAllListeners(_cfg.getServers());
+	_listenerManager._setupAllListeners(_cfg.getServers());
 }
 
 WebServer::~WebServer()
@@ -47,9 +47,9 @@ void WebServer::run()
 
 			if (_noEvents(pfd))
 				continue;
-			if (_listeners.isListener(pfd.fd))
+			if (_listenerManager.isListener(pfd.fd))
 				_handleListenerEvents(pfd);
-			if (_clients.isClient(pfd.fd))
+			if (_clientManager.isClient(pfd.fd))
 				_handleClientEvents(pfd);
 		}
 	}
@@ -57,25 +57,52 @@ void WebServer::run()
 
 void WebServer::_handleListenerEvents(const pollfd &listener)
 {
-	if (_listeners.clientIsConnecting(listener))
-		_clients.addClient(listener.fd, _listeners.getPort(listener.fd));
+	if (_clientIsConnecting(listener))
+		_clientManager.addClient(listener.fd, _listenerManager.getPort(listener.fd));
 }
 
 void WebServer::_handleClientEvents(const pollfd &client)
 {
 	int fd = client.fd;
 
-	if (_clients.clientIsDisconnected(client))
-		_clients.removeClient(fd);
-	else if (_clients.clientIsSendingData(client))
-		_clients.recvFromClient(fd);
-	else if (_clients.clientIsReadyToReceive(client))
-		_clients.sendToClient(fd);
+	if (_clientIsDisconnected(client))
+		_clientManager.removeClient(fd);
+	else if (_clientIsSendingData(client))
+		_clientManager.recvFromClient(fd);
+	else if (_clientIsReadyToReceive(client))
+		_clientManager.sendToClient(fd);
 }
 
 bool WebServer::_noEvents(const pollfd &pfd)
 {
 	return pfd.revents == 0;
+}
+
+// POLLIN on listener means client is attempting to connect to the server
+bool WebServer::_clientIsConnecting(const pollfd &listener)
+{
+	return listener.revents & POLLIN;
+}
+
+// problematic/disconnected clients
+// POLLERR = socket error (I/O error or connection reset or unusable socket)
+// POLLHUP = hang up (client disconnected)
+// POLLNVAL = invalid fd (fd closed but still in _poll list)
+bool WebServer::_clientIsDisconnected(const pollfd &client)
+{
+	return client.revents & (POLLERR | POLLHUP | POLLNVAL);
+}
+
+// POLLIN on client means client is sending data to the server
+bool WebServer::_clientIsSendingData(const pollfd &client)
+{
+	return client.revents & POLLIN;
+}
+
+// POLLOUT on client means client is ready to receive data
+bool WebServer::_clientIsReadyToReceive(const pollfd &client)
+{
+	return client.revents & POLLOUT;
 }
 
 WebServer::PollException::PollException()

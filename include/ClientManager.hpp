@@ -5,8 +5,8 @@
 # include <string>
 # include <vector>
 
-class Clients
-{	
+class ClientManager
+{
 	public:
 		struct ClientMeta
 		{
@@ -18,7 +18,7 @@ class Clients
 			int contentLength;
 		};
 
-		Clients(std::vector<pollfd> &poll, size_t &pollIndex); 
+		ClientManager(std::vector<pollfd> &poll, size_t &pollIndex);
 
 		void addClient(int listenerFd, int port);
 		void removeClient(int fd);
@@ -27,9 +27,6 @@ class Clients
 		void sendToClient(int fd);
 
 		bool isClient(int fd);
-		static bool clientIsDisconnected(const pollfd &client);
-		static bool clientIsSendingData(const pollfd &client);
-		static bool clientIsReadyToReceive(const pollfd &client);
 
 	private:
 		// maps client fd to client meta

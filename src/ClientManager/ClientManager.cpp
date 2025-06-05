@@ -1,4 +1,4 @@
-# include "Clients.hpp"
+# include "ClientManager.hpp"
 # include "colors.h"
 # include "utils.hpp"
 
@@ -11,10 +11,10 @@
 using std::cout;
 using std::string;
 
-Clients::Clients(std::vector<pollfd> &poll, size_t &pollIndex) 
+ClientManager::ClientManager(std::vector<pollfd> &poll, size_t &pollIndex)
 : _poll(poll), _pollIndex(pollIndex) {}
 
-void Clients::addClient(int listenerFd, int port)
+void ClientManager::addClient(int listenerFd, int port)
 {
 	// create a socket for the client on our server.
 	int clientFd = accept(listenerFd, NULL, NULL);
@@ -35,7 +35,7 @@ void Clients::addClient(int listenerFd, int port)
 	cout << GREEN <<  "Client with fd " << clientFd << " connected on port " << port << "!\n" << RESET;
 }
 
-void Clients::removeClient(int fd)
+void ClientManager::removeClient(int fd)
 {
 	close(fd);
 	utils::removeFromPoll(_poll, _pollIndex);
@@ -46,7 +46,7 @@ void Clients::removeClient(int fd)
 }
 
 // boolean reflects success of recv call().
-void Clients::recvFromClient(int fd)
+void ClientManager::recvFromClient(int fd)
 {
 	char buffer[4096];
 	// recv() returns the number of bytes read.
@@ -83,7 +83,7 @@ void Clients::recvFromClient(int fd)
 // "Content-Length" or "Transfer-Encoding" field to determine when
 // the http request has been fully received.
 // GET requests are complete when the headers are received.
-bool Clients::requestIsComplete(ClientMeta &client)
+bool ClientManager::requestIsComplete(ClientMeta &client)
 {
 	// in a http request, the end of headers is demarcated by "\r\n\r\n".
 	size_t headersEnd = client.requestBuffer.find("\r\n\r\n");
@@ -139,7 +139,7 @@ bool Clients::requestIsComplete(ClientMeta &client)
 	return false;
 }
 
-void Clients::sendToClient(int fd)
+void ClientManager::sendToClient(int fd)
 {
 	// TODO: DELETE - ONLY FOR TESTING PURPOSES
 	// -----------------------------------------------------------------------------------
@@ -171,33 +171,12 @@ void Clients::sendToClient(int fd)
 	removeClient(fd);
 }
 
-bool Clients::isClient(int fd)
+bool ClientManager::isClient(int fd)
 {
 	return _clientMap.count(fd);
 }
 
-// problematic/disconnected clients
-// POLLERR = socket error (I/O error or connection reset or unusable socket)
-// POLLHUP = hang up (client disconnected)
-// POLLNVAL = invalid fd (fd closed but still in _poll list)
-bool Clients::clientIsDisconnected(const pollfd &client)
-{
-	return client.revents & (POLLERR | POLLHUP | POLLNVAL);
-}
-
-// POLLIN on client means client is sending data to the server
-bool Clients::clientIsSendingData(const pollfd &client)
-{
-	return client.revents & POLLIN;
-}
-
-// POLLOUT on client means client is ready to receive data
-bool Clients::clientIsReadyToReceive(const pollfd &client)
-{
-	return client.revents & POLLOUT;
-}
-
-void Clients::_addToClientMap(int fd, int port, int listenerFd)
+void ClientManager::_addToClientMap(int fd, int port, int listenerFd)
 {
 	ClientMeta meta;
 
@@ -210,7 +189,7 @@ void Clients::_addToClientMap(int fd, int port, int listenerFd)
 	_clientMap[fd] = meta;
 }
 
-void Clients::_removeFromClientMap(int fd)
+void ClientManager::_removeFromClientMap(int fd)
 {
 	_clientMap.erase(fd);
 }

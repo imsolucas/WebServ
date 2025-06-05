@@ -1,8 +1,8 @@
 # pragma once
 
-# include "Clients.hpp"
+# include "ClientManager.hpp"
 # include "Config.hpp"
-# include "Listeners.hpp"
+# include "ListenerManager.hpp"
 
 # include <map>
 # include <poll.h>
@@ -18,8 +18,8 @@ class WebServer
 
 	private:
 		Config _cfg;
-		Listeners _listeners;
-		Clients _clients;
+		ListenerManager _listenerManager;
+		ClientManager _clientManager;
 
 		std::vector<pollfd> _poll;
 		size_t _pollIndex;
@@ -28,6 +28,10 @@ class WebServer
 		void _handleClientEvents(const pollfd &client);
 
 		static bool _noEvents(const pollfd &pollfd);
+		static bool _clientIsConnecting(const pollfd &listener);
+		static bool _clientIsDisconnected(const pollfd &client);
+		static bool _clientIsSendingData(const pollfd &client);
+		static bool _clientIsReadyToReceive(const pollfd &client);
 
 	public:
 		class PollException : public std::runtime_error
