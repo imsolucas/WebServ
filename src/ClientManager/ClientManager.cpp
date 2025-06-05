@@ -68,75 +68,21 @@ void ClientManager::recvFromClient(int fd)
 	else
 	{
 		ClientMeta &client = _clientMap[fd];
+
+		if (client.state == STATE_INIT)
+			client.state = STATE_RECVING;
+
 		client.requestBuffer.append(buffer, bytesReceived);
 		cout << "\nData received from client with fd " << fd <<  ":\n" << YELLOW << client.requestBuffer << "\n" << _RESET;
-		if (requestIsComplete(client))
+
+		if (_requestIsComplete(client))
 		{
 			cout << "Received complete request from fd " << fd << ".\n";
+			client.state = STATE_REQUEST_READY;
 			// change poll from POLLIN to POLLOUT to send response to client
 			_poll[_pollIndex].events = POLLOUT;
 		}
 	}
-}
-
-// This function will check the http request headers for either the
-// "Content-Length" or "Transfer-Encoding" field to determine when
-// the http request has been fully received.
-// GET requests are complete when the headers are received.
-bool ClientManager::requestIsComplete(ClientMeta &client)
-{
-	// in a http request, the end of headers is demarcated by "\r\n\r\n".
-	size_t headersEnd = client.requestBuffer.find("\r\n\r\n");
-	// cout << "[DEBUG] Buffer size: " << client.requestBuffer.size() << ", headersEnd: " << headersEnd << "\n";
-	// cout << "[DEBUG] Buffer: " << client.requestBuffer << "\n";
-
-	// headersParsed check to ensure code block is only entered once.
-	if (!client.headersParsed && headersEnd != string::npos)
-	{
-		client.headersParsed = true;
-		string headers = client.requestBuffer.substr(0, headersEnd);
-
-		// GET requests do not have a body, so they are complete when the headers are received.
-		if (headers.find("GET ") == 0)
-			return true;
-
-		if (headers.find("Transfer-Encoding: chunked") != string::npos)
-			client.chunkedRequest = true;
-		else
-		{
-			string nonChunkedMarker = "Content-Length:";
-			size_t pos = headers.find(nonChunkedMarker);
-			if (pos != string::npos)
-			{
-				pos += nonChunkedMarker.size();
-				// create a stringstream to extract the content length as an integer
-				std::stringstream ss(headers.substr(pos));
-				// set content length to 0 if fail to parse a valid number
-				if (!(ss >> client.contentLength))
-					client.contentLength = 0;
-			}
-			else
-				client.contentLength = 0;
-		}
-	}
-
-	if (client.headersParsed)
-	{
-		if (client.chunkedRequest)
-		{
-			// a chunked request ends with "0\r\n\r\n".
-			if (client.requestBuffer.find("0\r\n\r\n", headersEnd) != string::npos)
-				return true;
-		}
-		else
-		{
-			// a non-chunked request is complete when the buffer can contain
-			// the header length + "\r\n\r\n" + content length.
-			if (client.requestBuffer.size() >= headersEnd + 4 + client.contentLength)
-				return true;
-		}
-	}
-	return false;
 }
 
 void ClientManager::sendToClient(int fd)
@@ -180,16 +126,89 @@ void ClientManager::_addToClientMap(int fd, int port, int listenerFd)
 {
 	ClientMeta meta;
 
+	meta.state = STATE_INIT;
 	meta.port = port;
 	meta.listenerFd = listenerFd;
 	meta.requestBuffer = "";
-	meta.headersParsed = false;
-	meta.chunkedRequest = false;
-	meta.contentLength = -1; // default to -1 to avoid confusion
+
+	// default to -1 to prevent confusion
+	meta.requestMeta.headersEnd = -1;
+	meta.requestMeta.bodyEndKnown = false;
+	meta.requestMeta.chunkedRequest = false;
+	meta.requestMeta.contentLength = -1;
+
 	_clientMap[fd] = meta;
 }
 
 void ClientManager::_removeFromClientMap(int fd)
 {
 	_clientMap.erase(fd);
+}
+
+bool ClientManager::_requestIsComplete(ClientMeta &client)
+{
+	if (!_headersAreComplete(client))
+		return false;
+
+	if (!client.requestMeta.bodyEndKnown)
+		_determineBodyEnd(client);
+
+	if (_bodyIsComplete(client))
+		return true;
+
+	return false;
+}
+
+bool ClientManager::_headersAreComplete(ClientMeta &client)
+{
+	client.requestMeta.headersEnd = client.requestBuffer.find("\r\n\r\n");
+	// in a http request, the end of headers is demarcated by "\r\n\r\n".
+	return client.requestMeta.headersEnd != string::npos;
+}
+
+// This function will check the http request headers for either the
+// "Content-Length" or "Transfer-Encoding" field to determine when
+// the http request has been fully received.
+// GET requests are complete when the headers are received.
+void ClientManager::_determineBodyEnd(ClientMeta &client)
+{
+	client.requestMeta.bodyEndKnown = true;
+	string headers = client.requestBuffer.substr(0, client.requestMeta.headersEnd);
+
+	if (headers.find("GET ") == 0)
+	{
+		client.requestMeta.contentLength = 0;
+		return;
+	}
+
+	if (headers.find("Transfer-Encoding: chunked") != string::npos)
+		client.requestMeta.chunkedRequest = true;
+	else
+	{
+		string nonChunkedMarker = "Content-Length:";
+		size_t pos = headers.find(nonChunkedMarker);
+		if (pos != string::npos)
+		{
+			pos += nonChunkedMarker.size();
+			// create a stringstream to extract the content length as an integer
+			std::stringstream ss(headers.substr(pos));
+			// set content length to 0 if fail to parse a valid number
+			if (!(ss >> client.requestMeta.contentLength))
+				client.requestMeta.contentLength = 0;
+		}
+		else
+			client.requestMeta.contentLength = 0;
+	}
+}
+
+bool ClientManager::_bodyIsComplete(const ClientMeta &client)
+{
+	const size_t headersEnd = client.requestMeta.headersEnd;
+	if (client.requestMeta.chunkedRequest)
+		// a chunked request ends with "0\r\n\r\n".
+		return (client.requestBuffer.find("0\r\n\r\n", headersEnd) != string::npos);
+	else
+		// a non-chunked request is complete when the buffer can contain
+		// the header length + "\r\n\r\n" + content length.
+		return (client.requestBuffer.size() >= headersEnd + 4 + client.requestMeta.contentLength);
 }

@@ -8,14 +8,31 @@
 class ClientManager
 {
 	public:
+		enum ClientState
+		{
+			STATE_INIT,
+			STATE_RECVING,
+			STATE_REQUEST_READY,
+			STATE_RESPONSE_READY,
+			STATE_ERROR_413
+		};
+
+		struct RequestMeta
+		{
+			size_t headersEnd;
+			bool bodyEndKnown;
+			bool chunkedRequest;
+			int contentLength;
+		};
+
 		struct ClientMeta
 		{
+			ClientState state;
 			int port;
 			int listenerFd;
 			std::string requestBuffer;
-			bool headersParsed;
-			bool chunkedRequest;
-			int contentLength;
+
+			RequestMeta requestMeta;
 		};
 
 		ClientManager(std::vector<pollfd> &poll, size_t &pollIndex);
@@ -23,7 +40,6 @@ class ClientManager
 		void addClient(int listenerFd, int port);
 		void removeClient(int fd);
 		void recvFromClient(int fd);
-		bool requestIsComplete(ClientMeta &client);
 		void sendToClient(int fd);
 
 		bool isClient(int fd);
@@ -36,5 +52,10 @@ class ClientManager
 
 		void _addToClientMap(int fd, int port, int listenerFd);
 		void _removeFromClientMap(int fd);
+
+		bool _requestIsComplete(ClientMeta &client);
+		bool _headersAreComplete(ClientMeta &client);
+		void _determineBodyEnd(ClientMeta &client);
+		bool _bodyIsComplete(const ClientMeta &client);
 
 };
