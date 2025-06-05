@@ -12,7 +12,7 @@ using std::string;
 using std::runtime_error;
 
 WebServer::WebServer(const string &config)
-: _cfg(Config(config)), _listenerManager(_poll), _clientManager(_poll, _pollIndex, _cfg)
+: _cfg(Config(config)), _listenerManager(_poll), _clientManager(_poll, _pollIndex, _cfg.getServers())
 {
 	cout << "Parsed configuration file!\n";
 	_listenerManager._setupAllListeners(_cfg.getServers());

@@ -10,9 +10,10 @@
 
 using std::cout;
 using std::string;
+using std::vector;
 
-ClientManager::ClientManager(std::vector<pollfd> &poll, size_t &pollIndex, const Config &cfg)
-: _poll(poll), _pollIndex(pollIndex), _cfg(cfg) {(void)_cfg;} // TODO: DELETE
+ClientManager::ClientManager(std::vector<pollfd> &poll, size_t &pollIndex, const std::vector<Server> &servers)
+: _poll(poll), _pollIndex(pollIndex), _servers(servers) {}
 
 void ClientManager::addClient(int listenerFd, int port)
 {
@@ -185,7 +186,7 @@ void ClientManager::_preparseHeaders(ClientMeta &client)
 	string headers = client.requestBuffer.substr(0, client.requestMeta.headersEnd);
 	HttpRequest req = deserialize(headers);
 	_determineBodyEnd(client, req);
-
+	client.server = _selectServerBlock(client, req);
 	client.state = STATE_HEADERS_PREPARSED;
 }
 
@@ -193,13 +194,13 @@ void ClientManager::_preparseHeaders(ClientMeta &client)
 // "Content-Length" or "Transfer-Encoding" field to determine when
 // the http request has been fully received.
 // GET requests are complete when the headers are received.
-void ClientManager::_determineBodyEnd(ClientMeta &client, HttpRequest req)
+void ClientManager::_determineBodyEnd(ClientMeta &client, const HttpRequest &req)
 {
 	if (req.method == "GET")
 		client.requestMeta.contentLength = 0;
 	else if (req.headers.count("Transfer-Encoding"))
 	{
-		if (req.headers["Transfer-Encoding"] == "chunked")
+		if (req.headers.at("Transfer-Encoding") == "chunked")
 			client.requestMeta.chunkedRequest = true;
 	}
 	else
@@ -207,7 +208,7 @@ void ClientManager::_determineBodyEnd(ClientMeta &client, HttpRequest req)
 		if (req.headers.count("Content-Length"))
 		{
 			// create a stringstream to extract the content length as an integer
-			std::stringstream ss(req.headers["Content-Length"]);
+			std::stringstream ss(req.headers.at("Content-Length"));
 			// set content length to 0 if fail to parse a valid number
 			if (!(ss >> client.requestMeta.contentLength))
 				client.requestMeta.contentLength = 0;
@@ -215,6 +216,50 @@ void ClientManager::_determineBodyEnd(ClientMeta &client, HttpRequest req)
 		else
 			client.requestMeta.contentLength = 0;
 	}
+}
+
+const Server *ClientManager::_selectServerBlock(ClientMeta &client, const HttpRequest &req)
+{
+	string serverName = "";
+	if (req.headers.count("Host"))
+	{
+		vector<string> vec = utils::split(req.headers.at("Host"), ':');
+		// get server name from host header.
+		serverName = vec[0];
+	}
+
+	// select server candidates with matching ports.
+	vector<const Server *> candidates;
+	for (vector<Server>::const_iterator serverIt = _servers.begin(); serverIt != _servers.end(); ++serverIt)
+	{
+		const vector<int> &ports = serverIt->getPorts();
+		for (vector<int>::const_iterator portIt = ports.begin(); portIt != ports.end(); ++portIt)
+		{
+			if (*portIt == client.port)
+			{
+				candidates.push_back(&(*serverIt));
+				break;
+			}
+		}
+	}
+
+	// if only one server matches the port, use it.
+	if (candidates.size() == 1)
+		return candidates[0];
+
+	// if there are multiple candidates, match based on server name.
+	for (vector<const Server *>::const_iterator serverIt = candidates.begin(); serverIt != candidates.end(); ++serverIt)
+	{
+		const vector<string> &serverNames = (*serverIt)->getServerNames();
+		for (std::vector<string>::const_iterator nameIt = serverNames.begin(); nameIt != serverNames.end(); ++nameIt)
+		{
+			if (*nameIt == serverName)
+				return *serverIt;
+		}
+	}
+
+	// if no server names match, return first candidate.
+	return candidates[0];
 }
 
 bool ClientManager::_bodyIsComplete(const ClientMeta &client)

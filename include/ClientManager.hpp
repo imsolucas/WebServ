@@ -39,7 +39,7 @@ class ClientManager
 			RequestMeta requestMeta;
 		};
 
-		ClientManager(std::vector<pollfd> &poll, size_t &pollIndex, const Config &cfg);
+		ClientManager(std::vector<pollfd> &poll, size_t &pollIndex, const std::vector<Server> &_servers);
 
 		void addClient(int listenerFd, int port);
 		void removeClient(int fd);
@@ -53,7 +53,7 @@ class ClientManager
 		std::map<int, ClientMeta> _clientMap;
 		std::vector<pollfd> &_poll;
 		size_t &_pollIndex;
-		const Config &_cfg;
+		const std::vector<Server> &_servers;
 
 		void _addToClientMap(int fd, int port, int listenerFd);
 		void _removeFromClientMap(int fd);
@@ -61,7 +61,8 @@ class ClientManager
 		void _handleIncomingData(int fd, const char *buffer, size_t bytesReceived);
 		bool _headersAreComplete(ClientMeta &client);
 		void _preparseHeaders(ClientMeta &client);
-		void _determineBodyEnd(ClientMeta &client, HttpRequest req);
+		void _determineBodyEnd(ClientMeta &client, const HttpRequest &req);
+		const Server *_selectServerBlock(ClientMeta &client, const HttpRequest &req);
 		bool _bodyIsComplete(const ClientMeta &client);
 
 };
