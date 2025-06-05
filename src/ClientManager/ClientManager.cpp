@@ -11,8 +11,8 @@
 using std::cout;
 using std::string;
 
-ClientManager::ClientManager(std::vector<pollfd> &poll, size_t &pollIndex)
-: _poll(poll), _pollIndex(pollIndex) {}
+ClientManager::ClientManager(std::vector<pollfd> &poll, size_t &pollIndex, const Config &cfg)
+: _poll(poll), _pollIndex(pollIndex), _cfg(cfg) {}
 
 void ClientManager::addClient(int listenerFd, int port)
 {
@@ -66,23 +66,7 @@ void ClientManager::recvFromClient(int fd)
 		removeClient(fd);
 	}
 	else
-	{
-		ClientMeta &client = _clientMap[fd];
-
-		if (client.state == STATE_INIT)
-			client.state = STATE_RECVING;
-
-		client.requestBuffer.append(buffer, bytesReceived);
-		cout << "\nData received from client with fd " << fd <<  ":\n" << YELLOW << client.requestBuffer << "\n" << _RESET;
-
-		if (_requestIsComplete(client))
-		{
-			cout << "Received complete request from fd " << fd << ".\n";
-			client.state = STATE_REQUEST_READY;
-			// change poll from POLLIN to POLLOUT to send response to client
-			_poll[_pollIndex].events = POLLOUT;
-		}
-	}
+		_handleIncomingData(fd, buffer, bytesReceived);
 }
 
 void ClientManager::sendToClient(int fd)
@@ -130,10 +114,10 @@ void ClientManager::_addToClientMap(int fd, int port, int listenerFd)
 	meta.port = port;
 	meta.listenerFd = listenerFd;
 	meta.requestBuffer = "";
+	meta.server = NULL;
 
 	// default to -1 to prevent confusion
 	meta.requestMeta.headersEnd = -1;
-	meta.requestMeta.bodyEndKnown = false;
 	meta.requestMeta.chunkedRequest = false;
 	meta.requestMeta.contentLength = -1;
 
@@ -145,18 +129,48 @@ void ClientManager::_removeFromClientMap(int fd)
 	_clientMap.erase(fd);
 }
 
-bool ClientManager::_requestIsComplete(ClientMeta &client)
+void ClientManager::_handleIncomingData(int fd, const char *buffer, size_t bytesReceived)
 {
-	if (!_headersAreComplete(client))
-		return false;
+	ClientMeta &client = _clientMap[fd];
 
-	if (!client.requestMeta.bodyEndKnown)
-		_determineBodyEnd(client);
+	client.requestBuffer.append(buffer, bytesReceived);
+	cout << "\nData received from client with fd " << fd <<  ":\n" << YELLOW << client.requestBuffer << "\n" << _RESET;
 
-	if (_bodyIsComplete(client))
-		return true;
+	switch (client.state)
+	{
+		case STATE_INIT:
+			client.state = STATE_RECVING;
+			// fallthrough on purpose
 
-	return false;
+		case STATE_RECVING:
+		{
+			if (_headersAreComplete(client))
+				_preparseHeaders(client);
+			else
+				break;
+			// fallthrough on purpose
+		}
+
+		case STATE_HEADERS_PREPARSED:
+		{
+			if (_bodyIsComplete(client))
+				client.state = STATE_REQUEST_READY;
+			else
+				break;
+			// fallthrough on purpose
+		}
+
+		case STATE_REQUEST_READY:
+		{
+			cout << "Received complete request from fd " << fd << ".\n";
+			// change poll from POLLIN to POLLOUT to send response to client
+			_poll[_pollIndex].events = POLLOUT;
+			break;
+		}
+
+		default:
+			break;
+	}
 }
 
 bool ClientManager::_headersAreComplete(ClientMeta &client)
@@ -166,15 +180,19 @@ bool ClientManager::_headersAreComplete(ClientMeta &client)
 	return client.requestMeta.headersEnd != string::npos;
 }
 
+void ClientManager::_preparseHeaders(ClientMeta &client)
+{
+	string headers = client.requestBuffer.substr(0, client.requestMeta.headersEnd);
+	_determineBodyEnd(client, headers);
+	client.state = STATE_HEADERS_PREPARSED;
+}
+
 // This function will check the http request headers for either the
 // "Content-Length" or "Transfer-Encoding" field to determine when
 // the http request has been fully received.
 // GET requests are complete when the headers are received.
-void ClientManager::_determineBodyEnd(ClientMeta &client)
+void ClientManager::_determineBodyEnd(ClientMeta &client, string headers)
 {
-	client.requestMeta.bodyEndKnown = true;
-	string headers = client.requestBuffer.substr(0, client.requestMeta.headersEnd);
-
 	if (headers.find("GET ") == 0)
 	{
 		client.requestMeta.contentLength = 0;
