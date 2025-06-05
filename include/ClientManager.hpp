@@ -1,6 +1,7 @@
 # pragma once
 
 # include "Config.hpp"
+# include "Http.h"
 
 # include <map>
 # include <poll.h>
@@ -60,7 +61,7 @@ class ClientManager
 		void _handleIncomingData(int fd, const char *buffer, size_t bytesReceived);
 		bool _headersAreComplete(ClientMeta &client);
 		void _preparseHeaders(ClientMeta &client);
-		void _determineBodyEnd(ClientMeta &client, std::string headers);
+		void _determineBodyEnd(ClientMeta &client, HttpRequest req);
 		bool _bodyIsComplete(const ClientMeta &client);
 
 };

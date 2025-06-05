@@ -12,7 +12,7 @@ using std::cout;
 using std::string;
 
 ClientManager::ClientManager(std::vector<pollfd> &poll, size_t &pollIndex, const Config &cfg)
-: _poll(poll), _pollIndex(pollIndex), _cfg(cfg) {}
+: _poll(poll), _pollIndex(pollIndex), _cfg(cfg) {(void)_cfg;} // TODO: DELETE
 
 void ClientManager::addClient(int listenerFd, int port)
 {
@@ -183,7 +183,9 @@ bool ClientManager::_headersAreComplete(ClientMeta &client)
 void ClientManager::_preparseHeaders(ClientMeta &client)
 {
 	string headers = client.requestBuffer.substr(0, client.requestMeta.headersEnd);
-	_determineBodyEnd(client, headers);
+	HttpRequest req = deserialize(headers);
+	_determineBodyEnd(client, req);
+
 	client.state = STATE_HEADERS_PREPARSED;
 }
 
@@ -191,25 +193,21 @@ void ClientManager::_preparseHeaders(ClientMeta &client)
 // "Content-Length" or "Transfer-Encoding" field to determine when
 // the http request has been fully received.
 // GET requests are complete when the headers are received.
-void ClientManager::_determineBodyEnd(ClientMeta &client, string headers)
+void ClientManager::_determineBodyEnd(ClientMeta &client, HttpRequest req)
 {
-	if (headers.find("GET ") == 0)
-	{
+	if (req.method == "GET")
 		client.requestMeta.contentLength = 0;
-		return;
+	else if (req.headers.count("Transfer-Encoding"))
+	{
+		if (req.headers["Transfer-Encoding"] == "chunked")
+			client.requestMeta.chunkedRequest = true;
 	}
-
-	if (headers.find("Transfer-Encoding: chunked") != string::npos)
-		client.requestMeta.chunkedRequest = true;
 	else
 	{
-		string nonChunkedMarker = "Content-Length:";
-		size_t pos = headers.find(nonChunkedMarker);
-		if (pos != string::npos)
+		if (req.headers.count("Content-Length"))
 		{
-			pos += nonChunkedMarker.size();
 			// create a stringstream to extract the content length as an integer
-			std::stringstream ss(headers.substr(pos));
+			std::stringstream ss(req.headers["Content-Length"]);
 			// set content length to 0 if fail to parse a valid number
 			if (!(ss >> client.requestMeta.contentLength))
 				client.requestMeta.contentLength = 0;
