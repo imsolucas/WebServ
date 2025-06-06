@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Server.cpp                                         :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: imsolucas <imsolucas@student.42.fr>        +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/05/26 23:43:16 by imsolucas         #+#    #+#             */
-/*   Updated: 2025/05/27 18:12:27 by imsolucas        ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "Server.hpp"
 #include "colors.h"
 
@@ -71,6 +59,7 @@ void Server::clearLocations()
 std::vector<int> Server::getPorts() const { return ports; }
 std::vector<std::string> Server::getServerNames() const { return server_names; }
 std::string Server::getRoot() const { return root; }
+size_t Server::getClientMaxBodySize() const { return client_max_body_size; }
 std::vector<LocationConfig> Server::getLocations() const { return locations; }
 std::map<int, std::string> Server::getErrorPages() const { return error_pages; }
 

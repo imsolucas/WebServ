@@ -12,6 +12,15 @@ using std::cout;
 using std::string;
 using std::vector;
 
+ClientManager::ClientMeta::ClientMeta()
+: state(STATE_INIT), listenerFd(0), port(0), server(NULL),
+  requestBuffer(), errorCode(0)
+{
+	requestMeta.headersEnd = string::npos;
+	requestMeta.chunkedRequest = false;
+	requestMeta.contentLength = 0;
+}
+
 ClientManager::ClientManager(std::vector<pollfd> &poll, size_t &pollIndex, const std::vector<Server> &servers)
 : _poll(poll), _pollIndex(pollIndex), _servers(servers) {}
 
@@ -32,7 +41,7 @@ void ClientManager::addClient(int listenerFd, int port)
 		return;
 	}
 	utils::addToPoll(_poll, clientFd, POLLIN, 0);
-	_addToClientMap(clientFd, port, listenerFd);
+	_addToClientMap(clientFd, listenerFd, port);
 	cout << GREEN <<  "Client with fd " << clientFd << " connected on port " << port << "!\n" << RESET;
 }
 
@@ -107,21 +116,11 @@ bool ClientManager::isClient(int fd)
 	return _clientMap.count(fd);
 }
 
-void ClientManager::_addToClientMap(int fd, int port, int listenerFd)
+void ClientManager::_addToClientMap(int fd, int listenerFd, int port)
 {
 	ClientMeta meta;
-
-	meta.state = STATE_INIT;
-	meta.port = port;
 	meta.listenerFd = listenerFd;
-	meta.requestBuffer = "";
-	meta.server = NULL;
-
-	// default to -1 to prevent confusion
-	meta.requestMeta.headersEnd = -1;
-	meta.requestMeta.chunkedRequest = false;
-	meta.requestMeta.contentLength = -1;
-
+	meta.port = port;
 	_clientMap[fd] = meta;
 }
 
@@ -141,26 +140,33 @@ void ClientManager::_handleIncomingData(int fd, const char *buffer, size_t bytes
 	{
 		case STATE_INIT:
 			client.state = STATE_RECVING;
-			// fallthrough on purpose
-
+		// fall through
 		case STATE_RECVING:
 		{
 			if (_headersAreComplete(client))
+			{
 				_preparseHeaders(client);
+				client.state = STATE_HEADERS_PREPARSED;
+			}
 			else
 				break;
-			// fallthrough on purpose
 		}
-
+		// fall through
 		case STATE_HEADERS_PREPARSED:
 		{
+			// if (_maxBodySizeExceeded(client))
+			// {
+			// 	client.state = STATE_ERROR;
+			// 	client.errorCode = 413;
+			// 	cout << RED << "Request from client with fd " << fd << " exceeds the maximum body size.\n" << RESET;
+			// 	break;
+			// }
 			if (_bodyIsComplete(client))
 				client.state = STATE_REQUEST_READY;
 			else
 				break;
-			// fallthrough on purpose
 		}
-
+		// fall through
 		case STATE_REQUEST_READY:
 		{
 			cout << "Received complete request from fd " << fd << ".\n";
@@ -168,7 +174,6 @@ void ClientManager::_handleIncomingData(int fd, const char *buffer, size_t bytes
 			_poll[_pollIndex].events = POLLOUT;
 			break;
 		}
-
 		default:
 			break;
 	}
@@ -176,9 +181,13 @@ void ClientManager::_handleIncomingData(int fd, const char *buffer, size_t bytes
 
 bool ClientManager::_headersAreComplete(ClientMeta &client)
 {
-	client.requestMeta.headersEnd = client.requestBuffer.find("\r\n\r\n");
 	// in a http request, the end of headers is demarcated by "\r\n\r\n".
-	return client.requestMeta.headersEnd != string::npos;
+	size_t delimiter = client.requestBuffer.find("\r\n\r\n");
+	if (delimiter == string::npos)
+		return false;
+	// +4 to include the "\r\n\r\n" at the end of headers
+	client.requestMeta.headersEnd = delimiter + 4; 
+	return true;
 }
 
 void ClientManager::_preparseHeaders(ClientMeta &client)
@@ -187,7 +196,6 @@ void ClientManager::_preparseHeaders(ClientMeta &client)
 	HttpRequest req = deserialize(headers);
 	_determineBodyEnd(client, req);
 	client.server = _selectServerBlock(client, req);
-	client.state = STATE_HEADERS_PREPARSED;
 }
 
 // This function will check the http request headers for either the
@@ -227,7 +235,6 @@ const Server *ClientManager::_selectServerBlock(ClientMeta &client, const HttpRe
 		// get server name from host header.
 		serverName = vec[0];
 	}
-
 	// select server candidates with matching ports.
 	vector<const Server *> candidates;
 	for (vector<Server>::const_iterator serverIt = _servers.begin(); serverIt != _servers.end(); ++serverIt)
@@ -242,11 +249,9 @@ const Server *ClientManager::_selectServerBlock(ClientMeta &client, const HttpRe
 			}
 		}
 	}
-
 	// if only one server matches the port, use it.
 	if (candidates.size() == 1)
 		return candidates[0];
-
 	// if there are multiple candidates, match based on server name.
 	for (vector<const Server *>::const_iterator serverIt = candidates.begin(); serverIt != candidates.end(); ++serverIt)
 	{
@@ -257,9 +262,19 @@ const Server *ClientManager::_selectServerBlock(ClientMeta &client, const HttpRe
 				return *serverIt;
 		}
 	}
-
 	// if no server names match, return first candidate.
 	return candidates[0];
+}
+
+bool ClientManager::_maxBodySizeExceeded(const ClientMeta &client)
+{
+	size_t maxBodySize = client.server->getClientMaxBodySize();
+	size_t bodySize;
+	if (client.requestMeta.chunkedRequest) 
+		bodySize = client.requestBuffer.size() - client.requestMeta.headersEnd;
+	else
+		bodySize = client.requestMeta.contentLength;
+	return bodySize > maxBodySize;
 }
 
 bool ClientManager::_bodyIsComplete(const ClientMeta &client)
@@ -270,6 +285,6 @@ bool ClientManager::_bodyIsComplete(const ClientMeta &client)
 		return (client.requestBuffer.find("0\r\n\r\n", headersEnd) != string::npos);
 	else
 		// a non-chunked request is complete when the buffer can contain
-		// the header length + "\r\n\r\n" + content length.
-		return (client.requestBuffer.size() >= headersEnd + 4 + client.requestMeta.contentLength);
+		// the header length + content length.
+		return (client.requestBuffer.size() >= headersEnd + client.requestMeta.contentLength);
 }

@@ -18,7 +18,7 @@ class ClientManager
 			STATE_HEADERS_PREPARSED,
 			STATE_REQUEST_READY,
 			STATE_RESPONSE_READY,
-			STATE_ERROR_413
+			STATE_ERROR
 		};
 
 		struct RequestMeta
@@ -31,12 +31,14 @@ class ClientManager
 		struct ClientMeta
 		{
 			ClientState state;
-			int port;
 			int listenerFd;
-			std::string requestBuffer;
+			int port;
 			const Server *server;
-
+			std::string requestBuffer;
 			RequestMeta requestMeta;
+			int errorCode;
+
+			ClientMeta();
 		};
 
 		ClientManager(std::vector<pollfd> &poll, size_t &pollIndex, const std::vector<Server> &_servers);
@@ -55,7 +57,7 @@ class ClientManager
 		size_t &_pollIndex;
 		const std::vector<Server> &_servers;
 
-		void _addToClientMap(int fd, int port, int listenerFd);
+		void _addToClientMap(int fd, int listenerFd, int port);
 		void _removeFromClientMap(int fd);
 
 		void _handleIncomingData(int fd, const char *buffer, size_t bytesReceived);
@@ -63,6 +65,6 @@ class ClientManager
 		void _preparseHeaders(ClientMeta &client);
 		void _determineBodyEnd(ClientMeta &client, const HttpRequest &req);
 		const Server *_selectServerBlock(ClientMeta &client, const HttpRequest &req);
+		bool _maxBodySizeExceeded(const ClientMeta &client);
 		bool _bodyIsComplete(const ClientMeta &client);
-
 };

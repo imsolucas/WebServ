@@ -30,6 +30,7 @@ public:
 	std::vector<std::string> getServerNames() const;
 	std::string getRoot() const;
 	std::vector<std::string> getIndexes() const;
+	size_t getClientMaxBodySize() const;
 	std::vector<LocationConfig> getLocations() const;
 	std::map<int, std::string> getErrorPages() const;
 

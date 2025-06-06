@@ -1,4 +1,3 @@
-
 #include "Config.hpp"
 
 using std::cout;
