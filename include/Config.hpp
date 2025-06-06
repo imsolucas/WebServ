@@ -1,11 +1,11 @@
-#pragma once
+# pragma once
 
-#include "Server.hpp"
-#include "LocationConfig.hpp"
+# include "Server.hpp"
+# include "LocationConfig.hpp"
 
-#include <sstream>
-#include <stdexcept>
-#include <fstream>
+# include <sstream>
+# include <stdexcept>
+# include <fstream>
 
 
 class Config
@@ -20,7 +20,7 @@ public:
 	std::vector<Server> getServers() const;
 	void printline(const std::string &line) const;
 	void printTokens(const std::vector<std::string> &tokens) const;
-	
+
 	std::vector<std::string> tokenize(const std::string &str);
 
 private:
