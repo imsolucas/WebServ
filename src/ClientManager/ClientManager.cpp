@@ -154,14 +154,13 @@ void ClientManager::_handleIncomingData(int fd, const char *buffer, size_t bytes
 		// fall through
 		case STATE_HEADERS_PREPARSED:
 		{
-			// if (_maxBodySizeExceeded(client))
-			// {
-			// 	client.state = STATE_ERROR;
-			// 	client.errorCode = 413;
-			// 	cout << RED << "Request from client with fd " << fd << " exceeds the maximum body size.\n" << RESET;
-			// 	break;
-			// }
-			if (_bodyIsComplete(client))
+			if (_maxBodySizeExceeded(client))
+			{
+				client.errorCode = 413;
+				cout << RED << "Request from client with fd " << fd << " exceeds the maximum body size.\n" << RESET;
+				break;
+			}
+			else if (_bodyIsComplete(client))
 				client.state = STATE_REQUEST_READY;
 			else
 				break;
@@ -177,6 +176,11 @@ void ClientManager::_handleIncomingData(int fd, const char *buffer, size_t bytes
 		default:
 			break;
 	}
+	if (client.errorCode > 0)
+	{
+		cout << RED << "Error code: " << client.errorCode << ".\n" << RESET;
+		_poll[_pollIndex].events = POLLOUT;
+	}
 }
 
 bool ClientManager::_headersAreComplete(ClientMeta &client)
@@ -186,7 +190,7 @@ bool ClientManager::_headersAreComplete(ClientMeta &client)
 	if (delimiter == string::npos)
 		return false;
 	// +4 to include the "\r\n\r\n" at the end of headers
-	client.requestMeta.headersEnd = delimiter + 4; 
+	client.requestMeta.headersEnd = delimiter + 4;
 	return true;
 }
 
@@ -270,7 +274,7 @@ bool ClientManager::_maxBodySizeExceeded(const ClientMeta &client)
 {
 	size_t maxBodySize = client.server->getClientMaxBodySize();
 	size_t bodySize;
-	if (client.requestMeta.chunkedRequest) 
+	if (client.requestMeta.chunkedRequest)
 		bodySize = client.requestBuffer.size() - client.requestMeta.headersEnd;
 	else
 		bodySize = client.requestMeta.contentLength;
