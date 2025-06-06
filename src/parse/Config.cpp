@@ -47,7 +47,7 @@ void Config::printTokens(const std::vector<std::string> &tokens) const
 	}
 }
 
-std::vector<Server> Config::getServers() const
+const std::vector<Server> &Config::getServers() const
 {
 	return _servers;
 }
@@ -108,7 +108,7 @@ void Config::parseTokens(const std::vector<std::string> &tokens)
 				throw std::runtime_error("Expected '{' after 'server'");
 			++i; // Move past '{'
 			Server server = parseServerBlock(tokens, i);
-			server.printConfig(); 
+			server.printConfig();
 			_servers.push_back(server);
 		}
 		else
@@ -210,13 +210,13 @@ LocationConfig Config::parseLocationBlock(const std::vector<std::string> &tokens
 {
 	if (i >= tokens.size())
 		throw std::runtime_error("Expected location path");
-	
+
 	std::string path = tokens[i++];
 	LocationConfig loc(path);
 
 	if (i >= tokens.size() || tokens[i] != "{")
 		throw std::runtime_error("Expected '{' after location path");
-	
+
 	++i; // Move past '{'
 	while (i < tokens.size())
 	{
