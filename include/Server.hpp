@@ -6,7 +6,7 @@
 # include <iostream>
 # include <algorithm>
 
-# include "LocationConfig.hpp"
+# include "Location.hpp"
 
 class Server
 {
@@ -17,7 +17,7 @@ public:
 
 	void setRoot(const std::string &root);
 	void addErrorPage(int code, const std::string &path);
-	void addLocation(const LocationConfig &location);
+	void addLocation(const Location &location);
 	void addPort(int port);
 	void addServerName(const std::string &);
 	void addIndex(const std::string &);
@@ -30,7 +30,7 @@ public:
 	std::vector<std::string> getServerNames() const;
 	std::string getRoot() const;
 	std::vector<std::string> getIndexes() const;
-	std::vector<LocationConfig> getLocations() const;
+	std::vector<Location> getLocations() const;
 	std::map<int, std::string> getErrorPages() const;
 
 	// Utils
@@ -42,6 +42,6 @@ private:
 	std::string root;					   // e.g., "/var/www/html"
 	std::vector<std::string> indexes;
 	size_t client_max_body_size;			// e.g., "index.html"
-	std::vector<LocationConfig> locations;	// All `location {}` blocks
+	std::vector<Location> locations;	// All `location {}` blocks
 	std::map<int, std::string> error_pages; // Error code -> page path
 };

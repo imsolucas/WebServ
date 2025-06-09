@@ -1,7 +1,7 @@
 # pragma once
 
 # include "Server.hpp"
-# include "LocationConfig.hpp"
+# include "Location.hpp"
 
 # include <sstream>
 # include <stdexcept>
@@ -27,5 +27,5 @@ private:
 	std::vector<Server> _servers; // Vector to hold multiple Server configurations
 	void parseTokens(const std::vector<std::string> &tokens);
 	Server parseServerBlock(const std::vector<std::string> &tokens, size_t &i);
-	LocationConfig parseLocationBlock(const std::vector<std::string> &tokens, size_t &i);
+	Location parseLocationBlock(const std::vector<std::string> &tokens, size_t &i);
 };

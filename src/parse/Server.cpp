@@ -6,7 +6,7 @@
 /*   By: imsolucas <imsolucas@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/26 23:43:16 by imsolucas         #+#    #+#             */
-/*   Updated: 2025/05/27 18:12:27 by imsolucas        ###   ########.fr       */
+/*   Updated: 2025/06/09 12:30:02 by imsolucas        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,14 +46,14 @@ void Server::addErrorPage(int code, const std::string &path)
 	error_pages[code] = path;
 }
 
-void Server::addLocation(const LocationConfig &location)
+void Server::addLocation(const Location &location)
 {
 	locations.push_back(location);
 }
 
 void Server::removeLocation(const std::string &path)
 {
-	for (std::vector<LocationConfig>::iterator it = locations.begin(); it != locations.end(); ++it)
+	for (std::vector<Location>::iterator it = locations.begin(); it != locations.end(); ++it)
 	{
 		if (it->getPath() == path)
 		{
@@ -71,7 +71,7 @@ void Server::clearLocations()
 std::vector<int> Server::getPorts() const { return ports; }
 std::vector<std::string> Server::getServerNames() const { return server_names; }
 std::string Server::getRoot() const { return root; }
-std::vector<LocationConfig> Server::getLocations() const { return locations; }
+std::vector<Location> Server::getLocations() const { return locations; }
 std::map<int, std::string> Server::getErrorPages() const { return error_pages; }
 
 void Server::printConfig() const {
@@ -113,7 +113,7 @@ void Server::printConfig() const {
 
 	if (!locations.empty()) {
 		std::cout << BOLD << CYAN << "--- Locations ---" << RESET << std::endl;
-		for (std::vector<LocationConfig>::const_iterator it = locations.begin(); it != locations.end(); ++it) {
+		for (std::vector<Location>::const_iterator it = locations.begin(); it != locations.end(); ++it) {
 			it->printConfig();
 		}
 	}

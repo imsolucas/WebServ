@@ -196,7 +196,7 @@ Server Config::parseServerBlock(const std::vector<std::string> &tokens, size_t &
 		else if (token == "location")
 		{
 			i++; // Move past "location"
-			LocationConfig loc = parseLocationBlock(tokens, i);
+			Location loc = parseLocationBlock(tokens, i);
 			server.addLocation(loc);
 		}
 		else
@@ -207,13 +207,13 @@ Server Config::parseServerBlock(const std::vector<std::string> &tokens, size_t &
 	return server;
 }
 
-LocationConfig Config::parseLocationBlock(const std::vector<std::string> &tokens, size_t &i)
+Location Config::parseLocationBlock(const std::vector<std::string> &tokens, size_t &i)
 {
 	if (i >= tokens.size())
 		throw std::runtime_error("Expected location path");
 	
 	std::string path = tokens[i++];
-	LocationConfig loc(path);
+	Location loc(path);
 
 	if (i >= tokens.size() || tokens[i] != "{")
 		throw std::runtime_error("Expected '{' after location path");

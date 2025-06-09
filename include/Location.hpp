@@ -4,12 +4,12 @@
 # include <vector>
 # include <iostream>
 
-class LocationConfig {
+class Location {
 public:
     // Constructors & Destructor
-    LocationConfig();
-    LocationConfig(const std::string &path);
-    ~LocationConfig();
+    Location();
+    Location(const std::string &path);
+    ~Location();
 
     // Setters
     void setPath(const std::string &path);
