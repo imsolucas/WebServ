@@ -18,10 +18,10 @@ class WebServer
 
 	private:
 		Config _cfg;
+		std::vector<pollfd> _poll;
 		ListenerManager _listenerManager;
 		ClientManager _clientManager;
 
-		std::vector<pollfd> _poll;
 		size_t _pollIndex;
 
 		void _handleListenerEvents(const pollfd &listener);
