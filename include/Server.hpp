@@ -21,7 +21,7 @@ public:
 	void addPort(int port);
 	void addServerName(const std::string &);
 	void addIndex(const std::string &);
-	void setClientMaxBodySize(size_t);
+	void setClientMaxBodySize(size_t size, const std::string &unit);
 	void removeLocation(const std::string &path);
 	void clearLocations();
 
@@ -32,6 +32,7 @@ public:
 	std::vector<std::string> getIndexes() const;
 	std::vector<Location> getLocations() const;
 	std::map<int, std::string> getErrorPages() const;
+	size_t getClientMaxBodySizeInBytes() const;
 
 	// Utils
 	void printConfig() const;
@@ -41,7 +42,7 @@ private:
 	std::vector<std::string> server_names; // e.g., "example.com"
 	std::string root;					   // e.g., "/var/www/html"
 	std::vector<std::string> indexes;
-	size_t client_max_body_size;			// e.g., "index.html"
+	std::pair<size_t, std::string> client_max_body_size;			// e.g., "index.html"
 	std::vector<Location> locations;	// All `location {}` blocks
 	std::map<int, std::string> error_pages; // Error code -> page path
 };

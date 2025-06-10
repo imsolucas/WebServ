@@ -285,8 +285,20 @@ Server WebServer::parseServerBlock(const std::vector<std::string> &tokens, size_
 		{
 			if (i + 2 >= tokens.size())
 				throw std::runtime_error("Invalid 'client_max_body_size' syntax");
-			server.setClientMaxBodySize(static_cast<size_t>(atoi(tokens[i + 1].c_str())));
-			i += 3; // Move past "client_max_body_size <size>;"
+
+			size_t size = static_cast<size_t>(atoi(tokens[i + 1].c_str()));
+			std::string unit = "MB"; // Default to MB
+
+			if (tokens[i + 2] != ";") {
+				unit = tokens[i + 2];
+				i++; // Account for the unit token
+			}
+
+			server.setClientMaxBodySize(size, unit);
+			i += 2; // Skip size + optional unit
+			if (tokens[i] != ";")
+				throw std::runtime_error("Expected ';' after client_max_body_size");
+			i++; // Skip ';'
 		}
 		else if (token == "location")
 		{
@@ -356,10 +368,22 @@ Location WebServer::parseLocationBlock(const std::vector<std::string> &tokens, s
 		}
 		else if (token == "client_max_body_size")
 		{
-			if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
-				throw std::runtime_error("Invalid 'client_max_body_size' syntax in location block");
-			loc.setClientMaxBodySize(static_cast<size_t>(atoi(tokens[i + 1].c_str())));
-			i += 3; // Move past "client_max_body_size <size>;"
+			if (i + 2 >= tokens.size())
+				throw std::runtime_error("Invalid 'client_max_body_size' syntax");
+
+			size_t size = static_cast<size_t>(atoi(tokens[i + 1].c_str()));
+			std::string unit = "MB"; // Default to MB
+
+			if (tokens[i + 2] != ";") {
+				unit = tokens[i + 2];
+				i++; // Account for the unit token
+			}
+
+			loc.setClientMaxBodySize(size, unit);
+			i += 2; // Skip size + optional unit
+			if (tokens[i] != ";")
+				throw std::runtime_error("Expected ';' after client_max_body_size");
+			i++; // Skip ';'
 		}
 		else if (token == "cgi_path")
 		{

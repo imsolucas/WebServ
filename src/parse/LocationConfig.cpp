@@ -22,7 +22,7 @@ Location::Location()
 	  redirect(""),
 	  upload_store(""),
 	  autoindex(false),
-	  client_max_body_size(1 * 1024 * 1024) // 1 MB default
+	  client_max_body_size(std::pair<size_t, std::string>(1, "MB")) // 1 MB default
 {
 	allowed_methods.push_back("GET");
 	allowed_methods.push_back("POST");
@@ -36,7 +36,7 @@ Location::Location(const std::string &path)
 	  redirect(""),
 	  upload_store(""),
 	  autoindex(false),
-	  client_max_body_size(1 * 1024 * 1024) // 1 MB default
+	  client_max_body_size(std::pair<size_t, std::string>(1, "MB")) // 1 MB default
 {
 	allowed_methods.push_back("GET");
 	allowed_methods.push_back("POST");
@@ -52,7 +52,12 @@ void Location::setCgiPath(const std::string &cgi_path) { this->cgi_path = cgi_pa
 void Location::setRedirect(const std::string &redirect) { this->redirect = redirect; }
 void Location::setUploadStore(const std::string &upload_store) { this->upload_store = upload_store; }
 void Location::setAutoindex(bool autoindex) { this->autoindex = autoindex; }
-void Location::setClientMaxBodySize(size_t size) { this->client_max_body_size = size; }
+
+void Location::setClientMaxBodySize(size_t size, const std::string &unit)
+{
+	client_max_body_size.first = size;
+	client_max_body_size.second = unit;
+}
 
 void Location::addAllowedMethod(const std::string &method)
 {
@@ -80,7 +85,21 @@ std::string Location::getCgiPath() const { return cgi_path; }
 std::string Location::getRedirect() const { return redirect; }
 std::string Location::getUploadStore() const { return upload_store; }
 bool Location::getAutoindex() const { return autoindex; }
-size_t Location::getClientMaxBodySize() const { return client_max_body_size; }
+
+size_t Location::getClientMaxBodySizeInBytes() const
+{
+	size_t size = client_max_body_size.first;
+	std::string unit = client_max_body_size.second;
+
+	if (unit == "KB" || unit == "kb")
+		return size * 1024;
+	if (unit == "MB" || unit == "mb")
+		return size * 1024 * 1024;
+	if (unit == "GB" || unit == "gb")
+		return size * 1024 * 1024 * 1024;
+
+	return size; // Assume bytes if no valid unit
+}
 
 std::vector<std::string> Location::getAllowedMethods() const
 {
@@ -120,7 +139,9 @@ void Location::printConfig() const
 	std::cout << BOLD << MAGENTA << "Redirect: " << GREEN << redirect << RESET << std::endl;
 	std::cout << BOLD << MAGENTA << "Upload Store: " << GREEN << upload_store << RESET << std::endl;
 	std::cout << BOLD << MAGENTA << "Autoindex: " << GREEN << (autoindex ? "true" : "false") << RESET << std::endl;
-	std::cout << BOLD << MAGENTA << "Client Max Body Size: " << GREEN << client_max_body_size << RESET << std::endl;
+	std::cout << BOLD << MAGENTA << "Client Max Body Size: " << GREEN
+			  << client_max_body_size.first << " " << client_max_body_size.second
+			  << RESET << std::endl;
 
 	std::cout << BOLD << MAGENTA << "Allowed Methods: " << RESET;
 	for (std::vector<std::string>::const_iterator it = allowed_methods.begin(); it != allowed_methods.end(); ++it)
