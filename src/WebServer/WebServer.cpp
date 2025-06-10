@@ -344,6 +344,7 @@ Location WebServer::parseLocationBlock(const std::vector<std::string> &tokens, s
 		else if (token == "limit_except")
 		{
 			i++;
+			loc.clearAllowedMethods(); // Clear previous methods
 			while (i < tokens.size() && tokens[i] != ";")
 			{
 				loc.addAllowedMethod(tokens[i]);

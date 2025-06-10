@@ -24,6 +24,8 @@ Location::Location()
 	  autoindex(false),
 	  client_max_body_size(1 * 1024 * 1024) // 1 MB default
 {
+	allowed_methods.push_back("GET");
+	allowed_methods.push_back("POST");
 }
 
 Location::Location(const std::string &path)
@@ -36,6 +38,8 @@ Location::Location(const std::string &path)
 	  autoindex(false),
 	  client_max_body_size(1 * 1024 * 1024) // 1 MB default
 {
+	allowed_methods.push_back("GET");
+	allowed_methods.push_back("POST");
 }
 
 Location::~Location() {}
