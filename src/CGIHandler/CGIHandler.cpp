@@ -1,10 +1,14 @@
 # include "CGIHandler.hpp"
+# include "colors.h"
 # include "utils.hpp"
 
 # include <iostream>
 # include <sys/wait.h> // waitpid
 # include <unistd.h> // close, dup2, execve, _exit, fork, pipe
 
+using std::cerr;
+using std::istringstream;
+using std::runtime_error;
 using std::string;
 
 CGIHandler::CGIHandler(const HttpRequest &req) : _req(req) {}
@@ -12,6 +16,7 @@ CGIHandler::CGIHandler(const HttpRequest &req) : _req(req) {}
 string CGIHandler::execute()
 {
 	_setupPipes();
+	_unchunkBody();
 	_setupEnv();
 	_childPid = fork();
 	if (_childPid < 0)
@@ -29,6 +34,52 @@ void CGIHandler::_setupPipes()
 		throw PipeException("_stdinPipe");
 	if (pipe(_stdoutPipe) < 0)
 		throw PipeException("_stdoutPipe");
+}
+
+// Format for chunked transfer encoding as per RFC 7230
+// <chunk-size in hex>\r\n
+// <chunk-data>\r\n
+// ...
+// 0\r\n
+// \r\n
+void CGIHandler::_unchunkBody()
+{
+	if (!_req.headers.count("Transfer-Encoding")
+		|| _req.headers.at("Transfer-Encoding") != "chunked")
+		return;
+
+	istringstream stream(_req.body);
+	string line;
+	string unchunkedBody;
+
+	// getline breaks lines on "\n" by default
+	while (std::getline(stream, line))
+	{
+		if (!line.empty() && line.back() == '\r')
+			// erase last character of the string ('\r') so that hexStrToInt won't trigger !eof()
+			line.pop_back();
+		size_t chunkSize = 0;
+		try
+		{
+			chunkSize = utils::hexStrToInt(line);
+		}
+		catch (runtime_error e)
+		{
+			utils::printError(e.what());
+			throw UnchunkingException();
+		}
+	}
+
+
+
+
+
+	// once the body is unchunked, update the request body, content length
+	// and strip the transfer encoding header to prevent confusion.
+	_req.body = unchunkedBody;
+	// content length header was previously absent in chunked transfer, so add it in.
+	_req.headers["Content-Length"] = utils::toString(_req.body.size());
+	_req.headers.erase("Transfer-Encoding");
 }
 
 // Environment variables may remain unused, but our job is to emulate the
@@ -103,7 +154,7 @@ void CGIHandler::_cgiChildProcess()
 	// closing pipe ends after dup2
 	close(_stdinPipe[0]);
 	close(_stdoutPipe[1]);
-	
+
 	// TODO: MODIFY - DO NOT HARD CODE
 	// TODO: SANITIZE PATH TO PREVENT PATH TRAVERSAL AND VALIDATE THAT PATH EXISTS.
 	chdir("public/cgi-bin");
@@ -162,6 +213,9 @@ CGIHandler::PipeException::PipeException(string pipe)
 
 CGIHandler::ForkException::ForkException()
 : runtime_error("CGI: Failed to fork child process.") {}
+
+CGIHandler::UnchunkingException::UnchunkingException()
+: runtime_error("CGI: Failed to unchunk request body.") {}
 
 CGIHandler::ExecveException::ExecveException()
 : runtime_error("CGI: Failed to execute script.") {}

@@ -6,7 +6,7 @@
 # include <string>
 # include <vector>
 
-class CGIHandler 
+class CGIHandler
 {
 	public:
 		CGIHandler(const HttpRequest &req);
@@ -24,6 +24,7 @@ class CGIHandler
 		std::string _cgiOutput;
 
 		void _setupPipes();
+		void _unchunkBody();
 		void _setupEnv();
 		void _parseRequestTarget();
 		void _cgiChildProcess();
@@ -40,6 +41,12 @@ class CGIHandler
 		{
 			public:
 				ForkException();
+		};
+
+		class UnchunkingException : public std::runtime_error
+		{
+			public:
+				UnchunkingException();
 		};
 
 		class ExecveException : public std::runtime_error

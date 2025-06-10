@@ -36,7 +36,7 @@ void ClientManager::addClient(int listenerFd, int port)
 	// set the client's socket to be non-blocking.
 	if (fcntl(clientFd, F_SETFL, O_NONBLOCK) < 0)
 	{
-		utils::printError("Failed to set non-blocking mode for client with fd " + utils::toString(clientFd) + ".\n");
+		utils::printError("Failed to set non-blocking mode for client with fd " + utils::toString(clientFd) + ".");
 		close(clientFd);
 		return;
 	}
@@ -72,7 +72,7 @@ void ClientManager::recvFromClient(int fd)
 	}
 	else if (bytesReceived < 0)
 	{
-		utils::printError("Failed to receive request from client with fd " + utils::toString(fd) + ".\n");
+		utils::printError("Failed to receive request from client with fd " + utils::toString(fd) + ".");
 		removeClient(fd);
 	}
 	else
@@ -106,7 +106,7 @@ void ClientManager::sendToClient(int fd)
 	// Often used in server code to avoid crashes from broken pipes e.g. when client
 	// has closed their connection.
 	if (send(fd, response.c_str(), response.size(), MSG_NOSIGNAL) <= 0)
-		utils::printError("Failed to send response to client with fd " + utils::toString(fd) + ".\n");
+		utils::printError("Failed to send response to client with fd " + utils::toString(fd) + ".");
 	// remove client regardless whether send succeeded or failed.
 	removeClient(fd);
 }
