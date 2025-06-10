@@ -25,6 +25,7 @@ class CGIHandler
 
 		void _setupPipes();
 		void _unchunkBody();
+		void _addToEnv(std::string key, std::string headerField);
 		void _setupEnv();
 		void _parseRequestTarget();
 		void _cgiChildProcess();

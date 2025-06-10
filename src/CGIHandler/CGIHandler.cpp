@@ -103,6 +103,12 @@ void CGIHandler::_unchunkBody()
 	_req.headers.erase("transfer-encoding");
 }
 
+void CGIHandler::_addToEnv(string key, string headerField)
+{
+	if (_req.headers.count(headerField))
+		_envStrings.push_back(key + "=" + _req.headers.at(headerField));
+}
+
 // Environment variables may remain unused, but our job is to emulate the
 // standard environment expected by CGI scripts based on the RFC.
 void CGIHandler::_setupEnv()
@@ -114,22 +120,15 @@ void CGIHandler::_setupEnv()
 	_parseRequestTarget();
 
 	// CONTENT_LENGTH AND CONTENT_TYPE are only relevant for POST requests.
-	if (_req.method == "POST")
-	{
-		if (_req.headers.count("content-length"))
-			_envStrings.push_back("CONTENT_LENGTH=" + _req.headers.at("content-length"));
-		if (_req.headers.count("content-type"))
-			_envStrings.push_back("CONTENT_TYPE=" + _req.headers.at("content-type"));
-	}
+	_addToEnv("CONTENT_LENGTH", "content-length");
+	_addToEnv("CONTENT_TYPE", "content-type");
 
 	// optional but common CGI variables
 	// some headers are optional so count() will check that the header key exists
 	// before trying to access its value with at().
 	// count value will either be 0 or 1 in a map.
-	if (_req.headers.count("host"))
-		_envStrings.push_back("HTTP_HOST=" + _req.headers.at("host"));
-	if (_req.headers.count("user-agent"))
-		_envStrings.push_back("HTTP_USER_AGENT=" + _req.headers.at("user-agent"));
+	_addToEnv("HTTP_HOST", "host");
+	_addToEnv("HTTP_USER_AGENT", "user-agent");
 
 	// convert _envStrings to C-style char* array for execve.
 	for (vector<string>::iterator it = _envStrings.begin(); it != _envStrings.end(); ++it)
