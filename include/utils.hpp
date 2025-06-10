@@ -12,13 +12,15 @@ struct utils
 
 	static int hexStrToInt(const std::string& hexStr);
 
-	template <typename T>
-	static std::string toString(const T &any);
+	static void printError(std::string message);
+	static void printError(const char* message);
 
 	static std::vector<std::string> split(const std::string &str, char delimiter);
 
-	static void printError(std::string message);
-	static void printError(const char* message);
+	static std::string toLower(const std::string &string);
+
+	template <typename T>
+	static std::string toString(const T &any);
 };
 
 # include "../src/utils/string.tpp"

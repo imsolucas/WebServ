@@ -210,17 +210,17 @@ void ClientManager::_determineBodyEnd(ClientMeta &client, const HttpRequest &req
 {
 	if (req.method == "GET")
 		client.requestMeta.contentLength = 0;
-	else if (req.headers.count("Transfer-Encoding"))
+	else if (req.headers.count("transfer-encoding"))
 	{
-		if (req.headers.at("Transfer-Encoding") == "chunked")
+		if (req.headers.at("transfer-encoding") == "chunked")
 			client.requestMeta.chunkedRequest = true;
 	}
 	else
 	{
-		if (req.headers.count("Content-Length"))
+		if (req.headers.count("content-length"))
 		{
 			// create a stringstream to extract the content length as an integer
-			std::stringstream ss(req.headers.at("Content-Length"));
+			std::stringstream ss(req.headers.at("content-length"));
 			// set content length to 0 if fail to parse a valid number
 			if (!(ss >> client.requestMeta.contentLength))
 				client.requestMeta.contentLength = 0;
@@ -233,9 +233,9 @@ void ClientManager::_determineBodyEnd(ClientMeta &client, const HttpRequest &req
 const Server *ClientManager::_selectServerBlock(ClientMeta &client, const HttpRequest &req)
 {
 	string serverName = "";
-	if (req.headers.count("Host"))
+	if (req.headers.count("host"))
 	{
-		vector<string> vec = utils::split(req.headers.at("Host"), ':');
+		vector<string> vec = utils::split(req.headers.at("host"), ':');
 		// get server name from host header.
 		serverName = vec[0];
 	}

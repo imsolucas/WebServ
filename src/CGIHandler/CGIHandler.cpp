@@ -44,8 +44,8 @@ void CGIHandler::_setupPipes()
 // \r\n
 void CGIHandler::_unchunkBody()
 {
-	if (!_req.headers.count("Transfer-Encoding")
-		|| _req.headers.at("Transfer-Encoding") != "chunked")
+	if (!_req.headers.count("transfer-encoding")
+		|| _req.headers.at("transfer-encoding") != "chunked")
 		return;
 
 	istringstream stream(_req.body);
@@ -63,17 +63,14 @@ void CGIHandler::_unchunkBody()
 		{
 			chunkSize = utils::hexStrToInt(line);
 		}
-		catch (runtime_error e)
+		catch (const runtime_error &e)
 		{
 			utils::printError(e.what());
 			throw UnchunkingException();
 		}
+
+
 	}
-
-
-
-
-
 	// once the body is unchunked, update the request body, content length
 	// and strip the transfer encoding header to prevent confusion.
 	_req.body = unchunkedBody;
@@ -95,20 +92,20 @@ void CGIHandler::_setupEnv()
 	// CONTENT_LENGTH AND CONTENT_TYPE are only relevant for POST requests.
 	if (_req.method == "POST")
 	{
-		if (_req.headers.count("Content-Length"))
-			_envStrings.push_back("CONTENT_LENGTH=" + _req.headers.at("Content-Length"));
-		if (_req.headers.count("Content-Type"))
-			_envStrings.push_back("CONTENT_TYPE=" + _req.headers.at("Content-Type"));
+		if (_req.headers.count("content-length"))
+			_envStrings.push_back("CONTENT_LENGTH=" + _req.headers.at("content-length"));
+		if (_req.headers.count("content-type"))
+			_envStrings.push_back("CONTENT_TYPE=" + _req.headers.at("content-type"));
 	}
 
 	// optional but common CGI variables
 	// some headers are optional so count() will check that the header key exists
 	// before trying to access its value with at().
 	// count value will either be 0 or 1 in a map.
-	if (_req.headers.count("Host"))
-		_envStrings.push_back("HTTP_HOST=" + _req.headers.at("Host"));
-	if (_req.headers.count("User-Agent"))
-		_envStrings.push_back("HTTP_USER_AGENT=" + _req.headers.at("User-Agent"));
+	if (_req.headers.count("host"))
+		_envStrings.push_back("HTTP_HOST=" + _req.headers.at("host"));
+	if (_req.headers.count("user-agent"))
+		_envStrings.push_back("HTTP_USER_AGENT=" + _req.headers.at("user-agent"));
 
 	// convert _envStrings to C-style char* array for execve.
 	for (std::vector<string>::iterator it = _envStrings.begin(); it != _envStrings.end(); ++it)
