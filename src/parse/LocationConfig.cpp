@@ -34,7 +34,7 @@ Location::Location(const std::string &path)
 	  redirect(""),
 	  upload_store(""),
 	  autoindex(false),
-	  client_max_body_size(1 * 1024 * 1024)
+	  client_max_body_size(1 * 1024 * 1024) // 1 MB default
 {
 }
 
