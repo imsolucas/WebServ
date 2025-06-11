@@ -1,21 +1,8 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   LocationConfig.hpp                                 :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: imsolucas <imsolucas@student.42.fr>        +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/05/26 15:43:50 by imsolucas         #+#    #+#             */
-/*   Updated: 2025/05/26 15:43:50 by imsolucas        ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
+# pragma once
 
-#ifndef LOCATIONCONFIG_HPP
-#define LOCATIONCONFIG_HPP
-
-#include <string>
-#include <vector>
-#include <iostream>
+# include <string>
+# include <vector>
+# include <iostream>
 
 class LocationConfig {
 public:
@@ -64,5 +51,3 @@ private:
     size_t client_max_body_size;     // Limit for POST uploads
     std::vector<std::string> allowed_methods; // Allowed HTTP methods
 };
-
-#endif // LOCATIONCONFIG_HPP

@@ -1,25 +1,12 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Server.hpp                                         :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: imsolucas <imsolucas@student.42.fr>        +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/05/26 15:43:47 by imsolucas         #+#    #+#             */
-/*   Updated: 2025/05/27 18:12:40 by imsolucas        ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
+# pragma once
 
-#ifndef SERVER_HPP
-#define SERVER_HPP
+# include <string>
+# include <vector>
+# include <map>
+# include <iostream>
+# include <algorithm>
 
-#include <string>
-#include <vector>
-#include <map>
-#include <iostream>
-#include <algorithm>
-
-#include "LocationConfig.hpp"
+# include "LocationConfig.hpp"
 
 class Server
 {
@@ -58,7 +45,3 @@ private:
 	std::vector<LocationConfig> locations;	// All `location {}` blocks
 	std::map<int, std::string> error_pages; // Error code -> page path
 };
-
-
-
-#endif // SERVER_HPP

@@ -1,6 +1,8 @@
 # pragma once
 
+# include "ClientManager.hpp"
 # include "Config.hpp"
+# include "ListenerManager.hpp"
 
 # include <map>
 # include <poll.h>
@@ -15,99 +17,28 @@ class WebServer
 		~WebServer();
 
 		void run();
-		void stop();
-		void reload();
-		void closeAllSockets();
 
 	private:
-
-		private:
-		int port;
-		std::string server_name;
-
 		Config _cfg;
+		ListenerManager _listenerManager;
+		ClientManager _clientManager;
 
 		std::vector<pollfd> _poll;
+		size_t _pollIndex;
 
-		struct SocketMeta
-		{
-			enum Role { LISTENER, CLIENT };
-			Role type;
-			int listenerFd; // only for clients
-			int port; // only for listeners
-		};
+		void _handleListenerEvents(const pollfd &listener);
+		void _handleClientEvents(const pollfd &client);
 
-		std::map<int, SocketMeta> _socketMap;
+		static bool _noEvents(const pollfd &pollfd);
+		static bool _clientIsConnecting(const pollfd &listener);
+		static bool _clientIsDisconnected(const pollfd &client);
+		static bool _clientIsSendingData(const pollfd &client);
+		static bool _clientIsReadyToReceive(const pollfd &client);
 
-		void _init();
-		void _parse(const std::string &config);
-
-		void _handleRequest(const HttpRequest &request);
-		void _handleGET();
-		void _handlePOST();
-		void _handleDELETE();
-
-		void _removeClient(const pollfd &socket, int i);
-		void _addClient(const pollfd &socket);
-		bool _recvFromClient(const pollfd &socket, int i);
-		bool _sendToClient(const pollfd &socket, int i);
-
-		void _setUpListener(int port);
-
-		void _addToPoll(int fd, short events, short revents);
-		void _removeFromPoll(int i);
-		void _addToSocketMap(int fd, SocketMeta::Role type, int listenerFd, int port);
-		void _removeFromSocketMap(int fd);
-
-		bool _isClient(const SocketMeta &socketMeta) const;
-		bool _isListener(const SocketMeta &socketMeta) const;
-		bool _noEvents(const pollfd &socket) const;
-		bool _clientIsDisconnected(const pollfd &socket, const SocketMeta &socketMeta) const;
-		bool _clientIsConnecting(const pollfd &socket, const SocketMeta &socketMeta) const;
-		bool _clientIsSendingData(const pollfd &socket, const SocketMeta &socketMeta) const;
-		bool _clientIsReadyToReceive(const pollfd &socket, const SocketMeta &socketMeta) const;
-
-		static void printError(std::string message);
-
-		void _debugPollAndSocketMap() const;
-
-	// exceptions
 	public:
-
-		class PollException : public std::exception
+		class PollException : public std::runtime_error
 		{
 			public:
-				const char *what() const throw();
-		};
-
-		// inherit from runtime_error to customize error message
-		class SocketCreationException : public std::runtime_error
-		{
-			public:
-				SocketCreationException(const std::string &portString);
-		};
-
-		class SocketConfigException : public std::runtime_error
-		{
-			public:
-				SocketConfigException(const std::string &portString);
-		};
-
-		class SocketOptionException : public std::runtime_error
-		{
-			public:
-				SocketOptionException(const std::string &portString);
-		};
-
-		class BindException : public std::runtime_error
-		{
-			public:
-				BindException(const std::string &portString);
-		};
-
-		class ListenException : public std::runtime_error
-		{
-			public:
-				ListenException(const std::string &portString);
+				PollException();
 		};
 };
