@@ -12,10 +12,10 @@ using std::string;
 using std::runtime_error;
 
 WebServer::WebServer(const string &config)
-: _cfg(Config(config)), _listenerManager(_poll), _clientManager(_poll, _pollIndex, _cfg.getServers())
+: _servers(_parseConfig(config)), _listenerManager(_poll), _clientManager(_poll, _pollIndex, _servers)
 {
 	cout << "Parsed configuration file!\n";
-	_listenerManager._setupAllListeners(_cfg.getServers());
+	_listenerManager._setupAllListeners(_servers);
 }
 
 WebServer::~WebServer()
@@ -107,3 +107,4 @@ bool WebServer::_clientIsReadyToReceive(const pollfd &client)
 
 WebServer::PollException::PollException()
 : runtime_error("Failed to poll file descriptors.") {}
+

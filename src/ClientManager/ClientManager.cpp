@@ -272,7 +272,7 @@ const Server *ClientManager::_selectServerBlock(ClientMeta &client, const HttpRe
 
 bool ClientManager::_maxBodySizeExceeded(const ClientMeta &client)
 {
-	size_t maxBodySize = client.server->getClientMaxBodySize();
+	size_t maxBodySize = client.server->getClientMaxBodySizeInBytes();
 	size_t bodySize;
 	if (client.requestMeta.chunkedRequest)
 		bodySize = client.requestBuffer.size() - client.requestMeta.headersEnd;

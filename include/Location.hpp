@@ -4,12 +4,12 @@
 # include <vector>
 # include <iostream>
 
-class LocationConfig {
+class Location {
 public:
     // Constructors & Destructor
-    LocationConfig();
-    LocationConfig(const std::string &path);
-    ~LocationConfig();
+    Location();
+    Location(const std::string &path);
+    ~Location();
 
     // Setters
     void setPath(const std::string &path);
@@ -19,7 +19,7 @@ public:
     void setRedirect(const std::string &redirect);
     void setUploadStore(const std::string &upload_store);
     void setAutoindex(bool autoindex);
-    void setClientMaxBodySize(size_t size);
+    void setClientMaxBodySize(size_t size, const std::string &unit);
     void addAllowedMethod(const std::string &method);
     void removeAllowedMethod(const std::string &method);
     void clearAllowedMethods();
@@ -32,7 +32,7 @@ public:
     std::string getRedirect() const;
     std::string getUploadStore() const;
     bool getAutoindex() const;
-    size_t getClientMaxBodySize() const;
+    size_t getClientMaxBodySizeInBytes() const;
     std::vector<std::string> getAllowedMethods() const;
     std::string getAllowedMethodsAsString() const;
 
@@ -48,6 +48,6 @@ private:
     std::string redirect;            // e.g., "301 http://example.com"
     std::string upload_store;        // Upload destination directory
     bool autoindex;                  // Directory listing toggle
-    size_t client_max_body_size;     // Limit for POST uploads
+    std::pair<size_t, std::string> client_max_body_size; // Max body size for client requests
     std::vector<std::string> allowed_methods; // Allowed HTTP methods
 };

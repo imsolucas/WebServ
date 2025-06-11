@@ -1,19 +1,9 @@
-#include "Config.hpp"
+# include "WebServer.hpp"
 
-using std::cout;
-using std::string;
+# include <iostream>
+# include <unistd.h> // close
 
-Config::Config() : _servers() {}
-
-Config::Config(const string &config)
-{
-	readConfig(config);
-	cout << "Configuration file read successfully!\n";
-}
-
-Config::~Config() {}
-
-void Config::readConfig(const string &filePath)
+std::vector<Server> WebServer::_parseConfig(const std::string &filePath)
 {
 	std::string line;
 	std::ifstream file(filePath.c_str());
@@ -36,10 +26,15 @@ void Config::readConfig(const string &filePath)
 	std::istringstream buffer(_buffer.str());
 	std::vector<std::string> tokens = tokenize(buffer.str());
 	// printTokens(tokens);
-	parseTokens(tokens);
+	return _parseTokens(tokens);
 }
 
-void Config::printTokens(const std::vector<std::string> &tokens) const
+std::vector<Server> WebServer::getServers() const
+{
+	return _servers;
+}
+
+void WebServer::printTokens(const std::vector<std::string> &tokens) const
 {
 	for (std::vector<std::string>::const_iterator it = tokens.begin(); it != tokens.end(); ++it)
 	{
@@ -47,12 +42,7 @@ void Config::printTokens(const std::vector<std::string> &tokens) const
 	}
 }
 
-const std::vector<Server> &Config::getServers() const
-{
-	return _servers;
-}
-
-std::vector<std::string> Config::tokenize(const std::string &str)
+std::vector<std::string> WebServer::tokenize(const std::string &str)
 {
 	std::vector<std::string> tokens;
 	std::string token;
@@ -90,7 +80,7 @@ std::vector<std::string> Config::tokenize(const std::string &str)
 	return tokens;
 }
 
-void Config::parseTokens(const std::vector<std::string> &tokens)
+std::vector<Server> WebServer::_parseTokens(const std::vector<std::string> &tokens)
 {
 	size_t i = 0;
 
@@ -116,9 +106,10 @@ void Config::parseTokens(const std::vector<std::string> &tokens)
 			throw std::runtime_error("Unknown directive: " + tokens[i]);
 		}
 	}
+	return _servers;
 }
 
-Server Config::parseServerBlock(const std::vector<std::string> &tokens, size_t &i)
+Server WebServer::parseServerBlock(const std::vector<std::string> &tokens, size_t &i)
 {
 	Server server;
 
@@ -189,13 +180,25 @@ Server Config::parseServerBlock(const std::vector<std::string> &tokens, size_t &
 		{
 			if (i + 2 >= tokens.size())
 				throw std::runtime_error("Invalid 'client_max_body_size' syntax");
-			server.setClientMaxBodySize(static_cast<size_t>(atoi(tokens[i + 1].c_str())));
-			i += 3; // Move past "client_max_body_size <size>;"
+
+			size_t size = static_cast<size_t>(atoi(tokens[i + 1].c_str()));
+			std::string unit = "MB"; // Default to MB
+
+			if (tokens[i + 2] != ";") {
+				unit = tokens[i + 2];
+				i++; // Account for the unit token
+			}
+
+			server.setClientMaxBodySize(size, unit);
+			i += 2; // Skip size + optional unit
+			if (tokens[i] != ";")
+				throw std::runtime_error("Expected ';' after client_max_body_size");
+			i++; // Skip ';'
 		}
 		else if (token == "location")
 		{
 			i++; // Move past "location"
-			LocationConfig loc = parseLocationBlock(tokens, i);
+			Location loc = parseLocationBlock(tokens, i);
 			server.addLocation(loc);
 		}
 		else
@@ -206,13 +209,13 @@ Server Config::parseServerBlock(const std::vector<std::string> &tokens, size_t &
 	return server;
 }
 
-LocationConfig Config::parseLocationBlock(const std::vector<std::string> &tokens, size_t &i)
+Location WebServer::parseLocationBlock(const std::vector<std::string> &tokens, size_t &i)
 {
 	if (i >= tokens.size())
 		throw std::runtime_error("Expected location path");
 
 	std::string path = tokens[i++];
-	LocationConfig loc(path);
+	Location loc(path);
 
 	if (i >= tokens.size() || tokens[i] != "{")
 		throw std::runtime_error("Expected '{' after location path");
@@ -248,6 +251,7 @@ LocationConfig Config::parseLocationBlock(const std::vector<std::string> &tokens
 		else if (token == "limit_except")
 		{
 			i++;
+			loc.clearAllowedMethods(); // Clear previous methods
 			while (i < tokens.size() && tokens[i] != ";")
 			{
 				loc.addAllowedMethod(tokens[i]);
@@ -259,10 +263,22 @@ LocationConfig Config::parseLocationBlock(const std::vector<std::string> &tokens
 		}
 		else if (token == "client_max_body_size")
 		{
-			if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
-				throw std::runtime_error("Invalid 'client_max_body_size' syntax in location block");
-			loc.setClientMaxBodySize(static_cast<size_t>(atoi(tokens[i + 1].c_str())));
-			i += 3; // Move past "client_max_body_size <size>;"
+			if (i + 2 >= tokens.size())
+				throw std::runtime_error("Invalid 'client_max_body_size' syntax");
+
+			size_t size = static_cast<size_t>(atoi(tokens[i + 1].c_str()));
+			std::string unit = "MB"; // Default to MB
+
+			if (tokens[i + 2] != ";") {
+				unit = tokens[i + 2];
+				i++; // Account for the unit token
+			}
+
+			loc.setClientMaxBodySize(size, unit);
+			i += 2; // Skip size + optional unit
+			if (tokens[i] != ";")
+				throw std::runtime_error("Expected ';' after client_max_body_size");
+			i++; // Skip ';'
 		}
 		else if (token == "cgi_path")
 		{
