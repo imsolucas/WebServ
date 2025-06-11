@@ -13,9 +13,9 @@ using std::runtime_error;
 
 WebServer::WebServer(const string &config) : _listenerManager(_poll), _clientManager(_poll, _pollIndex)
 {
-	_cfg = Config(config);
+	_servers = _parseConfig(config);
 	cout << "Parsed configuration file!\n";
-	_listenerManager._setupAllListeners(_cfg.getServers());
+	_listenerManager._setupAllListeners(_servers);
 }
 
 WebServer::~WebServer()
@@ -107,3 +107,4 @@ bool WebServer::_clientIsReadyToReceive(const pollfd &client)
 
 WebServer::PollException::PollException()
 : runtime_error("Failed to poll file descriptors.") {}
+
