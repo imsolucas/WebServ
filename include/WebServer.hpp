@@ -20,8 +20,6 @@ class WebServer
 
 		void run();
 
-		std::vector<Server> _parseConfig(const std::string &filePath);
-
 		std::vector<Server> getServers() const;
 		void printTokens(const std::vector<std::string> &tokens) const;
 
@@ -46,6 +44,7 @@ class WebServer
 		static bool _clientIsReadyToReceive(const pollfd &client);
 
 		std::vector<Server> _parseTokens(const std::vector<std::string> &tokens);
+		std::vector<Server> _parseConfig(const std::string &filePath);
 		Server parseServerBlock(const std::vector<std::string> &tokens, size_t &i);
 		Location parseLocationBlock(const std::vector<std::string> &tokens, size_t &i);
 
