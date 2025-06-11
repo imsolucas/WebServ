@@ -12,7 +12,7 @@ using std::runtime_error;
 using std::string;
 using std::vector;
 
-CGIHandler::CGIHandler(const HttpRequest &req) : _req(req) {}
+CGIHandler::CGIHandler(HttpRequest &req) : _req(req) {}
 
 string CGIHandler::execute()
 {
@@ -58,9 +58,9 @@ void CGIHandler::_unchunkBody()
 	// getline breaks lines on "\n" by default
 	while (std::getline(stream, line))
 	{
-		if (!line.empty() && line.back() == '\r')
+		if (!line.empty() && line[line.size() - 1] == '\r')
 			// erase last character of the string ('\r') to sanitize input for hexStrToInt
-			line.pop_back();
+			line.erase(line.length() - 1);
 		size_t chunkSize = 0;
 		try
 		{

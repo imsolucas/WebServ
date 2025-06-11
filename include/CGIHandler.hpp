@@ -9,11 +9,13 @@
 class CGIHandler
 {
 	public:
-		CGIHandler(const HttpRequest &req);
+		// http request will be modified when unchunking the body
+		CGIHandler(HttpRequest &req);
 		std::string execute();
+		void _unchunkBody();
 
 	private:
-		HttpRequest _req;
+		HttpRequest &_req;
 		int _stdinPipe[2];
 		int _stdoutPipe[2];
 		// environment variables for execve
@@ -24,7 +26,6 @@ class CGIHandler
 		std::string _cgiOutput;
 
 		void _setupPipes();
-		void _unchunkBody();
 		void _addToEnv(std::string key, std::string headerField);
 		void _setupEnv();
 		void _parseRequestTarget();
