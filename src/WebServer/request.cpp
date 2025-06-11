@@ -1,33 +1,48 @@
+# include "utils.hpp"
 # include "Http.h"
 # include "WebServer.hpp"
 
+using std::vector;
+using std::string;
+using std::cout;
+
+
 void WebServer::_handleRequest(const HttpRequest &request)
 {
-	// TODO: find correct virtual server based on host
-	if (request.method == Http::GET)
-		_handleGET();
-	if (request.method == Http::POST)
-		_handlePOST();
-	if (request.method == Http::DELETE)
-		_handleDELETE();
-
-	// 2. loop through each location block and find closest matching prefix, otherwise use location /
-	// 3. use `root` directive
-
-	// 4. read and serialize the file requested in the request
+	// server matching
+	const Server &server = matchServer(request.headers.at("Host"), _cfg.getServers());
+	server.printConfig();
 }
 
-void WebServer::_handleGET()
+// TODO: match to default server correctly
+const Server &WebServer::matchServer(const string &host, const vector<Server> &servers)
 {
-
+	for (vector<Server>::const_iterator i = servers.begin();
+		i != servers.end(); ++i)
+	{
+		const vector<string> &serverNames = (*i).getServerNames();
+		for (vector<string>::const_iterator j = serverNames.begin();
+			j != serverNames.end(); ++j)
+		{
+			if (host == *j) return *i;
+		}
+	}
+	return servers[0];
 }
 
-void WebServer::_handlePOST()
+const LocationConfig &WebServer::matchURI(const string &URI, const vector<LocationConfig> &locations)
 {
-
-}
-
-void WebServer::_handleDELETE()
-{
-
+	const LocationConfig *bestMatch = &locations[0];
+	size_t matchLen = 1;
+	for (vector<LocationConfig>::const_iterator i = locations.begin();
+		i != locations.end(); ++i)
+	{
+		const string &prefix = (*i).getPath();
+		if (URI.find(prefix) == 0 && prefix.length() > matchLen)
+		{
+			bestMatch = &(*i);
+			matchLen = prefix.length();
+		}
+	}
+	return *bestMatch;
 }

@@ -12,7 +12,6 @@ static bool test_serialize_no_body();
 static bool test_serialize_with_body();
 static bool test_deserialize_get();
 static bool test_deserialize_post();
-void test_http(TestSuite &t);
 
 void test_http(TestSuite &t)
 {
@@ -22,7 +21,7 @@ void test_http(TestSuite &t)
 	t.addTest(test_deserialize_post);
 }
 
-static bool test_serialize_no_body()
+bool test_serialize_no_body()
 {
 	string message = "serialize HTTP response with no body";
 	map<string, string> headers;
@@ -44,7 +43,7 @@ static bool test_serialize_no_body()
 	return assertEqual(message, str, expected);
 }
 
-static bool test_serialize_with_body()
+bool test_serialize_with_body()
 {
 	string message = "serialize HTTP response with body";
 	string body = "Hello World !";
@@ -70,7 +69,7 @@ static bool test_serialize_with_body()
 	return assertEqual(message, str, expected);
 }
 
-static bool test_deserialize_get()
+bool test_deserialize_get()
 {
 	string message = "deserialize GET request";
 	const char *stream =
@@ -96,7 +95,7 @@ static bool test_deserialize_get()
 	return assertEqual(message, request, expected);
 }
 
-static bool test_deserialize_post()
+bool test_deserialize_post()
 {
 	string message = "deserialize POST request";
 	const char *stream =

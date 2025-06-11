@@ -7,5 +7,6 @@ int main()
 {
 	TestSuite t;
 	test_http(t);
+	test_matchURI(t);
 	t.run();
 }

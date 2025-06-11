@@ -31,5 +31,6 @@ void printHeader(const std::string &msg);
 void printSummary(unsigned int tests, unsigned int passes, unsigned int fails);
 
 void test_http(TestSuite &t);
+void test_matchURI(TestSuite &t);
 
 # include "test.tpp"
