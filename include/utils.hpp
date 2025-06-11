@@ -6,7 +6,7 @@
 
 struct utils
 {
-	// poll utils
+	// pollUtils.cpp
 	static void addToPoll(std::vector<pollfd> &poll, int fd, short events, short revents);
 	static void removeFromPoll(std::vector<pollfd> &poll, int i);
 
@@ -17,7 +17,9 @@ struct utils
 
 	static std::vector<std::string> split(const std::string &str, char delimiter);
 
+	// changeCase.cpp
 	static std::string toLower(const std::string &string);
+	static std::string toUpper(const std::string &string);
 
 	template <typename T>
 	static std::string toString(const T &any);

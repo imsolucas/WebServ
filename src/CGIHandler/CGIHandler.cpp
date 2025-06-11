@@ -8,6 +8,7 @@
 
 using std::cerr;
 using std::istringstream;
+using std::map;
 using std::runtime_error;
 using std::string;
 using std::vector;
@@ -16,8 +17,8 @@ CGIHandler::CGIHandler(HttpRequest &req) : _req(req) {}
 
 string CGIHandler::execute()
 {
-	_setupPipes();
 	_unchunkBody();
+	_setupPipes();
 	_setupEnv();
 	_childPid = fork();
 	if (_childPid < 0)
@@ -103,6 +104,9 @@ void CGIHandler::_unchunkBody()
 	_req.headers.erase("transfer-encoding");
 }
 
+// some headers are optional so count() will check that the header key exists
+// before trying to access its value with at().
+// count value will either be 0 or 1 in a map.
 void CGIHandler::_addToEnv(string key, string headerField)
 {
 	if (_req.headers.count(headerField))
@@ -123,12 +127,30 @@ void CGIHandler::_setupEnv()
 	_addToEnv("CONTENT_LENGTH", "content-length");
 	_addToEnv("CONTENT_TYPE", "content-type");
 
-	// optional but common CGI variables
-	// some headers are optional so count() will check that the header key exists
-	// before trying to access its value with at().
-	// count value will either be 0 or 1 in a map.
-	_addToEnv("HTTP_HOST", "host");
-	_addToEnv("HTTP_USER_AGENT", "user-agent");
+	// iterate throuh headers and add all of them as environment variables
+	// key format: HTTP_HOST (for "host")
+	// i.e. HTTP_ + uppercase of header name with all '-' converted to '_'
+	for (map<string, string>::iterator it = _req.headers.begin();
+		it != _req.headers.end(); ++it)
+	{
+		string key = it->first;
+
+		if (key == "content-length" || key == "content-type")
+			continue;
+
+		string envKey = "HTTP_" + utils::toUpper(key);
+
+		for (size_t i = 0; i < key.size(); ++i)
+		{
+			if (key[i] == '-')
+				key[i] = '_';
+		}
+		_addToEnv(envKey, key);
+	}
+
+	// // optional but common CGI variables
+	// _addToEnv("HTTP_HOST", "host");
+	// _addToEnv("HTTP_USER_AGENT", "user-agent");
 
 	// convert _envStrings to C-style char* array for execve.
 	for (vector<string>::iterator it = _envStrings.begin(); it != _envStrings.end(); ++it)
