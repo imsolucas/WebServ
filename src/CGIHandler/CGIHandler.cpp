@@ -30,14 +30,6 @@ string CGIHandler::execute()
 	return _cgiOutput;
 }
 
-void CGIHandler::_setupPipes()
-{
-	if (pipe(_stdinPipe) < 0)
-		throw PipeException("_stdinPipe");
-	if (pipe(_stdoutPipe) < 0)
-		throw PipeException("_stdoutPipe");
-}
-
 // Format for chunked transfer encoding as per RFC 7230
 // <chunk-size in hex>\r\n
 // <chunk-data>\r\n
@@ -104,53 +96,45 @@ void CGIHandler::_unchunkBody()
 	_req.headers.erase("transfer-encoding");
 }
 
-// some headers are optional so count() will check that the header key exists
-// before trying to access its value with at().
-// count value will either be 0 or 1 in a map.
-void CGIHandler::_addToEnv(string key, string headerField)
+void CGIHandler::_setupPipes()
 {
-	if (_req.headers.count(headerField))
-		_envStrings.push_back(key + "=" + _req.headers.at(headerField));
+	if (pipe(_stdinPipe) < 0)
+		throw PipeException("_stdinPipe");
+	if (pipe(_stdoutPipe) < 0)
+		throw PipeException("_stdoutPipe");
 }
 
 // Environment variables may remain unused, but our job is to emulate the
 // standard environment expected by CGI scripts based on the RFC.
 void CGIHandler::_setupEnv()
 {
-	// required CGI variables
 	_envStrings.push_back("REQUEST_METHOD=" + _req.method);
 	_envStrings.push_back("SERVER_PROTOCOL=" + _req.protocol);
 
+	// sets SCRIPT_NAME and QUERY_STRING
 	_parseRequestTarget();
 
-	// CONTENT_LENGTH AND CONTENT_TYPE are only relevant for POST requests.
 	_addToEnv("CONTENT_LENGTH", "content-length");
 	_addToEnv("CONTENT_TYPE", "content-type");
 
-	// iterate throuh headers and add all of them as environment variables
-	// key format: HTTP_HOST (for "host")
-	// i.e. HTTP_ + uppercase of header name with all '-' converted to '_'
+	// iterate through headers and set all of them as environment variables
+	// in the format (HTTP_ + uppercase of header name with all '-' converted to '_')
+	// e.g. "HTTP_HOST" for "host"
 	for (map<string, string>::iterator it = _req.headers.begin();
 		it != _req.headers.end(); ++it)
 	{
 		string key = it->first;
-
 		if (key == "content-length" || key == "content-type")
 			continue;
 
 		string envKey = "HTTP_" + utils::toUpper(key);
-
-		for (size_t i = 0; i < key.size(); ++i)
+		for (size_t i = 0; i < envKey.size(); ++i)
 		{
-			if (key[i] == '-')
-				key[i] = '_';
+			if (envKey[i] == '-')
+				envKey[i] = '_';
 		}
 		_addToEnv(envKey, key);
 	}
-
-	// // optional but common CGI variables
-	// _addToEnv("HTTP_HOST", "host");
-	// _addToEnv("HTTP_USER_AGENT", "user-agent");
 
 	// convert _envStrings to C-style char* array for execve.
 	for (vector<string>::iterator it = _envStrings.begin(); it != _envStrings.end(); ++it)
@@ -160,8 +144,6 @@ void CGIHandler::_setupEnv()
 	_env.push_back(NULL);
 }
 
-// Parses requestTarget and sets the SCRIPT_NAME and
-// QUERY_STRING environment variables.
 void CGIHandler::_parseRequestTarget()
 {
 	string requestTarget = _req.requestTarget;
@@ -183,6 +165,15 @@ void CGIHandler::_parseRequestTarget()
 		_envStrings.push_back("QUERY_STRING=" + queryString);
 }
 
+// some headers are optional so count() will check that the header key exists
+// before trying to access its value with at().
+// count value will either be 0 or 1 in a map.
+void CGIHandler::_addToEnv(string key, string headerField)
+{
+	if (_req.headers.count(headerField))
+		_envStrings.push_back(key + "=" + _req.headers.at(headerField));
+}
+
 // Child will call execve to execute the CGI script.
 void CGIHandler::_cgiChildProcess()
 {
@@ -199,7 +190,7 @@ void CGIHandler::_cgiChildProcess()
 
 	// TODO: MODIFY - DO NOT HARD CODE
 	// TODO: SANITIZE PATH TO PREVENT PATH TRAVERSAL AND VALIDATE THAT PATH EXISTS.
-	chdir("public/cgi-bin");
+	chdir("cgi-bin");
 
 	// ensure scriptName is not an absolute path (strip '/').
 	if (!_scriptName.empty() && _scriptName[0] == '/')

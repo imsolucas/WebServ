@@ -12,7 +12,6 @@ class CGIHandler
 		// http request will be modified when unchunking the body
 		CGIHandler(HttpRequest &req);
 		std::string execute();
-		void _unchunkBody();
 
 	private:
 		HttpRequest &_req;
@@ -25,10 +24,11 @@ class CGIHandler
 		pid_t _childPid;
 		std::string _cgiOutput;
 
+		void _unchunkBody();
 		void _setupPipes();
-		void _addToEnv(std::string key, std::string headerField);
 		void _setupEnv();
 		void _parseRequestTarget();
+		void _addToEnv(std::string key, std::string headerField);
 		void _cgiChildProcess();
 		void _cgiParentProcess();
 
