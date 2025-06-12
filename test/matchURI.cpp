@@ -15,9 +15,9 @@ void test_matchURI(TestSuite &t)
 
 bool test_no_match()
 {
-	vector<LocationConfig> locations;
-	locations.push_back(LocationConfig("/"));
+	vector<Location> locations;
+	locations.push_back(Location("/"));
 	const string URI = "/unknown/path";
-	const LocationConfig &result = WebServer::matchURI(URI, locations);
+	const Location &result = WebServer::matchURI(URI, locations);
 	return assertEqual("no matching location block", result, locations[0]);
 }

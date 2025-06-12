@@ -18,12 +18,11 @@
 # include "colors.h"
 # include "utils.hpp"
 # include "Exception.hpp"
-# include "Config.hpp"
+// # include "Config.hpp"
 # include "signal.hpp"
 # include "WebServer.hpp"
 # include "Server.hpp"
-# include "LocationConfig.hpp"
+# include "Location.hpp"
 
 // 📄 Config Path
 # define DEFAULT_CONFIG_PATH "config/default.conf"
-
