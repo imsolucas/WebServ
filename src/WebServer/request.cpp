@@ -10,7 +10,7 @@ using std::cout;
 void WebServer::_handleRequest(const HttpRequest &request)
 {
 	// server matching
-	const Server &server = matchServer(request.headers.at("Host"), _cfg.getServers());
+	const Server &server = matchServer(request.headers.at("Host"), _servers);
 	server.printConfig();
 }
 
@@ -30,14 +30,17 @@ const Server &WebServer::matchServer(const string &host, const vector<Server> &s
 	return servers[0];
 }
 
-const LocationConfig &WebServer::matchURI(const string &URI, const vector<LocationConfig> &locations)
+// does longest prefix match
+const Location &WebServer::matchURI(const string &URI, const vector<Location> &locations)
 {
-	const LocationConfig *bestMatch = &locations[0];
-	size_t matchLen = 1;
-	for (vector<LocationConfig>::const_iterator i = locations.begin();
+	const Location *bestMatch = &locations[0];
+	size_t matchLen = 0;
+	for (vector<Location>::const_iterator i = locations.begin();
 		i != locations.end(); ++i)
 	{
-		const string &prefix = (*i).getPath();
+		string prefix = (*i).getPath();
+		if (prefix != "/" && *(prefix.end() - 1) != '/')
+			prefix += "/";
 		if (URI.find(prefix) == 0 && prefix.length() > matchLen)
 		{
 			bestMatch = &(*i);
