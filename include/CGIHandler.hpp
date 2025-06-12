@@ -20,7 +20,7 @@ class CGIHandler
 		// environment variables for execve
 		std::vector<std::string> _envStrings;
 		std::vector<char *> _env;
-		std::string _scriptName;
+		std::string _virtualPath;
 		pid_t _childPid;
 		std::string _cgiOutput;
 

@@ -32,15 +32,15 @@
 // 	std::cout << req.body << std::endl;  // Should output: name=John&age=36
 // }
 
-int main()
-{
-	const char *request =
-	"GET /echo_env.py HTTP/1.1\r\n"
-	"Host: localhost\r\n"
-	"User-Agent: TestClient/1.0\r\n"
-	"Accept: */*\r\n"
-	"X-Custom-Header: custom_value\r\n"
-	"\r\n";
+// int main()
+// {
+// 	const char *request =
+// 	"GET /echo_env.py HTTP/1.1\r\n"
+// 	"Host: localhost\r\n"
+// 	"User-Agent: TestClient/1.0\r\n"
+// 	"Accept: */*\r\n"
+// 	"X-Custom-Header: custom_value\r\n"
+// 	"\r\n";
 
-	CGIHandler::testCGIHandler(request);
-}
+// 	CGIHandler::testCGIHandler(request);
+// }

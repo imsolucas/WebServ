@@ -111,11 +111,15 @@ void CGIHandler::_setupEnv()
 	_envStrings.push_back("REQUEST_METHOD=" + _req.method);
 	_envStrings.push_back("SERVER_PROTOCOL=" + _req.protocol);
 
-	// sets SCRIPT_NAME and QUERY_STRING
+	// sets PATH_INFO, SCRIPT_NAME and QUERY_STRING
 	_parseRequestTarget();
 
-	_addToEnv("CONTENT_LENGTH", "content-length");
-	_addToEnv("CONTENT_TYPE", "content-type");
+	// only set CONTENT_LENGTH and CONTENT_TYPE if there is a body
+	if (_req.body.size() > 0)
+	{
+		_addToEnv("CONTENT_LENGTH", "content-length");
+		_addToEnv("CONTENT_TYPE", "content-type");
+	}
 
 	// iterate through headers and set all of them as environment variables
 	// in the format (HTTP_ + uppercase of header name with all '-' converted to '_')
@@ -154,13 +158,15 @@ void CGIHandler::_parseRequestTarget()
 	std::size_t pos = requestTarget.find("?");
 	if (pos != std::string::npos)
 	{
-		_scriptName = requestTarget.substr(0, pos);
+		_virtualPath = requestTarget.substr(0, pos);
 		queryString = requestTarget.substr(pos + 1);
 	}
 	else
-		_scriptName = requestTarget;
+		_virtualPath = requestTarget;
 
-	_envStrings.push_back("SCRIPT_NAME=" + _scriptName);
+	// subject expects us to use the full path as PATH_INFO.
+	_envStrings.push_back("PATH_INFO=" + _virtualPath);
+	_envStrings.push_back("SCRIPT_NAME=" + _virtualPath);
 	if (queryString != "")
 		_envStrings.push_back("QUERY_STRING=" + queryString);
 }
@@ -188,18 +194,28 @@ void CGIHandler::_cgiChildProcess()
 	close(_stdinPipe[0]);
 	close(_stdoutPipe[1]);
 
-	// TODO: MODIFY - DO NOT HARD CODE
-	// TODO: SANITIZE PATH TO PREVENT PATH TRAVERSAL AND VALIDATE THAT PATH EXISTS.
-	chdir("cgi-bin");
-
-	// ensure scriptName is not an absolute path (strip '/').
-	if (!_scriptName.empty() && _scriptName[0] == '/')
-		_scriptName = _scriptName.substr(1);
+	size_t lastSlash = _virtualPath.find_last_of('/');
+	string scriptDir, scriptFile;
+	// no slashes mean relative path was given e.g. hello.py
+	if (lastSlash == string::npos)
+	{
+		scriptDir = ".";
+		scriptFile = _virtualPath;
+	}
+	// handles for /dir/hello.py, dir/hello.py and /hello.py
+	else
+	{
+		scriptDir = _virtualPath.substr(0, lastSlash);
+		if (scriptDir.empty())
+			scriptDir = "/";
+		scriptFile = _virtualPath.substr(lastSlash + 1);
+	}
+	chdir(scriptDir.c_str());
 
 	// CGI scripts usually don’t expect command-line arguments
-	char *arg[] = { (char *)_scriptName.c_str(), NULL };
+	char *arg[] = { (char *)scriptFile.c_str(), NULL };
 	char * const *envp = &_env[0];
-	execve(_scriptName.c_str(), arg, envp);
+	execve(scriptFile.c_str(), arg, envp);
 	// exit with status code 1 if execve fails
 	// exit and _exit are different in C++.
 	// exit will call destructors for global/static objects and may cause double-closing of fds.
