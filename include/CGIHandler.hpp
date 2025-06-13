@@ -11,7 +11,8 @@ class CGIHandler
 	public:
 		// http request will be modified when unchunking the body
 		CGIHandler(HttpRequest &req);
-		std::string execute();
+		int execute();
+		const std::string &getCGIOutput() const;
 
 	private:
 		HttpRequest &_req;
@@ -28,11 +29,17 @@ class CGIHandler
 		void _setupPipes();
 		void _setupEnv();
 		void _parseRequestTarget();
-		void _addToEnv(std::string key, std::string headerField);
+		void _addHeaderToEnv(std::string key, std::string headerField);
 		void _cgiChildProcess();
 		void _cgiParentProcess();
 
 	public:
+		class UnchunkingException : public std::runtime_error
+		{
+			public:
+				UnchunkingException();
+		};
+
 		class PipeException : public std::runtime_error
 		{
 			public:
@@ -45,16 +52,22 @@ class CGIHandler
 				ForkException();
 		};
 
-		class UnchunkingException : public std::runtime_error
+		class ScriptNotFoundException : public std::runtime_error
 		{
 			public:
-				UnchunkingException();
+				ScriptNotFoundException();
 		};
 
-		class ExecveException : public std::runtime_error
+		class ScriptPermissionDeniedException : public std::runtime_error
 		{
 			public:
-				ExecveException();
+				ScriptPermissionDeniedException();
+		};
+
+		class ScriptExecutionFailureException : public std::runtime_error
+		{
+			public:
+				ScriptExecutionFailureException();
 		};
 
 		static void testCGIHandler(const std::string &stream);

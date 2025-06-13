@@ -13,21 +13,49 @@ using std::runtime_error;
 using std::string;
 using std::vector;
 
-CGIHandler::CGIHandler(HttpRequest &req) : _req(req) {}
+CGIHandler::CGIHandler(HttpRequest &req) : _req(req), _cgiOutput() {}
 
-string CGIHandler::execute()
+int CGIHandler::execute()
 {
-	_unchunkBody();
-	_setupPipes();
-	_setupEnv();
-	_childPid = fork();
-	if (_childPid < 0)
-		throw ForkException();
-	else if (_childPid == 0)
-		_cgiChildProcess();
-	else
-		_cgiParentProcess();
-	return _cgiOutput;
+	try
+	{
+		_unchunkBody();
+		_setupPipes();
+		_setupEnv();
+		_childPid = fork();
+		if (_childPid < 0)
+			throw ForkException();
+		else if (_childPid == 0)
+			_cgiChildProcess();
+		else
+			_cgiParentProcess();
+		return 0;
+	}
+	catch (const UnchunkingException& e)
+	{
+		utils::printError(e.what());
+		return BAD_REQUEST;
+	}
+	catch (const PipeException& e)
+	{
+		utils::printError(e.what());
+		return INTERNAL_SERVER_ERROR;
+	}
+	catch (const ForkException& e)
+	{
+		utils::printError(e.what());
+		return INTERNAL_SERVER_ERROR;
+	}
+	catch (const std::exception& e)
+	{
+		utils::printError(e.what());
+		return INTERNAL_SERVER_ERROR;
+	}
+}
+
+const std::string &CGIHandler::getCGIOutput() const
+{
+	return this->_cgiOutput;
 }
 
 // Format for chunked transfer encoding as per RFC 7230
@@ -45,8 +73,7 @@ void CGIHandler::_unchunkBody()
 		return;
 
 	istringstream stream(_req.body);
-	string line;
-	string unchunkedBody;
+	string line, unchunkedBody;
 
 	// getline breaks lines on "\n" by default
 	while (std::getline(stream, line))
@@ -117,8 +144,8 @@ void CGIHandler::_setupEnv()
 	// only set CONTENT_LENGTH and CONTENT_TYPE if there is a body
 	if (_req.body.size() > 0)
 	{
-		_addToEnv("CONTENT_LENGTH", "content-length");
-		_addToEnv("CONTENT_TYPE", "content-type");
+		_addHeaderToEnv("CONTENT_LENGTH", "content-length");
+		_addHeaderToEnv("CONTENT_TYPE", "content-type");
 	}
 
 	// iterate through headers and set all of them as environment variables
@@ -137,7 +164,7 @@ void CGIHandler::_setupEnv()
 			if (envKey[i] == '-')
 				envKey[i] = '_';
 		}
-		_addToEnv(envKey, key);
+		_addHeaderToEnv(envKey, key);
 	}
 
 	// convert _envStrings to C-style char* array for execve.
@@ -174,7 +201,7 @@ void CGIHandler::_parseRequestTarget()
 // some headers are optional so count() will check that the header key exists
 // before trying to access its value with at().
 // count value will either be 0 or 1 in a map.
-void CGIHandler::_addToEnv(string key, string headerField)
+void CGIHandler::_addHeaderToEnv(string key, string headerField)
 {
 	if (_req.headers.count(headerField))
 		_envStrings.push_back(key + "=" + _req.headers.at(headerField));
@@ -216,11 +243,18 @@ void CGIHandler::_cgiChildProcess()
 	char *arg[] = { (char *)scriptFile.c_str(), NULL };
 	char * const *envp = &_env[0];
 	execve(scriptFile.c_str(), arg, envp);
-	// exit with status code 1 if execve fails
 	// exit and _exit are different in C++.
 	// exit will call destructors for global/static objects and may cause double-closing of fds.
 	// _exit will terminate the child process without touching the parent's runtime state.
-	_exit(1);
+	if (errno == ENOENT)
+		// script not found
+		_exit(127);
+	else if (errno == EACCES)
+		// permission denied
+		_exit(126);
+	else
+		// generic failure
+		_exit(EXIT_FAILURE);
 }
 
 // Parent will pipe POST request body to stdin of child then assemble CGI output from stdout of child.
@@ -253,9 +287,24 @@ void CGIHandler::_cgiParentProcess()
 	// if child returns 1, throw exception.
 	// WIFEXITED(status) returns true if the child terminated normally via exit().
 	// WEXITSTATUS(status) only gives the actual exit code if WIFEXITED(status) is true.
-	if (WIFEXITED(status) && WEXITSTATUS(status) == 1)
-		throw ExecveException();
+	if (WIFEXITED(status))
+	{
+		int exitStatus = WEXITSTATUS(status);
+		if (exitStatus == 127)
+			throw ScriptNotFoundException();
+		else if (exitStatus == 126)
+			throw ScriptPermissionDeniedException();
+		else if (exitStatus != 0)
+			throw ScriptExecutionFailureException();
+	}
+	else if (WIFSIGNALED(status))
+		throw ScriptExecutionFailureException();
+
+
 }
+
+CGIHandler::UnchunkingException::UnchunkingException()
+: runtime_error("CGI: Failed to unchunk request body.") {}
 
 CGIHandler::PipeException::PipeException(string pipe)
 : runtime_error("CGI: Failed to create pipe: " + pipe + ".") {}
@@ -263,11 +312,14 @@ CGIHandler::PipeException::PipeException(string pipe)
 CGIHandler::ForkException::ForkException()
 : runtime_error("CGI: Failed to fork child process.") {}
 
-CGIHandler::UnchunkingException::UnchunkingException()
-: runtime_error("CGI: Failed to unchunk request body.") {}
+CGIHandler::ScriptNotFoundException::ScriptNotFoundException()
+: runtime_error("CGI: Script not found (ENOENT).") {}
 
-CGIHandler::ExecveException::ExecveException()
-: runtime_error("CGI: Failed to execute script.") {}
+CGIHandler::ScriptPermissionDeniedException::ScriptPermissionDeniedException()
+: runtime_error("CGI: Script permission denied (EACCES).") {}
+
+CGIHandler::ScriptExecutionFailureException::ScriptExecutionFailureException()
+: runtime_error("CGI: Script failed to execute (execve failure).") {}
 
 void CGIHandler::testCGIHandler(const string &stream)
 {
