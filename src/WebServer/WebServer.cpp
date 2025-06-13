@@ -11,9 +11,9 @@ using std::cout;
 using std::string;
 using std::runtime_error;
 
-WebServer::WebServer(const string &config) : _listenerManager(_poll), _clientManager(_poll, _pollIndex)
+WebServer::WebServer(const string &config)
+: _servers(_parseConfig(config)), _listenerManager(_poll), _clientManager(_poll, _pollIndex, _servers)
 {
-	_servers = _parseConfig(config);
 	cout << "Parsed configuration file!\n";
 	_listenerManager._setupAllListeners(_servers);
 }

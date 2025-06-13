@@ -82,6 +82,7 @@ std::vector<std::string> WebServer::tokenize(const std::string &str)
 
 std::vector<Server> WebServer::_parseTokens(const std::vector<std::string> &tokens)
 {
+	std::vector<Server> servers;
 	size_t i = 0;
 
 	while (i < tokens.size())
@@ -99,14 +100,14 @@ std::vector<Server> WebServer::_parseTokens(const std::vector<std::string> &toke
 			++i; // Move past '{'
 			Server server = parseServerBlock(tokens, i);
 			server.printConfig();
-			_servers.push_back(server);
+			servers.push_back(server);
 		}
 		else
 		{
 			throw std::runtime_error("Unknown directive: " + tokens[i]);
 		}
 	}
-	return _servers;
+	return servers;
 }
 
 Server WebServer::parseServerBlock(const std::vector<std::string> &tokens, size_t &i)
@@ -213,13 +214,13 @@ Location WebServer::parseLocationBlock(const std::vector<std::string> &tokens, s
 {
 	if (i >= tokens.size())
 		throw std::runtime_error("Expected location path");
-	
+
 	std::string path = tokens[i++];
 	Location loc(path);
 
 	if (i >= tokens.size() || tokens[i] != "{")
 		throw std::runtime_error("Expected '{' after location path");
-	
+
 	++i; // Move past '{'
 	while (i < tokens.size())
 	{

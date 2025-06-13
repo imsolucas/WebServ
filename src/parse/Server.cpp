@@ -1,4 +1,3 @@
-
 #include "Server.hpp"
 #include "colors.h"
 
@@ -10,10 +9,9 @@ using std::string;
 using std::cout;
 using std::cerr;
 
-Server::Server() : root("/var/www/html"),
-				   client_max_body_size(pair<size_t, string>(1, "MB")) // 1 MB default
-{
-}
+Server::Server()
+: root("/var/www/html"), client_max_body_size(std::pair<size_t, std::string>(1, "MB")) {} // 1 MB default
+
 Server::~Server() {}
 
 void Server::addPort(int port)
@@ -132,7 +130,7 @@ void Server::printConfig() const {
 
 	cout << BOLD << MAGENTA << "Client Max Body Size: " << GREEN
 			  << client_max_body_size.first << " " << client_max_body_size.second
-			  << RESET << '\n';
+			  << RESET << std::endl;
 
 	if (!error_pages.empty()) {
 		cout << BOLD << MAGENTA << "Error Pages: " << RESET << '\n';
@@ -141,7 +139,7 @@ void Server::printConfig() const {
 		}
 	}
 
-	cout << '\n';
+	std::cout << std::endl;
 
 	if (!locations.empty()) {
 		cout << BOLD << CYAN << "--- Locations ---" << RESET << '\n';
