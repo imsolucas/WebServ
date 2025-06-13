@@ -14,6 +14,7 @@ struct utils
 	static std::string toString(const T &any);
 
 	static std::vector<std::string> split(const std::string &str, char delimiter);
+	static std::string toLowerStr(const std::string &str);
 
 	static void printError(std::string message);
 };
