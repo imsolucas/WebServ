@@ -2,6 +2,7 @@
 # include "colors.h"
 # include "utils.hpp"
 
+# include <cerrno> // errno
 # include <iostream>
 # include <sys/wait.h> // waitpid
 # include <unistd.h> // close, dup2, execve, _exit, fork, pipe
@@ -268,7 +269,7 @@ void CGIHandler::_cgiChildProcess()
 		_exit(126);
 	else
 		// generic failure
-		_exit(EXIT_FAILURE);
+		_exit(1);
 }
 
 // Parent will pipe POST request body to stdin of child then assemble CGI output from stdout of child.
@@ -285,16 +286,17 @@ void CGIHandler::_cgiParentProcess()
 	// signal EOF for child process to start reading.
 	close(_stdinPipe[1]);
 
+	// timeout should happen before reading from stdout because read()
+	// will block if the script loops forever.
+	_resolveChildStatus();
+
 	char buffer[1024];
 	ssize_t bytesRead;
-	// actively drain the pipe otherwise child will block on write() when pipe is full.
 	while ((bytesRead = read(_stdoutPipe[0], buffer, sizeof(buffer))) > 0)
 		// string& append (const char* s, size_t n);
 		_cgiOutput.append(buffer, bytesRead);
 	// close pipe after reading complete.
 	close(_stdoutPipe[0]);
-
-	_resolveChildStatus();
 }
 
 // This function will wait on the child process and throw exceptions if the child exited
