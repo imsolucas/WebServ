@@ -38,11 +38,11 @@ public:
 	void printConfig() const;
 
 private:
-	std::vector<int> ports;				   // e.g., 8080, 8081
-	std::vector<std::string> server_names; // e.g., "example.com"
-	std::string root;					   // e.g., "/var/www/html"
-	std::vector<std::string> indexes;
-	std::pair<size_t, std::string> client_max_body_size;			// e.g., "index.html"
-	std::vector<Location> locations;	// All `location {}` blocks
+	std::vector<int> ports;					// e.g., 8080, 8081
+	std::vector<std::string> server_names;	// e.g., "example.com"
+	std::string root;					 	// e.g., "/var/www/html"
+	std::vector<std::string> indexes;		// e.g., "index.html"
+	std::pair<size_t, std::string> client_max_body_size;
+	std::vector<Location> locations;		// All `location {}` blocks
 	std::map<int, std::string> error_pages; // Error code -> page path
 };

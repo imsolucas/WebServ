@@ -1,9 +1,9 @@
 # pragma once
 
 # include "ClientManager.hpp"
-# include "Server.hpp"
-# include "Location.hpp"
 # include "ListenerManager.hpp"
+# include "Location.hpp"
+# include "Server.hpp"
 
 # include <sstream>
 # include <stdexcept>
@@ -26,13 +26,12 @@ class WebServer
 		std::vector<std::string> tokenize(const std::string &str);
 
 	private:
-		// Config _cfg;
 		std::vector<Server> _servers;
 		std::vector<pollfd> _poll;
+		size_t _pollIndex;
+
 		ListenerManager _listenerManager;
 		ClientManager _clientManager;
-
-		size_t _pollIndex;
 
 		void _handleListenerEvents(const pollfd &listener);
 		void _handleClientEvents(const pollfd &client);

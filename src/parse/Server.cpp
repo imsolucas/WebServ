@@ -1,11 +1,9 @@
-
 #include "Server.hpp"
 #include "colors.h"
 
-Server::Server() : root("/var/www/html"),
-				   client_max_body_size(std::pair<size_t, std::string>(1, "MB")) // 1 MB default
-{
-}
+Server::Server()
+: root("/var/www/html"), client_max_body_size(std::pair<size_t, std::string>(1, "MB")) {} // 1 MB default
+
 Server::~Server() {}
 
 void Server::addPort(int port)
@@ -32,7 +30,7 @@ void Server::setClientMaxBodySize(size_t size, const std::string &unit)
 {
 	client_max_body_size.first = size;
 	// client_max_body_size.second = unit;
-	
+
 	if (unit == "KB" || unit == "kb")
 		client_max_body_size.second = "KB";
 	else if (unit == "MB" || unit == "mb")
@@ -125,14 +123,14 @@ void Server::printConfig() const {
 	std::cout << BOLD << MAGENTA << "Client Max Body Size: " << GREEN
 			  << client_max_body_size.first << " " << client_max_body_size.second
 			  << RESET << std::endl;
-	
+
 	if (!error_pages.empty()) {
 		std::cout << BOLD << MAGENTA << "Error Pages: " << RESET << std::endl;
 		for (std::map<int, std::string>::const_iterator it = error_pages.begin(); it != error_pages.end(); ++it) {
 			std::cout << "  " << it->first << " => " << it->second << std::endl;
 		}
 	}
-	
+
 	std::cout << std::endl;
 
 	if (!locations.empty()) {
