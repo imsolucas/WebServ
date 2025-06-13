@@ -4,11 +4,11 @@
 # include "utils.hpp"
 # include "Http.h"
 
-using std::string;
-using std::ostream;
-using std::istringstream;
 using std::vector;
 using std::map;
+using std::istringstream;
+using std::ostream;
+using std::string;
 using std::cout;
 using std::getline;
 

@@ -11,6 +11,9 @@ struct utils
 	static void removeFromPoll(std::vector<pollfd> &poll, int i);
 
 	template <typename T>
+	static bool contains(const T &element, const std::vector<T> &vec);
+
+	template <typename T>
 	static std::string toString(const T &any);
 
 	static std::vector<std::string> split(const std::string &str, char delimiter);
@@ -20,3 +23,4 @@ struct utils
 };
 
 # include "../src/utils/string.tpp"
+# include "../src/utils/utils.tpp"

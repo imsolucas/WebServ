@@ -1,9 +1,10 @@
 # pragma once
 
-# include "ClientManager.hpp"
 # include "Server.hpp"
 # include "Location.hpp"
 # include "ListenerManager.hpp"
+# include "ClientManager.hpp"
+# include "Http.h"
 
 # include <sstream>
 # include <stdexcept>
@@ -11,8 +12,6 @@
 # include <map>
 # include <poll.h>
 # include <vector>
-
-struct HttpRequest;
 
 class WebServer
 {
@@ -29,6 +28,7 @@ class WebServer
 
 		static const Server &matchServer(const std::string &host, const std::vector<Server> &servers);
 		static const Location &matchURI(const std::string &URI, const std::vector<Location> &locations);
+		static HttpResponse handleError(StatusCode code);
 
 	private:
 		// Config _cfg;
@@ -40,6 +40,7 @@ class WebServer
 		size_t _pollIndex;
 
 		void _handleRequest(const HttpRequest &request);
+		HttpResponse _buildResponse();
 
 		void _handleListenerEvents(const pollfd &listener);
 		void _handleClientEvents(const pollfd &client);

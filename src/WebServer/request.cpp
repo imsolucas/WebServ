@@ -9,12 +9,24 @@ using std::cout;
 
 void WebServer::_handleRequest(const HttpRequest &request)
 {
-	// server matching
+	StatusCode code = OK;
 	const Server &server = matchServer(request.headers.at("Host"), _servers);
-	server.printConfig();
+	const Location &location = matchURI(request.requestTarget, server.getLocations());
+	if (!utils::contains(request.method, location.getAllowedMethods()))
+	{
+		handleError(METHOD_NOT_ALLOWED);
+		return;
+	}
 }
 
-// TODO: match to default server correctly
+HttpResponse WebServer::_buildResponse()
+{
+	HttpResponse response;
+
+	return response;
+}
+
+// TODO: remove this once merged Eu Ting's CGI PR
 const Server &WebServer::matchServer(const string &host, const vector<Server> &servers)
 {
 	for (vector<Server>::const_iterator i = servers.begin();
@@ -48,4 +60,9 @@ const Location &WebServer::matchURI(const string &URI, const vector<Location> &l
 		}
 	}
 	return *bestMatch;
+}
+
+HttpResponse WebServer::handleError(StatusCode code)
+{
+	
 }
