@@ -10,17 +10,17 @@ struct utils
 	static void addToPoll(std::vector<pollfd> &poll, int fd, short events, short revents);
 	static void removeFromPoll(std::vector<pollfd> &poll, int i);
 
-	static int hexStrToInt(const std::string& hexStr);
-
+	// printError.cpp
 	static void printError(std::string message);
 	static void printError(const char* message);
 
-	static std::vector<std::string> split(const std::string &str, char delimiter);
-
-	// changeCase.cpp
+	// string.cpp
+	static int hexStrToInt(const std::string& hexStr);
 	static std::string toLower(const std::string &string);
 	static std::string toUpper(const std::string &string);
+	static std::vector<std::string> split(const std::string &str, char delimiter);
 
+	// string.tpp
 	template <typename T>
 	static std::string toString(const T &any);
 };
