@@ -15,6 +15,9 @@ using std::vector;
 
 CGIHandler::CGIHandler(HttpRequest &req) : _req(req), _cgiOutput() {}
 
+// If CGI executed successfully, function will return 0.
+// getCGIOutput can then be called to get the CGI output as a string.
+// Otherwise, it will return the HTTP status code for any errors.
 int CGIHandler::execute()
 {
 	try
@@ -24,7 +27,7 @@ int CGIHandler::execute()
 		_setupEnv();
 		_childPid = fork();
 		if (_childPid < 0)
-			throw ForkException();
+			throw runtime_error("CGI: Failed to fork child process.");
 		else if (_childPid == 0)
 			_cgiChildProcess();
 		else
@@ -36,16 +39,27 @@ int CGIHandler::execute()
 		utils::printError(e.what());
 		return BAD_REQUEST;
 	}
-	catch (const PipeException& e)
+	catch (const ScriptNotFoundException& e)
 	{
 		utils::printError(e.what());
-		return INTERNAL_SERVER_ERROR;
+		return NOT_FOUND;
 	}
-	catch (const ForkException& e)
+	catch (const ScriptPermissionDeniedException& e)
 	{
 		utils::printError(e.what());
-		return INTERNAL_SERVER_ERROR;
+		return FORBIDDEN;
 	}
+	catch (const AbnormalTerminationException& e)
+	{
+		utils::printError(e.what());
+		return BAD_GATEWAY;
+	}
+	catch (const TimeoutException& e)
+	{
+		utils::printError(e.what());
+		return GATEWAY_TIMEOUT;
+	}
+	// catches for pipe, fork and waitpid exceptions
 	catch (const std::exception& e)
 	{
 		utils::printError(e.what());
@@ -86,7 +100,7 @@ void CGIHandler::_unchunkBody()
 		{
 			chunkSize = utils::hexStrToInt(line);
 		}
-		catch (const runtime_error &e)
+		catch (const std::exception& e)
 		{
 			utils::printError(e.what());
 			throw UnchunkingException();
@@ -126,9 +140,9 @@ void CGIHandler::_unchunkBody()
 void CGIHandler::_setupPipes()
 {
 	if (pipe(_stdinPipe) < 0)
-		throw PipeException("_stdinPipe");
+		throw runtime_error("CGI: Failed to create pipe: _stdinPipe.");
 	if (pipe(_stdoutPipe) < 0)
-		throw PipeException("_stdoutPipe");
+		throw runtime_error("CGI: Failed to create pipe: _stdoutPipe.");
 }
 
 // Environment variables may remain unused, but our job is to emulate the
@@ -280,11 +294,38 @@ void CGIHandler::_cgiParentProcess()
 	// close pipe after reading complete.
 	close(_stdoutPipe[0]);
 
-	int status;
-	// wait for child's exit status to check that CGI script was successfully executed.
-	waitpid(_childPid, &status, 0);
+	_resolveChildStatus();
+}
 
-	// if child returns 1, throw exception.
+// This function will wait on the child process and throw exceptions if the child exited
+// with non-zero exit status or timed out.
+void CGIHandler::_resolveChildStatus()
+{
+	int status;
+	int msElapsed = 0;
+
+	while (msElapsed < TIMEOUT_MS)
+	{
+		// wait for child's exit status to check that CGI script was successfully executed.
+		// WNOHANG means waitpid is non-blocking and will immediately return if no child has exited.
+		pid_t exited = waitpid(_childPid, &status, WNOHANG);
+		if (exited < 0)
+			throw runtime_error("CGI: Failed to wait for child process.");
+		// > 0 means the child exited
+		else if (exited > 0)
+			break;
+		// sleep for 1ms
+		usleep(1000);
+		++msElapsed;
+	}
+
+	// if CGI has timed out, kill the child process.
+	if (msElapsed >= TIMEOUT_MS)
+	{
+		kill(_childPid, SIGKILL);
+		throw TimeoutException();
+	}
+
 	// WIFEXITED(status) returns true if the child terminated normally via exit().
 	// WEXITSTATUS(status) only gives the actual exit code if WIFEXITED(status) is true.
 	if (WIFEXITED(status))
@@ -295,22 +336,15 @@ void CGIHandler::_cgiParentProcess()
 		else if (exitStatus == 126)
 			throw ScriptPermissionDeniedException();
 		else if (exitStatus != 0)
-			throw ScriptExecutionFailureException();
+			throw AbnormalTerminationException();
 	}
+	// child was terminated by signal e.g.SIGSEGV, SIGKILL
 	else if (WIFSIGNALED(status))
-		throw ScriptExecutionFailureException();
-
-
+		throw AbnormalTerminationException();
 }
 
 CGIHandler::UnchunkingException::UnchunkingException()
 : runtime_error("CGI: Failed to unchunk request body.") {}
-
-CGIHandler::PipeException::PipeException(string pipe)
-: runtime_error("CGI: Failed to create pipe: " + pipe + ".") {}
-
-CGIHandler::ForkException::ForkException()
-: runtime_error("CGI: Failed to fork child process.") {}
 
 CGIHandler::ScriptNotFoundException::ScriptNotFoundException()
 : runtime_error("CGI: Script not found (ENOENT).") {}
@@ -318,8 +352,12 @@ CGIHandler::ScriptNotFoundException::ScriptNotFoundException()
 CGIHandler::ScriptPermissionDeniedException::ScriptPermissionDeniedException()
 : runtime_error("CGI: Script permission denied (EACCES).") {}
 
-CGIHandler::ScriptExecutionFailureException::ScriptExecutionFailureException()
-: runtime_error("CGI: Script failed to execute (execve failure).") {}
+// for non-zero exits and signal crash
+CGIHandler::AbnormalTerminationException::AbnormalTerminationException()
+: runtime_error("CGI: Child process terminated abnormally.") {}
+
+CGIHandler::TimeoutException::TimeoutException()
+: runtime_error("CGI: Child process has timed out.") {}
 
 void CGIHandler::testCGIHandler(const string &stream)
 {
@@ -346,6 +384,11 @@ void CGIHandler::testCGIHandler(const string &stream)
 	HttpRequest request = deserialize(stream);
 
 	CGIHandler cgi(request);
-	string cgiOutput = cgi.execute();
-	std::cout << "\nCGI Output: \n" << cgiOutput << std::endl;
+	int status = cgi.execute();
+	string cgiOutput;
+	if (status == 0)
+	{
+		cgiOutput = cgi.getCGIOutput();
+		std::cout << "\nCGI Output: \n" << cgiOutput << std::endl;
+	}
 }

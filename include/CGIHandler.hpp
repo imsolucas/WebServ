@@ -6,6 +6,9 @@
 # include <string>
 # include <vector>
 
+// 2-second timeout window for CGI scripts to execute
+# define TIMEOUT_MS 2000
+
 class CGIHandler
 {
 	public:
@@ -32,24 +35,13 @@ class CGIHandler
 		void _addHeaderToEnv(std::string key, std::string headerField);
 		void _cgiChildProcess();
 		void _cgiParentProcess();
+		void _resolveChildStatus();
 
 	public:
 		class UnchunkingException : public std::runtime_error
 		{
 			public:
 				UnchunkingException();
-		};
-
-		class PipeException : public std::runtime_error
-		{
-			public:
-				PipeException(std::string pipe);
-		};
-
-		class ForkException : public std::runtime_error
-		{
-			public:
-				ForkException();
 		};
 
 		class ScriptNotFoundException : public std::runtime_error
@@ -64,10 +56,16 @@ class CGIHandler
 				ScriptPermissionDeniedException();
 		};
 
-		class ScriptExecutionFailureException : public std::runtime_error
+		class AbnormalTerminationException : public std::runtime_error
 		{
 			public:
-				ScriptExecutionFailureException();
+				AbnormalTerminationException();
+		};
+
+		class TimeoutException : public std::runtime_error
+		{
+			public:
+				TimeoutException();
 		};
 
 		static void testCGIHandler(const std::string &stream);
