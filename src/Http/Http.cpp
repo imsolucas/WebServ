@@ -6,11 +6,29 @@
 
 using std::vector;
 using std::map;
+using std::pair;
 using std::istringstream;
 using std::ostream;
 using std::string;
 using std::cout;
 using std::getline;
+
+const pair<StatusCode, string> statusTextArray[] = {
+	pair<StatusCode, string>(OK, "OK"),
+	pair<StatusCode, string>(CREATED, "Created"),
+	pair<StatusCode, string>(NO_CONTENT, "No Content"),
+	pair<StatusCode, string>(MOVED_PERMANENTLY, "Moved Permanently"),
+	pair<StatusCode, string>(BAD_REQUEST, "Bad Request"),
+	pair<StatusCode, string>(UNAUTHORIZED, "Unauthorized"),
+	pair<StatusCode, string>(FORBIDDEN, "Forbidden"),
+	pair<StatusCode, string>(NOT_FOUND, "Not Found"),
+	pair<StatusCode, string>(METHOD_NOT_ALLOWED, "Method Not Allowed"),
+	pair<StatusCode, string>(CONTENT_TOO_LARGE, "Content Too Large"),
+	pair<StatusCode, string>(INTERNAL_SERVER_ERROR, "Internal Server Error"),
+	pair<StatusCode, string>(BAD_GATEWAY, "Bad Gateway")
+};
+
+const map<StatusCode, string> Http::statusText(statusTextArray, statusTextArray + sizeof(statusTextArray)/sizeof(statusTextArray[0]));
 
 static HttpRequest parse(HttpMessage message);
 static HttpMessage decode(string stream);

@@ -23,7 +23,8 @@ enum StatusCode
 
 namespace Http
 {
-	// TODO: create statusText map
+	extern const std::map<StatusCode, std::string> statusText;
+	
 	const std::string GET = "GET";
 	const std::string POST = "POST";
 	const std::string DELETE = "DELETE";
