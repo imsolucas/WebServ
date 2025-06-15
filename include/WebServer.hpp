@@ -26,9 +26,6 @@ class WebServer
 
 		std::vector<std::string> tokenize(const std::string &str);
 
-		static const Location &matchURI(const std::string &URI, const std::vector<Location> &locations);
-		static HttpResponse handleError(StatusCode code);
-
 	private:
 		std::vector<Server> _servers;
 		std::vector<pollfd> _poll;
@@ -36,9 +33,6 @@ class WebServer
 
 		ListenerManager _listenerManager;
 		ClientManager _clientManager;
-
-		void _handleRequest(const HttpRequest &request);
-		HttpResponse _buildResponse();
 
 		void _handleListenerEvents(const pollfd &listener);
 		void _handleClientEvents(const pollfd &client);

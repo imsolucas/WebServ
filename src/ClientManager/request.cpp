@@ -1,25 +1,24 @@
 # include "utils.hpp"
 # include "Http.h"
-# include "WebServer.hpp"
+# include "ClientManager.hpp"
 
 using std::vector;
 using std::string;
 using std::cout;
 
 
-void WebServer::_handleRequest(const HttpRequest &request)
+void ClientManager::_handleRequest(const ClientMeta &client)
 {
-	(void)request;
-	// StatusCode code = OK;
-	// const Location &location = matchURI(request.requestTarget, server.getLocations());
-	// if (!utils::contains(request.method, location.getAllowedMethods()))
-	// {
-	// 	handleError(METHOD_NOT_ALLOWED);
-	// 	return;
-	// }
+	HttpRequest request = deserialize(client.requestBuffer);
+	const Location &location = matchURI(request.requestTarget, client.server->getLocations());
+	if (!utils::contains(request.method, location.getAllowedMethods()))
+	{
+		handleError(METHOD_NOT_ALLOWED);
+		return;
+	}
 }
 
-HttpResponse WebServer::_buildResponse()
+HttpResponse ClientManager::_buildResponse()
 {
 	HttpResponse response;
 
@@ -27,7 +26,7 @@ HttpResponse WebServer::_buildResponse()
 }
 
 // does longest prefix match
-const Location &WebServer::matchURI(const string &URI, const vector<Location> &locations)
+const Location &ClientManager::matchURI(const string &URI, const vector<Location> &locations)
 {
 	const Location *bestMatch = &locations[0];
 	size_t matchLen = 0;
@@ -46,11 +45,12 @@ const Location &WebServer::matchURI(const string &URI, const vector<Location> &l
 	return *bestMatch;
 }
 
-HttpResponse WebServer::handleError(StatusCode code)
+HttpResponse ClientManager::handleError(StatusCode code)
 {
 	HttpResponse response;
 
 	response.statusCode = code;
+	response.statusText = Http::statusText.find(code)->second;
 
 	return response;
 }
