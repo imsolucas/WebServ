@@ -48,7 +48,7 @@ class ClientManager
 
 		bool isClient(int fd);
 
-		HttpResponse buildResponse(const HttpRequest &request, const std::vector<Location> &locations);
+		static HttpResponse buildResponse(HttpRequest &request, const std::string &file);
 		static const Location &matchURI(const std::string &URI, const std::vector<Location> &locations);
 		static HttpResponse handleError(StatusCode code);
 

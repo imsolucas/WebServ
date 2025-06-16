@@ -13,11 +13,28 @@ static bool isCGI(const string &file);
 
 void ClientManager::_handleRequest(const ClientMeta &client)
 {
+	HttpResponse response;
+
 	HttpRequest request = deserialize(client.requestBuffer);
-	HttpResponse response = buildResponse(request, client.server->getLocations());
+
+	const Location &location = matchURI(request.requestTarget, client.server->getLocations());
+	if (!utils::contains(request.method, location.getAllowedMethods()))
+	{
+		response = handleError(METHOD_NOT_ALLOWED);
+		return ;
+	}
+
+	string file = location.getRoot() + request.requestTarget;
+	if (access(file.c_str(), F_OK) == -1)
+	{
+		response = handleError(NOT_FOUND);
+		return ;
+	}
+
+	response = buildResponse(request, file);
 }
 
-HttpResponse ClientManager::buildResponse(const HttpRequest &request, const vector<Location> &locations)
+HttpResponse ClientManager::buildResponse(HttpRequest &request, const string &file)
 {
 	HttpResponse response;
 
@@ -25,18 +42,15 @@ HttpResponse ClientManager::buildResponse(const HttpRequest &request, const vect
 	response.statusCode = OK;
 	response.statusText = Http::statusText.find(OK)->second;
 
-	const Location &location = matchURI(request.requestTarget, locations);
-	if (!utils::contains(request.method, location.getAllowedMethods()))
-		return handleError(METHOD_NOT_ALLOWED);
-
-	string file = location.getRoot() + request.requestTarget;
-	if (access(file.c_str(), F_OK) == -1)
-		return handleError(NOT_FOUND);
-
 	if (isCGI(file))
 	{
 		if (access(file.c_str(), X_OK) == -1)
 			return handleError(FORBIDDEN);
+		CGIHandler cgi(request);
+		StatusCode status = cgi.execute();
+		if (status != OK)
+			return handleError(status);
+		response.body = cgi.getCGIOutput();
 	}
 	else if (request.method == Http::GET)
 	{
@@ -45,6 +59,8 @@ HttpResponse ClientManager::buildResponse(const HttpRequest &request, const vect
 		response.headers[Http::CONTENT_TYPE] = getContentType(file);
 		response.body = utils::readFile(file);
 	}
+	response.headers[Http::SERVER] = "webserv";
+	response.headers[Http::DATE] = utils::genTimeStamp();
 	response.headers[Http::CONTENT_LENGTH] = utils::toString(response.body.size());
 
 	return response;
