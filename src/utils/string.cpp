@@ -1,5 +1,6 @@
 # include "utils.hpp"
 
+# include <ctime>
 # include <algorithm> // transform()
 # include <cctype> // tolower(), toupper()
 # include <sstream>
@@ -9,6 +10,17 @@ using std::istringstream;
 using std::runtime_error;
 using std::string;
 using std::vector;
+
+string utils::genTimeStamp()
+{
+	time_t now = time(0);
+	tm *gmt = gmtime(&now);
+
+	char buffer[100];
+	strftime(buffer, sizeof(buffer), "%a, %d %b %Y %H:%M:%S GMT", gmt);
+
+	return buffer;
+}
 
 // util function to convert hexadecimal numbers to integer to get
 // chunk size in CGI unchunking.
@@ -70,4 +82,3 @@ vector<string> utils::split(const string &str, char delimiter)
 
 	return v;
 }
-

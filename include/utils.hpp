@@ -18,6 +18,7 @@ struct utils
 	static void printError(const char* message);
 
 	// string.cpp
+	static std::string genTimeStamp();
 	static int hexStrToInt(const std::string& hexStr);
 	static std::string toLower(const std::string &string);
 	static std::string toUpper(const std::string &string);
