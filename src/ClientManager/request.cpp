@@ -49,8 +49,15 @@ HttpResponse ClientManager::handleError(StatusCode code)
 {
 	HttpResponse response;
 
+	response.protocol = "HTTP/1.1";
 	response.statusCode = code;
 	response.statusText = Http::statusText.find(code)->second;
+	response.headers[Http::CONTENT_TYPE] = "text/html";
+
+	string errorPage = "public/error/" + utils::toString(code) + ".html";
+	response.body = utils::readFile(errorPage);
+
+	response.headers[Http::CONTENT_LENGTH] = utils::toString(response.body.size());
 
 	return response;
 }
