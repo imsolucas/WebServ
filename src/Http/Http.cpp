@@ -131,7 +131,14 @@ ostream &operator << (ostream &os, const HttpRequest &r)
 
 ostream &operator << (ostream &os, const HttpResponse &r)
 {
-	(void)r;
+	string httpResponse;
+
+	httpResponse = r.protocol + " " + utils::toString(r.statusCode) + " " + r.statusText + "\n";
+	for (map<string, string>::const_iterator it = r.headers.begin();
+		it != r.headers.end(); ++it)
+		httpResponse += it->first + ": " + it->second + "\n";
+	httpResponse += "\n" + r.body;
+	os << httpResponse;
 	return os;
 }
 
