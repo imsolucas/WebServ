@@ -25,7 +25,8 @@ enum StatusCode
 namespace Http
 {
 	extern const std::map<StatusCode, std::string> statusText;
-	
+	extern const std::map<std::string, std::string> mimeType;
+
 	const std::string GET = "GET";
 	const std::string POST = "POST";
 	const std::string DELETE = "DELETE";
@@ -78,6 +79,8 @@ struct HttpResponse
 
 std::string	serialize(const HttpResponse &response);
 HttpRequest	deserialize(const std::string &stream);
+
+std::string getContentType(const std::string &file);
 
 std::ostream &operator << (std::ostream &os, const HttpRequest &r);
 std::ostream &operator << (std::ostream &os, const HttpResponse &r);

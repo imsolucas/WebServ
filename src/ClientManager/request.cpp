@@ -1,6 +1,7 @@
 # include <unistd.h>
 
 # include "utils.hpp"
+# include "CGIHandler.hpp"
 # include "Http.h"
 # include "ClientManager.hpp"
 
@@ -20,18 +21,31 @@ HttpResponse ClientManager::buildResponse(const HttpRequest &request, const vect
 {
 	HttpResponse response;
 
+	response.protocol = "HTTP/1.1";
+	response.statusCode = OK;
+	response.statusText = Http::statusText.find(OK)->second;
+
 	const Location &location = matchURI(request.requestTarget, locations);
 	if (!utils::contains(request.method, location.getAllowedMethods()))
 		return handleError(METHOD_NOT_ALLOWED);
+
 	string file = location.getRoot() + request.requestTarget;
 	if (access(file.c_str(), F_OK) == -1)
 		return handleError(NOT_FOUND);
+
 	if (isCGI(file))
-		cout << "execute CGI\n";
+	{
+		if (access(file.c_str(), X_OK) == -1)
+			return handleError(FORBIDDEN);
+	}
 	else if (request.method == Http::GET)
 	{
-
+		if (access(file.c_str(), R_OK) == -1)
+			return handleError(FORBIDDEN);
+		response.headers[Http::CONTENT_TYPE] = getContentType(file);
+		response.body = utils::readFile(file);
 	}
+	response.headers[Http::CONTENT_LENGTH] = utils::toString(response.body.size());
 
 	return response;
 }
