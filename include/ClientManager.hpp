@@ -48,8 +48,10 @@ class ClientManager
 
 		bool isClient(int fd);
 
+		HttpResponse buildResponse(const HttpRequest &request, const std::vector<Location> &locations);
 		static const Location &matchURI(const std::string &URI, const std::vector<Location> &locations);
 		static HttpResponse handleError(StatusCode code);
+
 	private:
 		// maps client fd to client meta
 		std::map<int, ClientMeta> _clientMap;
@@ -58,7 +60,6 @@ class ClientManager
 		const std::vector<Server> &_servers;
 
 		void _handleRequest(const ClientMeta &client);
-		HttpResponse _buildResponse();
 
 		void _addToClientMap(int fd, int listenerFd, int port);
 		void _removeFromClientMap(int fd);

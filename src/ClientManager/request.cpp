@@ -1,3 +1,5 @@
+# include <unistd.h>
+
 # include "utils.hpp"
 # include "Http.h"
 # include "ClientManager.hpp"
@@ -6,21 +8,30 @@ using std::vector;
 using std::string;
 using std::cout;
 
+static bool isCGI(const string &file);
 
 void ClientManager::_handleRequest(const ClientMeta &client)
 {
 	HttpRequest request = deserialize(client.requestBuffer);
-	const Location &location = matchURI(request.requestTarget, client.server->getLocations());
-	if (!utils::contains(request.method, location.getAllowedMethods()))
-	{
-		handleError(METHOD_NOT_ALLOWED);
-		return;
-	}
+	HttpResponse response = buildResponse(request, client.server->getLocations());
 }
 
-HttpResponse ClientManager::_buildResponse()
+HttpResponse ClientManager::buildResponse(const HttpRequest &request, const vector<Location> &locations)
 {
 	HttpResponse response;
+
+	const Location &location = matchURI(request.requestTarget, locations);
+	if (!utils::contains(request.method, location.getAllowedMethods()))
+		return handleError(METHOD_NOT_ALLOWED);
+	string file = location.getRoot() + request.requestTarget;
+	if (access(file.c_str(), F_OK) == -1)
+		return handleError(NOT_FOUND);
+	if (isCGI(file))
+		cout << "execute CGI\n";
+	else if (request.method == Http::GET)
+	{
+
+	}
 
 	return response;
 }
@@ -60,4 +71,25 @@ HttpResponse ClientManager::handleError(StatusCode code)
 	response.headers[Http::CONTENT_LENGTH] = utils::toString(response.body.size());
 
 	return response;
+}
+
+bool isCGI(const string &file)
+{
+	vector<string> extensions;
+	extensions.push_back(".cgi");
+	extensions.push_back(".py");
+	extensions.push_back(".php");
+	extensions.push_back(".go");
+	extensions.push_back(".c");
+	extensions.push_back(".sh");
+
+	size_t dotPos = file.find_last_of('.');
+	if (dotPos == string::npos) return false;
+
+	string extension = file.substr(dotPos);
+	for (vector<string>::const_iterator it = extensions.begin();
+		it != extensions.end(); ++it)
+		if (extension == *it) return true;
+
+	return false;
 }
