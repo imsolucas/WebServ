@@ -10,6 +10,7 @@
 # include <unistd.h> // close
 
 using std::cout;
+using std::runtime_error;
 using std::string;
 
 ListenerManager::ListenerManager(std::vector<pollfd> &poll)
@@ -46,7 +47,7 @@ void ListenerManager::_setUpListener(int port)
 	// 0 = default protocol for the socket type
 	int listenerFd = socket(AF_INET, SOCK_STREAM, 0);
 	if (listenerFd < 0)
-		throw SocketCreationException(portString);
+		throw runtime_error("Failed to create listener socket for port " + portString + ".");
 
 	// fcntl is used to change the behaviour of the socket.
 	// F_SETFL = set file status flags
@@ -55,7 +56,7 @@ void ListenerManager::_setUpListener(int port)
 	if (fcntl(listenerFd, F_SETFL, O_NONBLOCK) < 0)
 	{
 		close(listenerFd);
-		throw SocketConfigException(portString);
+		throw runtime_error("Failed to set non-blocking mode for listener on port " + portString + ".");
 	}
 
 	// setsockopt modifies low-level networking behaviour of the socket.
@@ -68,7 +69,7 @@ void ListenerManager::_setUpListener(int port)
 	if (setsockopt(listenerFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
 	{
 		close(listenerFd);
-		throw SocketOptionException(portString);
+		throw runtime_error("Failed to set socket option (SO_REUSEADDR) for listener on port " + portString + ".");
 	}
 
 	// "socket address, internet" stores IP address, port, and family info.
@@ -86,7 +87,7 @@ void ListenerManager::_setUpListener(int port)
 	if (bind(listenerFd, (sockaddr *)&listenerAddress, sizeof(listenerAddress)) < 0)
 	{
 		close(listenerFd);
-		throw BindException(portString);
+		throw runtime_error("Failed to bind listener socket to port " + portString + ".");
 	}
 
 	// listener socket will listen for incoming connection requests.
@@ -94,25 +95,10 @@ void ListenerManager::_setUpListener(int port)
 	if (listen(listenerFd, SOMAXCONN) < 0)
 	{
 		close(listenerFd);
-		throw ListenException(portString);
+		throw runtime_error("Failed to listen to socket on port " + portString + ".");
 	}
 	utils::addToPoll(_poll, listenerFd, POLLIN, 0);
 	_listenerMap[listenerFd] = port;
 
 	cout << BLUE << "Listener with fd " << listenerFd << " set up on port " << port << "!\n" << RESET;
 }
-
-ListenerManager::SocketCreationException::SocketCreationException(const string &portString)
-: runtime_error("Failed to create listener socket for port " + portString + ".") {}
-
-ListenerManager::SocketConfigException::SocketConfigException(const string &portString)
-: runtime_error("Failed to set non-blocking mode for listener on port " + portString + ".") {}
-
-ListenerManager::SocketOptionException::SocketOptionException(const string &portString)
-: runtime_error("Failed to set socket option (SO_REUSEADDR) for listener on port " + portString + ".") {}
-
-ListenerManager::BindException::BindException(const string &portString)
-: runtime_error("Failed to bind listener socket to port " + portString + ".") {}
-
-ListenerManager::ListenException::ListenException(const string &portString)
-: runtime_error("Failed to listen to socket on port " + portString + ".") {}

@@ -46,11 +46,4 @@ class WebServer
 		std::vector<Server> _parseConfig(const std::string &filePath);
 		Server parseServerBlock(const std::vector<std::string> &tokens, size_t &i);
 		Location parseLocationBlock(const std::vector<std::string> &tokens, size_t &i);
-
-	public:
-		class PollException : public std::runtime_error
-		{
-			public:
-				PollException();
-		};
 };

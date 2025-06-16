@@ -38,7 +38,7 @@ void WebServer::run()
 		// return value: 0 = timeout (irrelavant with -1 timeout parameter); -1 = error
 		// prevent double printing if SIGINT received
 		if (ready < 0 && !gStopLoop)
-			throw PollException();
+			throw runtime_error("Failed to poll file descriptors.");
 
 		// for loop to service all file descriptors with events
 		for (_pollIndex = 0; _pollIndex < _poll.size(); _pollIndex++)
@@ -104,7 +104,4 @@ bool WebServer::_clientIsReadyToReceive(const pollfd &client)
 {
 	return client.revents & POLLOUT;
 }
-
-WebServer::PollException::PollException()
-: runtime_error("Failed to poll file descriptors.") {}
 
