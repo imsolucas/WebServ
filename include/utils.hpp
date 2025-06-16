@@ -6,6 +6,9 @@
 
 struct utils
 {
+	// file.cpp
+	static std::string readFile(const std::string &path);
+
 	// pollUtils.cpp
 	static void addToPoll(std::vector<pollfd> &poll, int fd, short events, short revents);
 	static void removeFromPoll(std::vector<pollfd> &poll, int i);
