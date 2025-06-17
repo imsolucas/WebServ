@@ -81,11 +81,11 @@ void Server::clearLocations()
 	locations.clear();
 }
 
-vector<int> Server::getPorts() const { return ports; }
-vector<string> Server::getServerNames() const { return server_names; }
-string Server::getRoot() const { return root; }
-vector<Location> Server::getLocations() const { return locations; }
-map<int, string> Server::getErrorPages() const { return error_pages; }
+const vector<int> &Server::getPorts() const { return ports; }
+const vector<string> &Server::getServerNames() const { return server_names; }
+const string &Server::getRoot() const { return root; }
+const vector<Location> &Server::getLocations() const { return locations; }
+const map<int, string> &Server::getErrorPages() const { return error_pages; }
 
 size_t Server::getClientMaxBodySizeInBytes() const
 {

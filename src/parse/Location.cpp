@@ -71,12 +71,12 @@ void Location::clearAllowedMethods()
 }
 
 // Getters
-string Location::getPath() const { return path; }
-string Location::getRoot() const { return root; }
-string Location::getIndex() const { return index; }
-string Location::getCgiPath() const { return cgi_path; }
-string Location::getRedirect() const { return redirect; }
-string Location::getUploadStore() const { return upload_store; }
+const string &Location::getPath() const { return path; }
+const string &Location::getRoot() const { return root; }
+const string &Location::getIndex() const { return index; }
+const string &Location::getCgiPath() const { return cgi_path; }
+const string &Location::getRedirect() const { return redirect; }
+const string &Location::getUploadStore() const { return upload_store; }
 bool Location::getAutoindex() const { return autoindex; }
 
 size_t Location::getClientMaxBodySizeInBytes() const
@@ -94,7 +94,7 @@ size_t Location::getClientMaxBodySizeInBytes() const
 	return size; // Assume bytes if no valid unit
 }
 
-vector<string> Location::getAllowedMethods() const
+const vector<string> &Location::getAllowedMethods() const
 {
 	return allowed_methods;
 }
