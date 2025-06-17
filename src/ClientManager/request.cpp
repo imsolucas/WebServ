@@ -11,27 +11,32 @@ using std::cout;
 
 static bool isCGI(const string &file);
 
-void ClientManager::_handleRequest(const ClientMeta &client)
+// TODO: handle directories
+// TODO: autoindex
+string ClientManager::_handleRequest(const ClientMeta &client)
 {
 	HttpResponse response;
 
 	HttpRequest request = deserialize(client.requestBuffer);
 
 	const Location &location = matchURI(request.requestTarget, client.server->getLocations());
+		cout << "allowed methods 2: " + location.getAllowedMethodsAsString();
 	if (!utils::contains(request.method, location.getAllowedMethods()))
 	{
+		cout << "method: " + request.method + "\n";
 		response = handleError(METHOD_NOT_ALLOWED);
-		return ;
+		return serialize(response);
 	}
 
 	string file = location.getRoot() + request.requestTarget;
 	if (access(file.c_str(), F_OK) == -1)
 	{
 		response = handleError(NOT_FOUND);
-		return ;
+		return serialize(response);
 	}
 
 	response = buildResponse(request, file);
+	return serialize(response);
 }
 
 HttpResponse ClientManager::buildResponse(HttpRequest &request, const string &file)
@@ -83,6 +88,7 @@ const Location &ClientManager::matchURI(const string &URI, const vector<Location
 			matchLen = prefix.length();
 		}
 	}
+	cout << "allowed methods 1: " + bestMatch->getAllowedMethodsAsString() + "\n";
 	return *bestMatch;
 }
 

@@ -59,7 +59,7 @@ class ClientManager
 		size_t &_pollIndex;
 		const std::vector<Server> &_servers;
 
-		void _handleRequest(const ClientMeta &client);
+		std::string _handleRequest(const ClientMeta &client);
 
 		void _addToClientMap(int fd, int listenerFd, int port);
 		void _removeFromClientMap(int fd);

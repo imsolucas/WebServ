@@ -81,27 +81,7 @@ void ClientManager::recvFromClient(int fd)
 
 void ClientManager::sendToClient(int fd)
 {
-	// TODO: DELETE - ONLY FOR TESTING PURPOSES
-	// -----------------------------------------------------------------------------------
-	std::ifstream page("public/upload.html");
-	string line, body;
-
-	while (std::getline(page, line))
-	body += line + "\n";
-
-	// attempt to send a http response.
-	// Modern browsers will reuse persistent connections due to HTTP/1.1 keep-alive, which is on by default.
-	// So removing "Connection: close" will cause the browser to reuse the same client fd even across
-	// different tabs.
-	string response =
-		"HTTP/1.1 200 OK\r\n"
-		"Content-Type: text/html\r\n"
-		"Content-Length: " + utils::toString(body.size()) + "\r\n"
-		"Connection: close\r\n"
-		"\r\n" +
-		body;
-	// -----------------------------------------------------------------------------------
-
+	string response = _handleRequest(_clientMap[fd]);
 	// MSG_NOSIGNAL flag prevents SIGPIPE if the client has already closed the connection.
 	// Often used in server code to avoid crashes from broken pipes e.g. when client
 	// has closed their connection.
