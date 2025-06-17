@@ -20,15 +20,14 @@ string ClientManager::_handleRequest(const ClientMeta &client)
 	HttpRequest request = deserialize(client.requestBuffer);
 
 	const Location &location = matchURI(request.requestTarget, client.server->getLocations());
-		cout << "allowed methods 2: " + location.getAllowedMethodsAsString();
 	if (!utils::contains(request.method, location.getAllowedMethods()))
 	{
-		cout << "method: " + request.method + "\n";
 		response = handleError(METHOD_NOT_ALLOWED);
 		return serialize(response);
 	}
 
 	string file = location.getRoot() + request.requestTarget;
+	cout << "file: " + file + "\n";
 	if (access(file.c_str(), F_OK) == -1)
 	{
 		response = handleError(NOT_FOUND);
@@ -88,7 +87,6 @@ const Location &ClientManager::matchURI(const string &URI, const vector<Location
 			matchLen = prefix.length();
 		}
 	}
-	cout << "allowed methods 1: " + bestMatch->getAllowedMethodsAsString() + "\n";
 	return *bestMatch;
 }
 
