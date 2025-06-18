@@ -34,8 +34,8 @@ bool test_staticFileReadable()
 	// Mock access() to simulate file readability
 	utils::mockAccess(file, R_OK);
 
-	// Call buildResponse()
-	HttpResponse actual = ClientManager::buildResponse(request, file);
+	// Call serveFile()
+	HttpResponse actual = ClientManager::serveFile(request, file);
 
 	// Expected response
 	HttpResponse expected;
@@ -64,8 +64,8 @@ bool test_staticFileNotReadable()
 	// Mock access() to simulate file not readable
 	utils::mockAccess(file, -1);
 
-	// Call buildResponse()
-	HttpResponse actual = ClientManager::buildResponse(request, file);
+	// Call serveFile()
+	HttpResponse actual = ClientManager::serveFile(request, file);
 
 	// Expected response
 	HttpResponse expected = ClientManager::handleError(FORBIDDEN);
@@ -89,8 +89,8 @@ bool test_cgiFileExecutable()
 	// Mock access() to simulate file executable
 	utils::mockAccess(file, X_OK);
 
-	// Call buildResponse()
-	HttpResponse actual = ClientManager::buildResponse(request, file);
+	// Call serveFile()
+	HttpResponse actual = ClientManager::serveFile(request, file);
 
 	// Expected response
 	HttpResponse expected;
@@ -118,8 +118,8 @@ bool test_cgiFilePermissionDenied()
 	// Mock access() to simulate file not executable
 	utils::mockAccess(file, -1);
 
-	// Call buildResponse()
-	HttpResponse actual = ClientManager::buildResponse(request, file);
+	// Call serveFile()
+	HttpResponse actual = ClientManager::serveFile(request, file);
 
 	// Expected response
 	HttpResponse expected = ClientManager::handleError(FORBIDDEN);
@@ -140,8 +140,8 @@ bool test_nonExistentFile()
 	// Mock access() to simulate file not found
 	utils::mockAccess(file, -1);
 
-	// Call buildResponse()
-	HttpResponse actual = ClientManager::buildResponse(request, file);
+	// Call serveFile()
+	HttpResponse actual = ClientManager::serveFile(request, file);
 
 	// Expected response
 	HttpResponse expected = ClientManager::handleError(NOT_FOUND);
