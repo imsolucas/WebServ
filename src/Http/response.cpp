@@ -1,11 +1,14 @@
 # include <unistd.h>
+# include <sstream>
 
 # include "utils.hpp"
 # include "CGIHandler.hpp"
 # include "ClientManager.hpp"
 # include "Http.h"
 
-HttpResponse buildResponse(HttpRequest &request, const string &path)
+using std::ostringstream;
+
+HttpResponse serveFile(HttpRequest &request, const string &file)
 {
 	HttpResponse response;
 
@@ -13,9 +16,9 @@ HttpResponse buildResponse(HttpRequest &request, const string &path)
 	response.statusCode = OK;
 	response.statusText = Http::statusText.find(OK)->second;
 
-	if (isCGI(path))
+	if (isCGI(file))
 	{
-		if (access(path.c_str(), X_OK) == -1)
+		if (access(file.c_str(), X_OK) == -1)
 			return handleError(FORBIDDEN);
 		CGIHandler cgi(request);
 		StatusCode status = cgi.execute();
@@ -25,13 +28,47 @@ HttpResponse buildResponse(HttpRequest &request, const string &path)
 	}
 	else if (request.method == Http::GET)
 	{
-		if (access(path.c_str(), R_OK) == -1)
+		if (access(file.c_str(), R_OK) == -1)
 			return handleError(FORBIDDEN);
-		response.headers[Http::CONTENT_TYPE] = getContentType(path);
-		response.body = utils::readFile(path);
+		response.headers[Http::CONTENT_TYPE] = getContentType(file);
+		response.body = utils::readFile(file);
 	}
 	response.headers[Http::SERVER] = "webserv";
 	response.headers[Http::DATE] = utils::genTimeStamp();
+	response.headers[Http::CONTENT_LENGTH] = utils::toString(response.body.size());
+
+	return response;
+}
+
+HttpResponse listDirectory(const string &directory)
+{
+	ostringstream body;
+	body << "<!DOCTYPE html>\n"
+		 << "<html>\n"
+		 << "<head><title>Directory Listing</title></head>\n"
+		 << "<body>\n"
+		 << "<h1>Directory Listing for " << directory << "</h1>\n"
+		 << "<ul>\n";
+
+	vector<string> dirents = utils::readDirectory(directory);
+	for (vector<string>::const_iterator it = dirents.begin();
+		it != dirents.end(); ++it)
+	{
+		body << "<li><a href=\"" << *it << "\">" << *it << "</a></li>\n";
+	}
+
+	body << "</ul>\n"
+		 << "</body>\n"
+		 << "</html>";
+
+	HttpResponse response;
+	response.protocol = "HTTP/1.1";
+	response.statusCode = OK;
+	response.statusText = Http::statusText.find(OK)->second;
+	response.headers[Http::SERVER] = "webserv";
+	response.headers[Http::DATE] = utils::genTimeStamp();
+	response.headers[Http::CONTENT_TYPE] = "text/html";
+	response.body = body.str();
 	response.headers[Http::CONTENT_LENGTH] = utils::toString(response.body.size());
 
 	return response;

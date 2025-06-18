@@ -92,7 +92,8 @@ std::ostream &operator << (std::ostream &os, const HttpResponse &r);
 std::string	serialize(const HttpResponse &response);
 HttpRequest	deserialize(const std::string &stream);
 
-HttpResponse buildResponse(HttpRequest &request, const std::string &path);
+HttpResponse serveFile(HttpRequest &request, const std::string &file);
+HttpResponse listDirectory(const std::string &directory);
 const Location &matchURI(const std::string &URI, const std::vector<Location> &locations);
 HttpResponse handleError(StatusCode code);
 

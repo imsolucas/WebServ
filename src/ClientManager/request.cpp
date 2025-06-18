@@ -31,6 +31,21 @@ string ClientManager::_handleRequest(const ClientMeta &client)
 		return serialize(response);
 	}
 
-	response = buildResponse(request, path);
+	PathType type = getPathType(path);
+	switch (type)
+	{
+		case R_FILE:
+			response = serveFile(request, path);
+			break;
+
+		case DIRECTORY:
+			response = listDirectory(path);
+			break;
+
+		default:
+			response = handleError(FORBIDDEN);
+			break;
+	}
+
 	return serialize(response);
 }
