@@ -98,20 +98,6 @@ HttpMessage decode(string stream)
 	return msg;
 }
 
-string getContentType(const string &file)
-{
-	size_t dotPos = file.find_last_of('.');
-	if (dotPos == string::npos)
-		return "application/octet-stream";
-
-	string extension = file.substr(dotPos);
-	map<string, string>::const_iterator it = Http::mimeType.find(extension);
-	if (it != Http::mimeType.end())
-		return it->second;
-
-	return "application/octet-stream";
-}
-
 ostream &operator << (ostream &os, const HttpRequest &r)
 {
 	string httpRequest;

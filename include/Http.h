@@ -22,6 +22,14 @@ enum StatusCode
 	GATEWAY_TIMEOUT = 504
 };
 
+enum PathType
+{
+	R_FILE, // regular file
+	DIRECTORY,
+	OTHER,
+	NOT_EXIST
+};
+
 namespace Http
 {
 	extern const std::map<StatusCode, std::string> statusText;
@@ -48,6 +56,8 @@ namespace Http
 	const std::string CONTENT_LANGUAGE = "Content-Language";
 }
 
+class Location;
+
 struct HttpMessage
 {
 	std::string startLine;
@@ -65,6 +75,7 @@ struct HttpRequest
 
 	bool operator == (const HttpRequest &rhs) const;
 };
+std::ostream &operator << (std::ostream &os, const HttpRequest &r);
 
 struct HttpResponse
 {
@@ -76,11 +87,15 @@ struct HttpResponse
 
 	bool operator == (const HttpResponse &rhs) const;
 };
+std::ostream &operator << (std::ostream &os, const HttpResponse &r);
 
 std::string	serialize(const HttpResponse &response);
 HttpRequest	deserialize(const std::string &stream);
 
-std::string getContentType(const std::string &file);
+HttpResponse buildResponse(HttpRequest &request, const std::string &path);
+const Location &matchURI(const std::string &URI, const std::vector<Location> &locations);
+HttpResponse handleError(StatusCode code);
 
-std::ostream &operator << (std::ostream &os, const HttpRequest &r);
-std::ostream &operator << (std::ostream &os, const HttpResponse &r);
+PathType getPathType(const std::string &path);
+std::string getContentType(const std::string &file);
+bool isCGI(const std::string &file);

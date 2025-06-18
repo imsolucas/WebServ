@@ -48,10 +48,6 @@ class ClientManager
 
 		bool isClient(int fd);
 
-		static HttpResponse buildResponse(HttpRequest &request, const std::string &file);
-		static const Location &matchURI(const std::string &URI, const std::vector<Location> &locations);
-		static HttpResponse handleError(StatusCode code);
-
 	private:
 		// maps client fd to client meta
 		std::map<int, ClientMeta> _clientMap;
