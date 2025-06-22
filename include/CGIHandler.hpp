@@ -27,6 +27,7 @@ class CGIHandler
 		std::vector<char *> _env;
 		std::string _virtualPath;
 		pid_t _childPid;
+		size_t _headersEnd;
 		std::string _cgiOutput;
 		std::string _cgiOutputType;
 
@@ -38,9 +39,10 @@ class CGIHandler
 		void _cgiChildProcess();
 		void _cgiParentProcess();
 		void _resolveChildStatus();
-		bool _hasContentTypeHeader() const;
-		bool _hasHeaderBodySeparator() const;
-		void _normalizeHeaderBodySeparator();
+		void _validateCGIOutput();
+		void _normalizeHeaderSeparator();
+		bool _hasHeaderSeparator();
+		bool _hasContentType();
 
 	public:
 		class UnchunkingException : public std::runtime_error
@@ -72,6 +74,4 @@ class CGIHandler
 			public:
 				TimeoutException();
 		};
-
-		static void testCGIHandler(const std::string &stream);
 };

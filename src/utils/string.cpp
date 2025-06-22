@@ -69,3 +69,16 @@ vector<string> utils::split(const string &str, char delimiter)
 
 	return v;
 }
+
+// This helper function trims leading and trailing whitespaces from the input.
+string utils::trim(const string& input, const string& whitespace)
+{
+	// Find the first non-whitespace character
+	size_t start = input.find_first_not_of(whitespace);
+	// npos (no-position) means no matches
+	if (start == std::string::npos)
+		return ""; // If only whitespace characters, return empty string.
+	 // Find the last non-whitespace character
+	size_t end = input.find_last_not_of(whitespace);
+	return input.substr(start, end - start + 1);
+}
