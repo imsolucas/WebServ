@@ -14,7 +14,7 @@ using std::runtime_error;
 using std::string;
 using std::vector;
 
-CGIHandler::CGIHandler(HttpRequest &req) : _req(req), _cgiOutput() {}
+CGIHandler::CGIHandler(HttpRequest &req) : _req(req), _cgiOutput(), _cgiOutputType() {}
 
 // If CGI executed successfully, function will return 0.
 // getCGIOutput can then be called to get the CGI output as a string.
@@ -33,6 +33,9 @@ int CGIHandler::execute()
 			_cgiChildProcess();
 		else
 			_cgiParentProcess();
+		if (!_hasContentTypeHeader() || !_hasHeaderBodySeparator())
+			throw runtime_error("CGI: Malformed output - missing Content-Type or header-body separator.");
+		_normalizeHeaderBodySeparator();
 		return 0;
 	}
 	catch (const UnchunkingException& e)
@@ -60,7 +63,7 @@ int CGIHandler::execute()
 		utils::printError(e.what());
 		return GATEWAY_TIMEOUT;
 	}
-	// catches for pipe, fork and waitpid exceptions
+	// catches for pipe, fork, waitpid and malformed output exceptions
 	catch (const std::exception& e)
 	{
 		utils::printError(e.what());
@@ -71,6 +74,11 @@ int CGIHandler::execute()
 const std::string &CGIHandler::getCGIOutput() const
 {
 	return this->_cgiOutput;
+}
+
+const std::string &CGIHandler::getCGIOutputType() const
+{
+	return this->_cgiOutputType;
 }
 
 // Format for chunked transfer encoding as per RFC 7230
@@ -198,7 +206,7 @@ void CGIHandler::_parseRequestTarget()
 	// check whether requestTarget has a '?' that will demarcate
 	// the beginning of the query string
 	std::size_t pos = requestTarget.find("?");
-	if (pos != std::string::npos)
+	if (pos != string::npos)
 	{
 		_virtualPath = requestTarget.substr(0, pos);
 		queryString = requestTarget.substr(pos + 1);
@@ -343,6 +351,28 @@ void CGIHandler::_resolveChildStatus()
 	// child was terminated by signal e.g.SIGSEGV, SIGKILL
 	else if (WIFSIGNALED(status))
 		throw AbnormalTerminationException();
+}
+
+bool CGIHandler::_hasContentTypeHeader() const
+{
+}
+
+// CGI scripts are not strictly bound to HTTP formatting rules.
+// Although the HTTP standard (RFC) specifies "\r\n\r\n" to separate headers from the body,
+// many CGI scripts (especially in languages like Python) use "\n\n" instead, e.g. print("Content-Type: text/plain\n").
+// Therefore, it is the server's responsibility to accept "\n\n" as a valid separator and normalize the output.
+bool CGIHandler::_hasHeaderBodySeparator() const
+{
+	return (_cgiOutput.find("\r\n\r\n") != string::npos ||
+		_cgiOutput.find("\n\n") != string::npos);
+}
+
+// replace "\n\n" with "\r\n\r\n" to conform to HTTP standards.
+void CGIHandler::_normalizeHeaderBodySeparator()
+{
+	size_t pos = _cgiOutput.find("\n\n");
+	if (pos != string::npos)
+		_cgiOutput.replace(pos, 2, "\r\n\r\n");
 }
 
 CGIHandler::UnchunkingException::UnchunkingException()
