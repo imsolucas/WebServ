@@ -6,10 +6,7 @@
 
 using std::vector;
 using std::string;
-using std::cout;
 
-// TODO: handle directories
-// TODO: autoindex
 string ClientManager::_handleRequest(const ClientMeta &client)
 {
 	HttpResponse response;
@@ -23,28 +20,25 @@ string ClientManager::_handleRequest(const ClientMeta &client)
 		return serialize(response);
 	}
 
-	string path = location.getRoot() + request.requestTarget; // TODO
-	cout << "path: " + path + "\n";
-	if (access(path.c_str(), F_OK) == -1)
-	{
-		response = handleError(NOT_FOUND);
-		return serialize(response);
-	}
-
+	string path = location.getRoot() + request.requestTarget;
 	PathType type = getPathType(path);
 	switch (type)
 	{
 		case R_FILE:
 			response = serveFile(request, path);
-			break;
+		break;
 
 		case DIRECTORY:
-			response = listDirectory(path);
-			break;
+			response = listDirectory(location, path);
+		break;
+
+		case NOT_EXIST:
+			response = handleError(NOT_FOUND);
+		break;
 
 		default:
 			response = handleError(FORBIDDEN);
-			break;
+		break;
 	}
 
 	return serialize(response);

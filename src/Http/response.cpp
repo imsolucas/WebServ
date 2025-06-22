@@ -15,6 +15,8 @@ HttpResponse serveFile(HttpRequest &request, const string &file)
 	response.protocol = "HTTP/1.1";
 	response.statusCode = OK;
 	response.statusText = Http::statusText.find(OK)->second;
+	response.headers[Http::SERVER] = "webserv";
+	response.headers[Http::DATE] = utils::genTimeStamp();
 
 	if (isCGI(file))
 	{
@@ -24,7 +26,7 @@ HttpResponse serveFile(HttpRequest &request, const string &file)
 		StatusCode status = cgi.execute();
 		if (status != OK)
 			return handleError(status);
-		response.body = cgi.getCGIOutput();
+		response.body = cgi.getCGIOutput(); // TODO: get CGI content type
 	}
 	else if (request.method == Http::GET)
 	{
@@ -33,14 +35,50 @@ HttpResponse serveFile(HttpRequest &request, const string &file)
 		response.headers[Http::CONTENT_TYPE] = getContentType(file);
 		response.body = utils::readFile(file);
 	}
-	response.headers[Http::SERVER] = "webserv";
-	response.headers[Http::DATE] = utils::genTimeStamp();
 	response.headers[Http::CONTENT_LENGTH] = utils::toString(response.body.size());
 
 	return response;
 }
 
-HttpResponse listDirectory(const string &directory)
+HttpResponse listDirectory(const Location &location, const string &directory)
+{
+	HttpResponse response;
+	response.protocol = "HTTP/1.1";
+	response.statusCode = OK;
+	response.statusText = Http::statusText.find(OK)->second;
+	response.headers[Http::SERVER] = "webserv";
+	response.headers[Http::DATE] = utils::genTimeStamp();
+	response.headers[Http::CONTENT_TYPE] = "text/html";
+
+	string filePath = location.getIndex();
+	if (filePath.empty())
+	{
+		if (location.getAutoindex() == true)
+			response.body = autoindex(directory);
+		else
+			return handleError(FORBIDDEN);
+	}
+	else
+	{
+		filePath = directory + "/" + filePath;
+		if (getPathType(filePath) == R_FILE)
+		{
+			if (access(filePath.c_str(), R_OK) == -1)
+				return handleError(FORBIDDEN);
+			response.body = utils::readFile(filePath);
+		}
+		else
+		{
+			if (location.getAutoindex() == true)
+				response.body = autoindex(directory);
+		}
+	}
+	response.headers[Http::CONTENT_LENGTH] = utils::toString(response.body.size());
+
+	return response;
+}
+
+string autoindex(const string &directory)
 {
 	ostringstream body;
 	body << "<!DOCTYPE html>\n"
@@ -61,17 +99,7 @@ HttpResponse listDirectory(const string &directory)
 		 << "</body>\n"
 		 << "</html>";
 
-	HttpResponse response;
-	response.protocol = "HTTP/1.1";
-	response.statusCode = OK;
-	response.statusText = Http::statusText.find(OK)->second;
-	response.headers[Http::SERVER] = "webserv";
-	response.headers[Http::DATE] = utils::genTimeStamp();
-	response.headers[Http::CONTENT_TYPE] = "text/html";
-	response.body = body.str();
-	response.headers[Http::CONTENT_LENGTH] = utils::toString(response.body.size());
-
-	return response;
+	return body.str();
 }
 
 // does longest prefix match

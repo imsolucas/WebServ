@@ -1,5 +1,5 @@
 # include "utils.hpp"
-# include "ClientManager.hpp"
+# include "Http.h"
 # include "test.hpp"
 
 static bool test_400();
@@ -25,7 +25,7 @@ void test_handleError(TestSuite &t)
 
 bool test_400()
 {
-	HttpResponse actual = ClientManager::handleError(BAD_REQUEST);
+	HttpResponse actual = handleError(BAD_REQUEST);
 
 	HttpResponse expected;
 	expected.protocol = "HTTP/1.1";
@@ -48,7 +48,7 @@ bool test_400()
 
 bool test_401()
 {
-	HttpResponse actual = ClientManager::handleError(UNAUTHORIZED);
+	HttpResponse actual = handleError(UNAUTHORIZED);
 
 	HttpResponse expected;
 	expected.protocol = "HTTP/1.1";
@@ -71,7 +71,7 @@ bool test_401()
 
 bool test_403()
 {
-	HttpResponse actual = ClientManager::handleError(FORBIDDEN);
+	HttpResponse actual = handleError(FORBIDDEN);
 
 	HttpResponse expected;
 	expected.protocol = "HTTP/1.1";
@@ -94,7 +94,7 @@ bool test_403()
 
 bool test_404()
 {
-	HttpResponse actual = ClientManager::handleError(NOT_FOUND);
+	HttpResponse actual = handleError(NOT_FOUND);
 
 	HttpResponse expected;
 	expected.protocol = "HTTP/1.1";
@@ -117,7 +117,7 @@ bool test_404()
 
 bool test_405()
 {
-	HttpResponse actual = ClientManager::handleError(METHOD_NOT_ALLOWED);
+	HttpResponse actual = handleError(METHOD_NOT_ALLOWED);
 
 	HttpResponse expected;
 	expected.protocol = "HTTP/1.1";
@@ -140,7 +140,7 @@ bool test_405()
 
 bool test_413()
 {
-	HttpResponse actual = ClientManager::handleError(CONTENT_TOO_LARGE);
+	HttpResponse actual = handleError(CONTENT_TOO_LARGE);
 
 	HttpResponse expected;
 	expected.protocol = "HTTP/1.1";
@@ -163,7 +163,7 @@ bool test_413()
 
 bool test_500()
 {
-	HttpResponse actual = ClientManager::handleError(INTERNAL_SERVER_ERROR);
+	HttpResponse actual = handleError(INTERNAL_SERVER_ERROR);
 
 	HttpResponse expected;
 	expected.protocol = "HTTP/1.1";
@@ -186,7 +186,7 @@ bool test_500()
 
 bool test_502()
 {
-	HttpResponse actual = ClientManager::handleError(BAD_GATEWAY);
+	HttpResponse actual = handleError(BAD_GATEWAY);
 
 	HttpResponse expected;
 	expected.protocol = "HTTP/1.1";

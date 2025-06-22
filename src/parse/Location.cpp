@@ -10,7 +10,7 @@ using std::cout;
 Location::Location()
 	: path("/"),
 	  root("/var/www/html"),
-	  index("index.html"),
+	  index(""),
 	  cgi_path("/usr/bin/php-cgi"),
 	  redirect(""),
 	  upload_store(""),
@@ -24,7 +24,7 @@ Location::Location()
 Location::Location(const string &path)
 	: path(path),
 	  root("/var/www/html"),
-	  index("index.html"),
+	  index(""),
 	  cgi_path("/usr/bin/php-cgi"),
 	  redirect(""),
 	  upload_store(""),

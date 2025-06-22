@@ -57,8 +57,7 @@ HttpRequest parse(HttpMessage message)
 		it != message.headers.end(); ++it)
 	{
 		vec = utils::split(*it, ':');
-		// RFC 9110: field names are case-insensitive
-		vec[0] = utils::toLower(vec[0]);
+		vec[0] = utils::toLower(vec[0]); // RFC 9110: field names are case-insensitive
 		req.headers[vec[0]] = vec[1].substr(1);
 	}
 

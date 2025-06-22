@@ -93,8 +93,9 @@ std::string	serialize(const HttpResponse &response);
 HttpRequest	deserialize(const std::string &stream);
 
 HttpResponse serveFile(HttpRequest &request, const std::string &file);
-HttpResponse listDirectory(const std::string &directory);
 const Location &matchURI(const std::string &URI, const std::vector<Location> &locations);
+HttpResponse listDirectory(const Location &location, const std::string &directory);
+std::string autoindex(const std::string &directory);
 HttpResponse handleError(StatusCode code);
 
 PathType getPathType(const std::string &path);
