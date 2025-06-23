@@ -1,17 +1,29 @@
 # include <unistd.h>
 
+# include "colors.h"
 # include "utils.hpp"
 # include "Http.h"
 # include "ClientManager.hpp"
 
+using std::exception;
 using std::vector;
-using std::string;
+using std::cerr;
 
 string ClientManager::_handleRequest(const ClientMeta &client)
 {
 	HttpResponse response;
+	HttpRequest request;
 
-	HttpRequest request = deserialize(client.requestBuffer);
+	try
+	{
+		request = deserialize(client.requestBuffer);
+	}
+	catch (const exception &e)
+	{
+		cerr << RED << "Error: " << e.what() << "\n" << RESET;
+		response = handleError(BAD_REQUEST);
+		return serialize(response);
+	}
 
 	const Location &location = matchURI(request.requestTarget, client.server->getLocations());
 	if (!utils::contains(request.method, location.getAllowedMethods()))

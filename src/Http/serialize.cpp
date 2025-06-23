@@ -1,9 +1,11 @@
 # include <iostream>
 # include <sstream>
+# include <cstdlib>
 
 # include "utils.hpp"
 # include "Http.h"
 
+using std::runtime_error;
 using std::vector;
 using std::map;
 using std::pair;
@@ -49,19 +51,51 @@ HttpRequest parse(HttpMessage message)
 	HttpRequest req;
 
 	vector<string> vec = utils::split(message.startLine, ' ');
+	if (vec.size() != 3)
+		throw runtime_error("BAD REQUEST: invalid start line\n");
 	req.method = vec[0];
+	if (req.method != "GET" && req.method != "POST"
+		&& req.method != "DELETE")
+		throw runtime_error("BAD REQUEST: invalid method\n");
 	req.requestTarget = vec[1];
+	if (req.requestTarget.find('\r') != string::npos
+		|| req.requestTarget.find('\n') != string::npos)
+		throw runtime_error("BAD REQUEST: invalid request target\n");
 	req.protocol = vec[2];
+	if (req.protocol != "HTTP/1.1")
+		throw runtime_error("BAD REQUEST: invalid protocol\n");
 
 	for (vector<string>::iterator it = message.headers.begin();
 		it != message.headers.end(); ++it)
 	{
-		vec = utils::split(*it, ':');
+		vec = utils::split(*it, ':'); // TODO: only split by the first occurance
+		if (vec.size() != 2)
+			throw runtime_error("BAD REQUEST: invalid header\n");
 		vec[0] = utils::toLower(vec[0]); // RFC 9110: field names are case-insensitive
-		req.headers[vec[0]] = vec[1].substr(1);
+		if (!utils::isPrint(vec[0]) || vec[0].find(' ') != string::npos
+			|| vec[0].find('\r') != string::npos
+			|| vec[0].find('\n') != string::npos)
+			throw runtime_error("BAD REQUEST: invalid header type\n");
+		req.headers[vec[0]] = vec[1].substr(1); // TODO: trim whitespace
+		if (!utils::isPrint(req.headers[vec[0]])
+			|| req.headers[vec[0]].find("\r\n") != string::npos)
+			throw runtime_error("BAD REQUEST: invalid header content\n");
 	}
+	if (req.headers.find("host") == req.headers.end())
+		throw runtime_error("BAD REQUEST: Host header missing\n");
 
 	req.body = message.body;
+	if (req.method == "GET" && !req.body.empty())
+		throw runtime_error("BAD REQUEST: invalid body\n");
+	if (req.headers.find("content-length") != req.headers.end())
+	{
+		if (req.headers.find("transfer-encoding") != req.headers.end())
+			throw runtime_error("BAD REQUEST: conflicting headers\n");
+		if (!utils::isNum(req.headers["content-length"]))
+			throw runtime_error("BAD REQUEST: invalid content length\n");
+		if (req.body.size() != (size_t)atoi(req.headers["content-length"].c_str()))
+			throw runtime_error("BAD REQUEST: wrong content length\n");
+	}
 
 	return (req);
 }
@@ -74,7 +108,9 @@ HttpMessage decode(string stream)
 
 	// Read start line
 	getline(iss, line);
-	if (!line.empty() && line[line.length() - 1 == '\r'])
+	if (line.empty())
+		throw runtime_error("BAD REQUEST: empty start line");
+	if (line[line.length() - 1 == '\r'])
 		line.erase(line.length() - 1);
 	msg.startLine = line;
 
@@ -87,6 +123,8 @@ HttpMessage decode(string stream)
 			break;
 		msg.headers.push_back(line);
 	}
+	if (!line.empty())
+		throw runtime_error("BAD REQUEST: missing empty line");
 
 	// Read the body
 	while (getline(iss, line))
