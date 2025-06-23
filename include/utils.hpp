@@ -19,10 +19,13 @@ struct utils
 	static void printError(const char* message);
 
 	// string.cpp
-	static std::string genTimeStamp();
-	static int hexStrToInt(const std::string& hexStr);
+	static bool isPrint(const std::string &string);
+	static bool isNum(const std::string &string);
+	static bool containsControlChar(const std::string &string);
 	static std::string toLower(const std::string &string);
 	static std::string toUpper(const std::string &string);
+	static std::string genTimeStamp();
+	static int hexStrToInt(const std::string& hexStr);
 	static std::vector<std::string> split(const std::string &str, char delimiter);
 
 	// string.tpp

@@ -38,6 +38,22 @@ int utils::hexStrToInt(const std::string& hexStr)
 	return value;
 }
 
+bool utils::isPrint(const string &string)
+{
+	for (size_t i = 0; i < string.size(); ++i)
+		if (!isprint(static_cast<unsigned char>(string[i])))
+			return false;
+	return true;
+}
+
+bool utils::isNum(const std::string &string)
+{
+	for (size_t i = 0; i < string.size(); ++i)
+		if (!isdigit(string[i]))
+			return false;
+	return true;
+}
+
 // std::transform expects a unary function that returns the same type as the input.
 int toLowerChar(int c)
 {
