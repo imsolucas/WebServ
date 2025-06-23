@@ -16,6 +16,7 @@ class CGIHandler
 		CGIHandler(HttpRequest &req);
 		StatusCode execute();
 		const std::string &getCGIOutput() const;
+		const std::string &getCGIOutputType() const;
 
 	private:
 		HttpRequest &_req;
@@ -26,7 +27,9 @@ class CGIHandler
 		std::vector<char *> _env;
 		std::string _virtualPath;
 		pid_t _childPid;
+		size_t _headersEnd;
 		std::string _cgiOutput;
+		std::string _cgiOutputType;
 
 		void _unchunkBody();
 		void _setupPipes();
@@ -36,6 +39,10 @@ class CGIHandler
 		void _cgiChildProcess();
 		void _cgiParentProcess();
 		void _resolveChildStatus();
+		void _validateCGIOutput();
+		void _normalizeHeaderSeparator();
+		bool _hasHeaderSeparator();
+		bool _hasContentType();
 
 	public:
 		class UnchunkingException : public std::runtime_error
@@ -67,6 +74,4 @@ class CGIHandler
 			public:
 				TimeoutException();
 		};
-
-		static void testCGIHandler(const std::string &stream);
 };

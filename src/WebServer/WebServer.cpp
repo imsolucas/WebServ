@@ -12,10 +12,14 @@ using std::string;
 using std::runtime_error;
 
 WebServer::WebServer(const string &config)
-: _servers(_parseConfig(config)), _listenerManager(_poll), _clientManager(_poll, _pollIndex, _servers)
+: _servers(_parseConfig(config)),
+	_clientManager(_pollRemoveQueue, _pollToggleQueue, _pollAddQueue, _servers)
 {
-	cout << "Parsed configuration file!\n";
 	_listenerManager._setupAllListeners(_servers);
+	// add listeners to poll
+	std::map<int, int> listenerMap = _listenerManager.getListenerMap();
+	for (std::map<int, int>::iterator it = listenerMap.begin(); it != listenerMap.end(); ++it)
+		_addToPoll(it->first);
 }
 
 WebServer::~WebServer()
@@ -41,9 +45,9 @@ void WebServer::run()
 			throw runtime_error("Failed to poll file descriptors.");
 
 		// for loop to service all file descriptors with events
-		for (_pollIndex = 0; _pollIndex < _poll.size(); _pollIndex++)
+		for (size_t i = 0; i < _poll.size(); ++i)
 		{
-			pollfd &pfd = _poll[_pollIndex];
+			pollfd &pfd = _poll[i];
 
 			if (_noEvents(pfd))
 				continue;
@@ -52,6 +56,8 @@ void WebServer::run()
 			if (_clientManager.isClient(pfd.fd))
 				_handleClientEvents(pfd);
 		}
+		// poll should only be modified after the loop is completed
+		_updatePoll();
 	}
 }
 
@@ -71,6 +77,69 @@ void WebServer::_handleClientEvents(const pollfd &client)
 		_clientManager.recvFromClient(fd);
 	else if (_clientIsReadyToReceive(client))
 		_clientManager.sendToClient(fd);
+}
+
+// process poll queues
+// remove -> toggle -> add to minimize search space for remove and modify
+void WebServer::_updatePoll()
+{
+	for (std::vector<int>::iterator it = _pollRemoveQueue.begin(); it != _pollRemoveQueue.end(); ++it)
+		_removeFromPoll(*it);
+
+	for (std::vector<int>::iterator it = _pollToggleQueue.begin(); it != _pollToggleQueue.end(); ++it)
+		_togglePollEvent(*it);
+
+	for (std::vector<int>::iterator it = _pollAddQueue.begin(); it != _pollAddQueue.end(); ++it)
+		_addToPoll(*it);
+
+	_pollRemoveQueue.clear();
+	_pollToggleQueue.clear();
+	_pollAddQueue.clear();
+}
+
+void WebServer::_removeFromPoll(int fd)
+{
+	for (std::vector<pollfd>::iterator it = _poll.begin(); it != _poll.end(); ++it)
+	{
+		if (it->fd == fd)
+		{
+			_poll.erase(it);
+			break;
+		}
+	}
+}
+
+// toggle poll event between POLLIN and POLLOUT
+// change poll from POLLIN to POLLOUT to send response to client
+void WebServer::_togglePollEvent(int fd)
+{
+	for (std::vector<pollfd>::iterator it = _poll.begin(); it != _poll.end(); ++it)
+	{
+		if (it->fd == fd)
+		{
+			it->events = (it->events == POLLIN ? POLLOUT : POLLIN);
+			break;
+		}
+	}
+}
+
+// add a file descriptor and its event to be monitored by poll(). POLLIN by default.
+// short data type for events and revents is a bitmask for the events to monitor.
+void WebServer::_addToPoll(int fd)
+{
+	// A pollfd struct is used to monitor file descriptors for events:
+	// 1) FD to monitor
+	// 2) EVENTS to monitor (POLLIN = incoming data, POLLOUT = outgoing data)
+	//    In case of error, poll() will set error flags in the revents field.
+	//    server POLLIN - client wishing to connect
+	//    client POLLIN - client wishing to send data
+	// 3) REVENTS (returned events which will be set by poll())
+	struct pollfd pfd;
+
+	pfd.fd = fd;
+	pfd.events = POLLIN;
+	pfd.revents = 0;
+	_poll.push_back(pfd);
 }
 
 bool WebServer::_noEvents(const pollfd &pfd)

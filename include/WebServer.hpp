@@ -29,13 +29,20 @@ class WebServer
 	private:
 		std::vector<Server> _servers;
 		std::vector<pollfd> _poll;
-		size_t _pollIndex;
+		std::vector<int> _pollRemoveQueue;
+		std::vector<int> _pollToggleQueue;
+		std::vector<int> _pollAddQueue;
 
 		ListenerManager _listenerManager;
 		ClientManager _clientManager;
 
 		void _handleListenerEvents(const pollfd &listener);
 		void _handleClientEvents(const pollfd &client);
+
+		void _updatePoll();
+		void _removeFromPoll(int fd);
+		void _togglePollEvent(int fd);
+		void _addToPoll(int fd);
 
 		static bool _noEvents(const pollfd &pollfd);
 		static bool _clientIsConnecting(const pollfd &listener);
