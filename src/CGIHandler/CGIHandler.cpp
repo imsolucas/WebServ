@@ -8,18 +8,21 @@
 # include <unistd.h> // close, dup2, execve, _exit, fork, pipe
 
 using std::cerr;
+using std::exception;
+using std::getline;
 using std::istringstream;
 using std::map;
 using std::runtime_error;
 using std::string;
 using std::vector;
 
-CGIHandler::CGIHandler(HttpRequest &req) : _req(req), _cgiOutput() {}
+CGIHandler::CGIHandler(HttpRequest &req) 
+: _req(req), _headersEnd(string::npos), _cgiOutput(), _cgiOutputType() {}
 
 // If CGI executed successfully, function will return 0.
 // getCGIOutput can then be called to get the CGI output as a string.
 // Otherwise, it will return the HTTP status code for any errors.
-int CGIHandler::execute()
+StatusCode CGIHandler::execute()
 {
 	try
 	{
@@ -33,7 +36,8 @@ int CGIHandler::execute()
 			_cgiChildProcess();
 		else
 			_cgiParentProcess();
-		return 0;
+		_validateCGIOutput();
+		return OK;
 	}
 	catch (const UnchunkingException& e)
 	{
@@ -60,17 +64,22 @@ int CGIHandler::execute()
 		utils::printError(e.what());
 		return GATEWAY_TIMEOUT;
 	}
-	// catches for pipe, fork and waitpid exceptions
-	catch (const std::exception& e)
+	// catches for pipe, fork, waitpid and malformed output exceptions
+	catch (const exception& e)
 	{
 		utils::printError(e.what());
 		return INTERNAL_SERVER_ERROR;
 	}
 }
 
-const std::string &CGIHandler::getCGIOutput() const
+const string &CGIHandler::getCGIOutput() const
 {
 	return this->_cgiOutput;
+}
+
+const string &CGIHandler::getCGIOutputType() const
+{
+	return this->_cgiOutputType;
 }
 
 // Format for chunked transfer encoding as per RFC 7230
@@ -91,7 +100,7 @@ void CGIHandler::_unchunkBody()
 	string line, unchunkedBody;
 
 	// getline breaks lines on "\n" by default
-	while (std::getline(stream, line))
+	while (getline(stream, line))
 	{
 		if (!line.empty() && line[line.size() - 1] == '\r')
 			// erase last character of the string ('\r') to sanitize input for hexStrToInt
@@ -101,7 +110,7 @@ void CGIHandler::_unchunkBody()
 		{
 			chunkSize = utils::hexStrToInt(line);
 		}
-		catch (const std::exception& e)
+		catch (const exception& e)
 		{
 			utils::printError(e.what());
 			throw UnchunkingException();
@@ -128,7 +137,7 @@ void CGIHandler::_unchunkBody()
 		unchunkedBody.append(buffer.begin(), buffer.end());
 		// after appending the buffer, "\r\n" of the chunk-data still remains in the stream,
 		// so cleanly skip over it with getline
-		std::getline(stream, line);
+		getline(stream, line);
 	}
 	// once the body is unchunked, update the request body, content length
 	// and strip the transfer encoding header to prevent confusion.
@@ -197,8 +206,8 @@ void CGIHandler::_parseRequestTarget()
 
 	// check whether requestTarget has a '?' that will demarcate
 	// the beginning of the query string
-	std::size_t pos = requestTarget.find("?");
-	if (pos != std::string::npos)
+	size_t pos = requestTarget.find("?");
+	if (pos != string::npos)
 	{
 		_virtualPath = requestTarget.substr(0, pos);
 		queryString = requestTarget.substr(pos + 1);
@@ -345,6 +354,74 @@ void CGIHandler::_resolveChildStatus()
 		throw AbnormalTerminationException();
 }
 
+// This function performs basic checks on the CGI output after normalizing the header separator:
+// 1) has a header-body separator
+// 2) has a content-type header
+// If either check fails, a runtime_error is thrown (error code 500).
+void CGIHandler::_validateCGIOutput()
+{
+	_normalizeHeaderSeparator();
+	if (!_hasHeaderSeparator())
+		throw runtime_error("CGI: Malformed output - missing header-body separator.");
+	if (!_hasContentType())
+		throw runtime_error("CGI: Malformed output - missing Content-Type header.");
+}
+
+// CGI scripts are not strictly bound to HTTP formatting rules.
+// Although the HTTP standard (RFC) specifies "\r\n\r\n" to separate headers from the body,
+// many CGI scripts (especially in languages like Python) use "\n\n" instead, e.g. print("Content-Type: text/plain\n").
+// Therefore, it is the server's responsibility to accept "\n\n" as a valid separator and normalize the output.
+// Normalization is done by replacing "\n\n" with "\r\n\r\n".
+void CGIHandler::_normalizeHeaderSeparator()
+{
+	size_t pos = _cgiOutput.find("\n\n");
+	if (pos != string::npos)
+		_cgiOutput.replace(pos, 2, "\r\n\r\n");
+}
+
+// Checks that the output has a header-body separator.
+// If it does, sets the position of _headersEnd that will be used by hasContentType.
+bool CGIHandler::_hasHeaderSeparator()
+{
+	size_t pos = _cgiOutput.find("\r\n\r\n");	
+	if (pos != string::npos)
+	{
+		_headersEnd = pos + 4;
+		return true;
+	}
+	return false;
+}
+
+// This function checks for the presence of the "Content-Type" header in the CGI output and 
+// stores its value in _cgiOutputType if it exists.
+// Formatting checked: 
+// - "Content-Type:" must be at the start of the line
+// - optional whitespace after the colon
+// - the value must not be empty and will be stored trimmed of leading and trailing whitespaces
+// CGI headers are not governed by the HTTP RFC in the same way as HTTP request/response headers. 
+// We have opted for case-sensitive matching of the Content-Type header for simplicity.
+bool CGIHandler::_hasContentType()
+{
+	string headerSection = _cgiOutput.substr(0, _headersEnd);
+	istringstream stream(headerSection);
+	string line;
+
+	while (getline(stream, line))
+	{
+		if (line.compare(0, 13, "Content-Type:") == 0)
+		{
+			// Python CGI output could contain \r in header lines when run on Windows.
+			string value = utils::trim(line.substr(13), " \t\r");
+			if (!value.empty())
+			{
+				_cgiOutputType = value;
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 CGIHandler::UnchunkingException::UnchunkingException()
 : runtime_error("CGI: Failed to unchunk request body.") {}
 
@@ -360,37 +437,3 @@ CGIHandler::AbnormalTerminationException::AbnormalTerminationException()
 
 CGIHandler::TimeoutException::TimeoutException()
 : runtime_error("CGI: Child process has timed out.") {}
-
-void CGIHandler::testCGIHandler(const string &stream)
-{
-	// // GET request with query string
-	// string stream =
-	// 	"GET /test_cgi.py?name=Alice&age=25 HTTP/1.1\r\n"
-	// 	"Host: example.com\r\n"
-	// 	"User-Agent: TestClient/1.0\r\n"
-	// 	"Accept: */*\r\n"
-	// 	"Connection: close\r\n"
-	// 	"\r\n";
-
-	// // POST request with form data in body
-	// string stream =
-	// 	"POST /test_cgi.py HTTP/1.1\r\n"
-	// 	"Host: example.com\r\n"
-	// 	"User-Agent: TestClient/1.0\r\n"
-	// 	"Content-Type: application/x-www-form-urlencoded\r\n"
-	// 	"Content-Length: 42\r\n"
-	// 	"Connection: close\r\n"
-	// 	"\r\n"
-	// 	"name=Bob+Smith&email=bob.smith%40mail.com";
-
-	HttpRequest request = deserialize(stream);
-
-	CGIHandler cgi(request);
-	int status = cgi.execute();
-	string cgiOutput;
-	if (status == 0)
-	{
-		cgiOutput = cgi.getCGIOutput();
-		std::cout << "\nCGI Output: \n" << cgiOutput << std::endl;
-	}
-}
