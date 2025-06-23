@@ -1,15 +1,10 @@
 # pragma once
 
-# include <poll.h>
 # include <string>
 # include <vector>
 
 struct utils
 {
-	// pollUtils.cpp
-	static void addToPoll(std::vector<pollfd> &poll, int fd, short events, short revents);
-	static void removeFromPoll(std::vector<pollfd> &poll, int i);
-
 	// printError.cpp
 	static void printError(std::string message);
 	static void printError(const char* message);

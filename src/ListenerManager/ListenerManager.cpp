@@ -13,9 +13,6 @@ using std::cout;
 using std::runtime_error;
 using std::string;
 
-ListenerManager::ListenerManager(std::vector<pollfd> &poll)
-: _poll(poll) {}
-
 void ListenerManager::_setupAllListeners(const std::vector<Server>&servers)
 {
 	std::vector<Server>::const_iterator serverIt = servers.begin();
@@ -31,6 +28,11 @@ void ListenerManager::_setupAllListeners(const std::vector<Server>&servers)
 bool ListenerManager::isListener(int fd)
 {
 	return _listenerMap.count(fd);
+}
+
+const std::map<int, int> &ListenerManager::getListenerMap() const
+{
+	return _listenerMap;
 }
 
 int ListenerManager::getPort(int listenerFd) const
@@ -97,7 +99,7 @@ void ListenerManager::_setUpListener(int port)
 		close(listenerFd);
 		throw runtime_error("Failed to listen to socket on port " + portString + ".");
 	}
-	utils::addToPoll(_poll, listenerFd, POLLIN, 0);
+
 	_listenerMap[listenerFd] = port;
 
 	cout << BLUE << "Listener with fd " << listenerFd << " set up on port " << port << "!\n" << RESET;
