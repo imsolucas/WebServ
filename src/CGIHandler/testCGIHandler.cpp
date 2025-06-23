@@ -2,6 +2,40 @@
 // #include "Http.h"
 // #include <iostream>
 
+// void testCGIHandler(const string &stream)
+// {
+// 	// // GET request with query string
+// 	// string stream =
+// 	// 	"GET /test_cgi.py?name=Alice&age=25 HTTP/1.1\r\n"
+// 	// 	"Host: example.com\r\n"
+// 	// 	"User-Agent: TestClient/1.0\r\n"
+// 	// 	"Accept: */*\r\n"
+// 	// 	"Connection: close\r\n"
+// 	// 	"\r\n";
+
+// 	// // POST request with form data in body
+// 	// string stream =
+// 	// 	"POST /test_cgi.py HTTP/1.1\r\n"
+// 	// 	"Host: example.com\r\n"
+// 	// 	"User-Agent: TestClient/1.0\r\n"
+// 	// 	"Content-Type: application/x-www-form-urlencoded\r\n"
+// 	// 	"Content-Length: 42\r\n"
+// 	// 	"Connection: close\r\n"
+// 	// 	"\r\n"
+// 	// 	"name=Bob+Smith&email=bob.smith%40mail.com";
+
+// 	HttpRequest request = deserialize(stream);
+
+// 	CGIHandler cgi(request);
+// 	int status = cgi.execute();
+// 	string cgiOutput;
+// 	if (status == 0)
+// 	{
+// 		cgiOutput = cgi.getCGIOutput();
+// 		std::cout << "\nCGI Output: \n" << cgiOutput << std::endl;
+// 	}
+// }
+
 // // int testUnchunkBody()
 // // {
 // // 	const char *chunkedRequestBody =
@@ -36,7 +70,7 @@
 // {
 // 	try {
 // 		const char *request =
-// 		"GET cgi-bin/infinite_loop.py HTTP/1.1\r\n"
+// 		"GET cgi-bin/test_cgi.py?name=john HTTP/1.1\r\n"
 // 		"Host: localhost\r\n"
 // 		"User-Agent: TestClient/1.0\r\n"
 // 		"Accept: */*\r\n"
@@ -55,6 +89,8 @@
 // 	{
 // 		std::string output = handler.getCGIOutput();
 // 		std::cout << "CGI executed successfully:\n" << output << std::endl;
+// 		std::string contentType = handler.getCGIOutputType();
+// 		std::cout << "Content-Type extracted:\n" << contentType << std::endl;
 // 	}
 // 	else
 // 	{

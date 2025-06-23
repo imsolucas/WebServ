@@ -13,6 +13,7 @@ struct utils
 	static int hexStrToInt(const std::string& hexStr);
 	static std::string toLower(const std::string &string);
 	static std::string toUpper(const std::string &string);
+	static std::string trim(const std::string& input, const std::string& whitespace);
 	static std::vector<std::string> split(const std::string &str, char delimiter);
 
 	// string.tpp
