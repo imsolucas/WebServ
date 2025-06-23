@@ -22,7 +22,7 @@ CGIHandler::CGIHandler(HttpRequest &req)
 // If CGI executed successfully, function will return 0.
 // getCGIOutput can then be called to get the CGI output as a string.
 // Otherwise, it will return the HTTP status code for any errors.
-int CGIHandler::execute()
+StatusCode CGIHandler::execute()
 {
 	try
 	{
@@ -37,7 +37,7 @@ int CGIHandler::execute()
 		else
 			_cgiParentProcess();
 		_validateCGIOutput();
-		return 0;
+		return OK;
 	}
 	catch (const UnchunkingException& e)
 	{

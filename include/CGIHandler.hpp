@@ -14,7 +14,7 @@ class CGIHandler
 	public:
 		// http request will be modified when unchunking the body
 		CGIHandler(HttpRequest &req);
-		int execute();
+		StatusCode execute();
 		const std::string &getCGIOutput() const;
 		const std::string &getCGIOutputType() const;
 

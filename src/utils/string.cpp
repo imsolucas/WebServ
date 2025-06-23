@@ -58,18 +58,6 @@ string utils::toUpper(const string &str)
 	return uppercase;
 }
 
-vector<string> utils::split(const string &str, char delimiter)
-{
-	istringstream	iss(str);
-	string			token;
-	vector<string>	v;
-
-	while (getline(iss, token, delimiter))
-		v.push_back(token);
-
-	return v;
-}
-
 // This helper function trims leading and trailing whitespaces from the input.
 string utils::trim(const string& input, const string& whitespace)
 {
@@ -81,4 +69,16 @@ string utils::trim(const string& input, const string& whitespace)
 	 // Find the last non-whitespace character
 	size_t end = input.find_last_not_of(whitespace);
 	return input.substr(start, end - start + 1);
+}
+
+vector<string> utils::split(const string &str, char delimiter)
+{
+	istringstream	iss(str);
+	string			token;
+	vector<string>	v;
+
+	while (getline(iss, token, delimiter))
+		v.push_back(token);
+
+	return v;
 }
