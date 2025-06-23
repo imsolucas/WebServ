@@ -68,15 +68,13 @@ HttpRequest parse(HttpMessage message)
 	for (vector<string>::iterator it = message.headers.begin();
 		it != message.headers.end(); ++it)
 	{
-		vec = utils::split(*it, ':'); // TODO: only split by the first occurance
-		if (vec.size() != 2)
-			throw runtime_error("BAD REQUEST: invalid header\n");
+		vec = utils::splitFirst(*it, ':');
 		vec[0] = utils::toLower(vec[0]); // RFC 9110: field names are case-insensitive
 		if (!utils::isPrint(vec[0]) || vec[0].find(' ') != string::npos
 			|| vec[0].find('\r') != string::npos
 			|| vec[0].find('\n') != string::npos)
 			throw runtime_error("BAD REQUEST: invalid header type\n");
-		req.headers[vec[0]] = vec[1].substr(1); // TODO: trim whitespace
+		req.headers[vec[0]] = utils::trim(vec[1], " ");
 		if (!utils::isPrint(req.headers[vec[0]])
 			|| req.headers[vec[0]].find("\r\n") != string::npos)
 			throw runtime_error("BAD REQUEST: invalid header content\n");

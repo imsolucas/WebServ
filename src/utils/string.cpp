@@ -99,6 +99,18 @@ string utils::trim(const string& input, const string& whitespace)
 	return input.substr(start, end - start + 1);
 }
 
+vector<string> utils::splitFirst(const string &str, char delimiter) {
+	vector<string> result;
+	size_t pos = str.find(delimiter);
+	if (pos == string::npos) {
+		result.push_back(str);
+	} else {
+		result.push_back(str.substr(0, pos));
+		result.push_back(str.substr(pos + 1));
+	}
+	return result;
+}
+
 vector<string> utils::split(const string &str, char delimiter)
 {
 	istringstream	iss(str);
@@ -106,7 +118,8 @@ vector<string> utils::split(const string &str, char delimiter)
 	vector<string>	v;
 
 	while (getline(iss, token, delimiter))
-		v.push_back(token);
+		if (!token.empty())
+			v.push_back(token);
 
 	return v;
 }
