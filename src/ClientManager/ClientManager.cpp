@@ -21,8 +21,9 @@ ClientManager::ClientMeta::ClientMeta()
 	requestMeta.contentLength = 0;
 }
 
-ClientManager::ClientManager(std::vector<pollfd> &poll, size_t &pollIndex, const std::vector<Server> &servers)
-: _poll(poll), _pollIndex(pollIndex), _servers(servers) {}
+ClientManager::ClientManager(std::vector<int> &pollRemoveQueue, std::vector<int> &pollToggleQueue,
+								std::vector<int> &pollAddQueue, const std::vector<Server> &servers)
+: _pollRemoveQueue(pollRemoveQueue), _pollToggleQueue(pollToggleQueue), _pollAddQueue(pollAddQueue), _servers(servers) {}
 
 void ClientManager::addClient(int listenerFd, int port)
 {
@@ -40,18 +41,16 @@ void ClientManager::addClient(int listenerFd, int port)
 		close(clientFd);
 		return;
 	}
-	utils::addToPoll(_poll, clientFd, POLLIN, 0);
 	_addToClientMap(clientFd, listenerFd, port);
+	_pollAddQueue.push_back(clientFd);
 	cout << GREEN <<  "Client with fd " << clientFd << " connected on port " << port << "!\n" << RESET;
 }
 
 void ClientManager::removeClient(int fd)
 {
 	close(fd);
-	utils::removeFromPoll(_poll, _pollIndex);
 	_removeFromClientMap(fd);
-	// decrement to prevent skipping the element that just moved into position i.
-	_pollIndex--;
+	_pollRemoveQueue.push_back(fd);
 	cout << RED << "Client with fd " << fd << " disconnected!\n" << RESET;
 }
 
@@ -169,8 +168,7 @@ void ClientManager::_handleIncomingData(int fd, const char *buffer, size_t bytes
 		case STATE_REQUEST_READY:
 		{
 			cout << "Received complete request from fd " << fd << ".\n";
-			// change poll from POLLIN to POLLOUT to send response to client
-			_poll[_pollIndex].events = POLLOUT;
+			_pollToggleQueue.push_back(fd);
 			break;
 		}
 		default:
@@ -179,7 +177,7 @@ void ClientManager::_handleIncomingData(int fd, const char *buffer, size_t bytes
 	if (client.errorCode > 0)
 	{
 		cout << RED << "Error code: " << client.errorCode << ".\n" << RESET;
-		_poll[_pollIndex].events = POLLOUT;
+		_pollToggleQueue.push_back(fd);
 	}
 }
 
