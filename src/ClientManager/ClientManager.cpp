@@ -3,7 +3,6 @@
 # include "utils.hpp"
 
 # include <fcntl.h>
-# include <fstream> // TODO: DELETE
 # include <iostream>
 # include <sys/socket.h> // accept, recv, send
 # include <unistd.h> // close
@@ -175,7 +174,7 @@ bool ClientManager::_headersAreComplete(ClientMeta &client)
 void ClientManager::_preparseHeaders(ClientMeta &client)
 {
 	string headers = client.requestBuffer.substr(0, client.requestMeta.headersEnd);
-	HttpRequest req = deserialize(headers);
+	HttpRequest req = deserialize(headers); // TODO ?: custom logic for preparse
 	_determineBodyEnd(client, req);
 	client.server = _selectServerBlock(client, req);
 }

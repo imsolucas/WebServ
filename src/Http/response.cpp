@@ -26,7 +26,8 @@ HttpResponse serveFile(HttpRequest &request, const string &file)
 		StatusCode status = cgi.execute();
 		if (status != OK)
 			return handleError(status);
-		response.body = cgi.getCGIOutput(); // TODO: get CGI content type
+		response.headers[Http::CONTENT_TYPE] = cgi.getCGIOutputType();
+		response.body = cgi.getCGIOutput();
 	}
 	else if (request.method == Http::GET)
 	{

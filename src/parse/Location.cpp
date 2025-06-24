@@ -9,7 +9,7 @@ using std::cout;
 // Constructors
 Location::Location()
 	: path("/"),
-	  root("/var/www/html"),
+	  root(""),
 	  index(""),
 	  cgi_path("/usr/bin/php-cgi"),
 	  redirect(""),
@@ -23,7 +23,7 @@ Location::Location()
 
 Location::Location(const string &path)
 	: path(path),
-	  root("/var/www/html"),
+	  root(""),
 	  index(""),
 	  cgi_path("/usr/bin/php-cgi"),
 	  redirect(""),

@@ -34,7 +34,6 @@ string serialize(const HttpResponse &response)
 	return stream;
 }
 
-// assumes the byte stream is a valid HTTP request
 HttpRequest deserialize(const string &stream)
 {
 	HttpMessage msg;
