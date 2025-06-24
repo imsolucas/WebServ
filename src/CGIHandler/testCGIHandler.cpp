@@ -70,7 +70,7 @@
 // {
 // 	try {
 // 		const char *request =
-// 		"GET cgi-bin/test_cgi.py?name=john HTTP/1.1\r\n"
+// 		"GET /cgi-bin/test_cgi.py?name=john HTTP/1.1\r\n"
 // 		"Host: localhost\r\n"
 // 		"User-Agent: TestClient/1.0\r\n"
 // 		"Accept: */*\r\n"
@@ -78,19 +78,30 @@
 // 		"\r\n";
 
 // 	HttpRequest req = deserialize(request);
-// 	CGIHandler handler(req);
+// 	CGIHandler handler(req, "public");
 
 // 	// (Optional) Set up handler with request/headers/body as needed
 // 	// handler.setRequest(...);
 
 // 	int statusCode = handler.execute();
 
-// 	if (statusCode == 0)
+// 	if (statusCode == 200)
 // 	{
+// 		// Print raw CGI output (if needed for debug)
 // 		std::string output = handler.getCGIOutput();
 // 		std::cout << "CGI executed successfully:\n" << output << std::endl;
-// 		std::string contentType = handler.getCGIOutputType();
-// 		std::cout << "Content-Type extracted:\n" << contentType << std::endl;
+
+// 		// Print headers
+// 		const std::map<std::string, std::string> &headers = handler.getCGIHeaders();
+// 		std::cout << "Parsed CGI Headers:\n";
+// 		for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
+// 		{
+// 			std::cout << it->first << ": " << it->second << std::endl;
+// 		}
+
+// 		// Print body
+// 		const std::string &body = handler.getCGIBody();
+// 		std::cout << "\nCGI Body:\n" << body << std::endl;
 // 	}
 // 	else
 // 	{
