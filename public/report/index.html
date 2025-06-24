@@ -1,23 +1,143 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="UTF-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<title>Bug Reports</title>
-	<style>
-		body { font-family: Arial, sans-serif; padding: 2rem; background: #f5f5f5; color: #333; text-align: center; }
-		ul { list-style-type: none; padding: 0; }
-		li { padding: 0.5em 0; }
-	</style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Black Market</title>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            padding: 2rem;
+            text-align: center;
+            background: linear-gradient(135deg, #0a0a0a 80%, #1a1a1a 100%);
+            color: #eeff00;
+            min-height: 100vh;
+            position: relative;
+        }
+        .bg-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: url('https://www.transparenttextures.com/patterns/asfalt-light.png');
+            opacity: 0.07;
+            z-index: 0;
+			pointer-events: none;
+        }
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 0.5em;
+            letter-spacing: 0.1em;
+            text-shadow: 0 0 10px #eeff00, 0 0 30px #000;
+            filter: blur(0.2px);
+        }
+        .logo {
+            width: 80px;
+            margin-bottom: 1em;
+            filter: drop-shadow(0 0 10px #eeff00);
+        }
+        a {
+            display: block;
+            margin: 1.5em auto;
+            font-size: 1.3rem;
+            text-decoration: none;
+            color: #00ffe7;
+            background: rgba(20,20,20,0.7);
+            border: 1px solid #222;
+            border-radius: 8px;
+            padding: 0.7em 2em;
+            box-shadow: 0 0 10px #00ffe7, 0 0 2px #000;
+            transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+            max-width: 320px;
+        }
+        a:hover {
+            background: #111;
+            color: #eeff00;
+            box-shadow: 0 0 20px #eeff00, 0 0 2px #000;
+        }
+        p {
+            font-size: 1.2rem;
+            margin-bottom: 2em;
+            color: #b7ffb7;
+            text-shadow: 0 0 5px #000;
+        }
+        footer {
+            position: absolute;
+            bottom: 1em;
+            width: 100%;
+            font-size: 0.9em;
+            color: #444;
+            letter-spacing: 0.1em;
+			position: static;;
+        }
+    </style>
 </head>
 <body>
-	<h1>Recent Bug Reports</h1>
-	<p>This page shows submitted bug reports. (Just a placeholder for now!)</p>
-	<ul>
-		<li>📄 report_001.txt</li>
-		<li>📄 screenshot_123.png</li>
-		<li>📄 crash_log.log</li>
+	<div class="bg-overlay"></div>
+	<img src="https://img.icons8.com/ios-filled/100/eeff00/diamond.png" alt="Black Market Logo" class="logo" />
+	<h1>🖼️ Black Market NFT Gallery</h1>
+	<p>Browse and manage your uploaded NFT images below.</p>
+	<ul id="file-list" style="display: flex; flex-wrap: wrap; gap: 2em; justify-content: center; list-style: none; padding: 0; margin: 2em 0;">
+		<li style="color:#888;">Loading files...</li>
 	</ul>
 	<p><a href="/">← Back to Home</a></p>
+	<footer>
+		&copy; 2025 Black Market &mdash; All rights reserved.
+	</footer>
+	<script>
+		// Fetch file list dynamically (your CGI script must output JSON)
+		fetch('/cgi-bin/list_reports.py')
+			.then(res => res.json())
+			.then(files => {
+				const list = document.getElementById('file-list');
+				list.innerHTML = '';
+				if (files.length === 0) {
+					list.innerHTML = '<li style="color:#888;">No uploaded files found.</li>';
+					return;
+				}
+				files.forEach(file => {
+					const li = document.createElement('li');
+					li.style.background = 'rgba(20,20,20,0.85)';
+					li.style.border = '1px solid #222';
+					li.style.borderRadius = '12px';
+					li.style.boxShadow = '0 0 16px #111';
+					li.style.padding = '1.2em 1em 1em 1em';
+					li.style.width = '220px';
+					li.style.display = 'flex';
+					li.style.flexDirection = 'column';
+					li.style.alignItems = 'center';
+					li.style.position = 'relative';
+
+					li.innerHTML = `
+						<div style="width:180px;height:180px;display:flex;align-items:center;justify-content:center;background:#111;border-radius:8px;overflow:hidden;margin-bottom:1em;">
+							<img src="/uploads/${file}" alt="${file}" style="max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 0 8px #eeff00);" onerror="this.src='https://img.icons8.com/ios-filled/100/ff0000/image.png';" />
+						</div>
+						<a href="/uploads/${file}" target="_blank" style="color:#00ffe7;font-size:1.1em;word-break:break-all;margin-bottom:0.7em;">${file}</a>
+						<button onclick="deleteFile('${file}')" style="background:#eeff00;color:#111;border:none;border-radius:6px;padding:0.5em 1.2em;cursor:pointer;font-family:inherit;font-size:1em;box-shadow:0 0 8px #eeff00;transition:background 0.2s;">Delete</button>
+					`;
+					li.querySelector('button').onmouseover = function() {
+						this.style.background = '#111';
+						this.style.color = '#eeff00';
+					};
+					li.querySelector('button').onmouseout = function() {
+						this.style.background = '#eeff00';
+						this.style.color = '#111';
+					};
+					list.appendChild(li);
+				});
+			});
+
+		function deleteFile(filename) {
+			fetch('/cgi-bin/delete_report.py', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+				body: 'file=' + encodeURIComponent(filename)
+			})
+			.then(res => res.text())
+			.then(msg => {
+				alert(msg);
+				location.reload();
+			});
+		}
+	</script>
 </body>
 </html>

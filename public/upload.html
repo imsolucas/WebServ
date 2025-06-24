@@ -1,22 +1,93 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="UTF-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<title>Submit a Bug Report</title>
-	<style>
-		body { font-family: Arial, sans-serif; padding: 2rem; text-align: center; background: #fcfcfc; color: #333; }
-		form { margin-top: 2rem; }
-		input[type="file"] { margin-bottom: 1rem; }
-	</style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Black Market</title>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            padding: 2rem;
+            text-align: center;
+            background: linear-gradient(135deg, #0a0a0a 80%, #1a1a1a 100%);
+            color: #eeff00;
+            min-height: 100vh;
+            position: relative;
+			overflow: hidden;
+        }
+        .bg-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: url('https://www.transparenttextures.com/patterns/asfalt-light.png');
+            opacity: 0.07;
+            z-index: 0;
+			pointer-events: none;
+        }
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 0.5em;
+            letter-spacing: 0.1em;
+            text-shadow: 0 0 10px #eeff00, 0 0 30px #000;
+            filter: blur(0.2px);
+        }
+        .logo {
+            width: 80px;
+            margin-bottom: 1em;
+            filter: drop-shadow(0 0 10px #eeff00);
+        }
+        a {
+            display: block;
+            margin: 1.5em auto;
+            font-size: 1.3rem;
+            text-decoration: none;
+            color: #00ffe7;
+            background: rgba(20,20,20,0.7);
+            border: 1px solid #222;
+            border-radius: 8px;
+            padding: 0.7em 2em;
+            box-shadow: 0 0 10px #00ffe7, 0 0 2px #000;
+            transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+            max-width: 320px;
+        }
+        a:hover {
+            background: #111;
+            color: #eeff00;
+            box-shadow: 0 0 20px #eeff00, 0 0 2px #000;
+        }
+        p {
+            font-size: 1.2rem;
+            margin-bottom: 2em;
+            color: #b7ffb7;
+            text-shadow: 0 0 5px #000;
+        }
+        footer {
+            position: absolute;
+            bottom: 1em;
+            width: 100%;
+            font-size: 0.9em;
+            color: #444;
+            letter-spacing: 0.1em;
+			position: static;;
+        }
+    </style>
 </head>
 <body>
-	<h1>Submit a Bug Report</h1>
-	<p>You can upload a screenshot, a log file, or a description of the issue.</p>
-	<form method="POST" action="/cgi-bin/submit_report.py" enctype="multipart/form-data">
-		<input type="file" name="bugfile" required /><br />
-		<button type="submit">Upload</button>
+	<h1>Upload NFT Image</h1>
+	<p>You can upload an image file for your NFT.</p>
+	<form method="POST" action="/cgi-bin/submit_report.py" enctype="multipart/form-data" style="background: rgba(20,20,20,0.85); border: 2px solid #222; border-radius: 12px; padding: 2em 1.5em; max-width: 400px; margin: 2em auto 2em auto; box-shadow: 0 0 24px #eeff00, 0 0 4px #000;">
+		<label for="bugfile" style="display: block; font-size: 1.1rem; color: #eeff00; margin-bottom: 1em; letter-spacing: 0.05em;">
+			Select your NFT image:
+		</label>
+		<input type="file" id="bugfile" name="bugfile" required style="background: #111; color: #eeff00; border: 1px solid #444; border-radius: 6px; padding: 0.5em; margin-bottom: 1.5em; width: 100%; font-family: 'Share Tech Mono', monospace;" />
+		<br />
+		<button type="submit" style="background: linear-gradient(90deg, #eeff00 60%, #00ffe7 100%); color: #111; font-weight: bold; border: none; border-radius: 8px; padding: 0.8em 2.5em; font-size: 1.2rem; box-shadow: 0 0 12px #eeff00, 0 0 2px #000; cursor: pointer; transition: background 0.2s, color 0.2s;">
+			Upload
+		</button>
 	</form>
 	<p><a href="/">← Back to Home</a></p>
+	<footer>
+		&copy; 2025 Black Market &mdash; All rights reserved.
+	</footer>
 </body>
 </html>
