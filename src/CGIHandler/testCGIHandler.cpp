@@ -70,7 +70,7 @@ int main()
 {
 	try {
 		const char *request =
-		"GET /cgi-bin/throw_exception.py HTTP/1.1\r\n"
+		"GET /cgi-bin/hello.php HTTP/1.1\r\n"
 		"Host: localhost\r\n"
 		"User-Agent: TestClient/1.0\r\n"
 		"Accept: */*\r\n"

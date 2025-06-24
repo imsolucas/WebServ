@@ -69,7 +69,7 @@ StatusCode CGIHandler::execute()
 		utils::printError(e.what());
 		return GATEWAY_TIMEOUT;
 	}
-	// catches for pipe, fork, waitpid and malformed output exceptions
+	// catches for pipe, fork, waitpid and ENOEXEC exceptions
 	catch (const exception& e)
 	{
 		utils::printError(e.what());
@@ -287,6 +287,9 @@ void CGIHandler::_cgiChildProcess()
 	else if (errno == EACCES)
 		// permission denied
 		_exit(126);
+	else if (errno == ENOEXEC)
+		// invalid executable format
+		_exit(125);
 	else
 		// generic failure
 		_exit(1);
@@ -357,6 +360,8 @@ void CGIHandler::_resolveChildStatus()
 			throw ScriptNotFoundException();
 		else if (exitStatus == 126)
 			throw ScriptPermissionDeniedException();
+		else if (exitStatus == 125)
+			throw runtime_error("CGI: Invalid executable format (ENOEXEC).");
 		else if (exitStatus != 0)
 			throw AbnormalTerminationException();
 	}
