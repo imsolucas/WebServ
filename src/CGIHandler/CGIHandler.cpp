@@ -281,18 +281,21 @@ void CGIHandler::_cgiChildProcess()
 	// exit and _exit are different in C++.
 	// exit will call destructors for global/static objects and may cause double-closing of fds.
 	// _exit will terminate the child process without touching the parent's runtime state.
-	if (errno == ENOENT)
+	switch (errno)
+	{
 		// script not found
-		_exit(127);
-	else if (errno == EACCES)
+		case ENOENT: 
+			_exit(CGI_EXIT_ENOENT);
 		// permission denied
-		_exit(126);
-	else if (errno == ENOEXEC)
+		case EACCES: 
+			_exit(CGI_EXIT_EACCES);
 		// invalid executable format
-		_exit(125);
-	else
+		case ENOEXEC: 
+			_exit(CGI_EXIT_ENOEXEC); 
 		// generic failure
-		_exit(1);
+		default: 
+			_exit(CGI_EXIT_FAILURE); 
+	}
 }
 
 // Parent will pipe POST request body to stdin of child then assemble CGI output from stdout of child.
@@ -356,14 +359,20 @@ void CGIHandler::_resolveChildStatus()
 	if (WIFEXITED(status))
 	{
 		int exitStatus = WEXITSTATUS(status);
-		if (exitStatus == 127)
-			throw ScriptNotFoundException();
-		else if (exitStatus == 126)
-			throw ScriptPermissionDeniedException();
-		else if (exitStatus == 125)
-			throw runtime_error("CGI: Invalid executable format (ENOEXEC).");
-		else if (exitStatus != 0)
-			throw AbnormalTerminationException();
+		if (exitStatus != 0)
+		{
+			switch (exitStatus)
+			{
+				case CGI_EXIT_ENOENT:
+					throw ScriptNotFoundException();
+				case CGI_EXIT_EACCES:
+					throw ScriptPermissionDeniedException();
+				case CGI_EXIT_ENOEXEC:
+					throw runtime_error("CGI: Invalid executable format (ENOEXEC).");
+				default:
+					throw AbnormalTerminationException();
+			}
+		}
 	}
 	// child was terminated by signal e.g.SIGSEGV, SIGKILL
 	else if (WIFSIGNALED(status))
@@ -401,7 +410,7 @@ void CGIHandler::_normalizeHeaderSeparator()
 }
 
 // Checks that the output has a header-body separator.
-// If it does, sets the position of _headersEnd that will be used by hasContentType.
+// If it does, sets the position of _headersEnd.
 bool CGIHandler::_hasHeaderSeparator()
 {
 	size_t pos = _cgiOutput.find("\r\n\r\n");

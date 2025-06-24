@@ -6,6 +6,12 @@
 # include <string>
 # include <vector>
 
+// CGI-specific exit codes
+# define CGI_EXIT_FAILURE 1
+# define CGI_EXIT_ENOEXEC 125
+# define CGI_EXIT_EACCES  126
+# define CGI_EXIT_ENOENT  127
+
 // 2-second timeout window for CGI scripts to execute
 # define TIMEOUT_MS 2000
 

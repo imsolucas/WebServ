@@ -37,6 +37,7 @@ def run_curl_test(method, path, expected_status, data=None):
 # 502 BAD_GATEWAY
 # 504 GATEWAY_TIMEOUT
 
+# test - access control
 run_curl_test("GET", "/", 200)
 run_curl_test("FAKE_METHOD", "/", 400)
 run_curl_test("GET", "/forbidden", 403)
@@ -58,5 +59,8 @@ run_curl_test("DELETE", "/to_be_deleted.txt", 200)
 print("Testing CGI...")
 run_curl_test("GET", "/cgi-bin/test_cgi.py", 200)
 run_curl_test("POST", "/cgi-bin/test_cgi.py", 200)
+run_curl_test("GET", "/cgi-bin/invalid_bin.py", 500)
 run_curl_test("GET", "/cgi-bin/crash.py", 502)
 run_curl_test("GET", "/cgi-bin/infinite_loop.py", 504)
+
+# test - unchunking
