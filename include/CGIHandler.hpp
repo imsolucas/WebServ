@@ -13,13 +13,15 @@ class CGIHandler
 {
 	public:
 		// http request will be modified when unchunking the body
-		CGIHandler(HttpRequest &req);
+		CGIHandler(HttpRequest &req, std::string root);
 		StatusCode execute();
 		const std::string &getCGIOutput() const;
-		const std::string &getCGIOutputType() const;
+		const std::map<std::string, std::string> &getCGIHeaders() const;
+		const std::string &getCGIBody() const;
 
 	private:
 		HttpRequest &_req;
+		std::string _root;
 		int _stdinPipe[2];
 		int _stdoutPipe[2];
 		// environment variables for execve
@@ -29,7 +31,8 @@ class CGIHandler
 		pid_t _childPid;
 		size_t _headersEnd;
 		std::string _cgiOutput;
-		std::string _cgiOutputType;
+		std::map<std::string, std::string> _cgiHeaders;
+		std::string _cgiBody;
 
 		void _unchunkBody();
 		void _setupPipes();
@@ -42,7 +45,7 @@ class CGIHandler
 		void _validateCGIOutput();
 		void _normalizeHeaderSeparator();
 		bool _hasHeaderSeparator();
-		bool _hasContentType();
+		bool _parseCGIOutput();
 
 	public:
 		class UnchunkingException : public std::runtime_error
@@ -73,5 +76,11 @@ class CGIHandler
 		{
 			public:
 				TimeoutException();
+		};
+
+		class MalformedOutputException : public std::runtime_error
+		{
+			public:
+				MalformedOutputException(std::string msg);
 		};
 };

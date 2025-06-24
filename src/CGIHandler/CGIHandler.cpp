@@ -16,8 +16,8 @@ using std::runtime_error;
 using std::string;
 using std::vector;
 
-CGIHandler::CGIHandler(HttpRequest &req) 
-: _req(req), _headersEnd(string::npos), _cgiOutput(), _cgiOutputType() {}
+CGIHandler::CGIHandler(HttpRequest &req, string root)
+: _req(req), _root(root), _headersEnd(string::npos), _cgiOutput(), _cgiBody() {}
 
 // If CGI executed successfully, function will return 0.
 // getCGIOutput can then be called to get the CGI output as a string.
@@ -59,6 +59,11 @@ StatusCode CGIHandler::execute()
 		utils::printError(e.what());
 		return BAD_GATEWAY;
 	}
+	catch (const MalformedOutputException& e)
+	{
+		utils::printError(e.what());
+		return BAD_GATEWAY;
+	}
 	catch (const TimeoutException& e)
 	{
 		utils::printError(e.what());
@@ -77,9 +82,14 @@ const string &CGIHandler::getCGIOutput() const
 	return this->_cgiOutput;
 }
 
-const string &CGIHandler::getCGIOutputType() const
+const map<string, string> &CGIHandler::getCGIHeaders() const
 {
-	return this->_cgiOutputType;
+	return this->_cgiHeaders;
+}
+
+const string &CGIHandler::getCGIBody() const
+{
+	return this->_cgiBody;
 }
 
 // Format for chunked transfer encoding as per RFC 7230
@@ -245,21 +255,22 @@ void CGIHandler::_cgiChildProcess()
 	close(_stdinPipe[0]);
 	close(_stdoutPipe[1]);
 
-	size_t lastSlash = _virtualPath.find_last_of('/');
+	string execPath = _root + _virtualPath;
+	size_t lastSlash = execPath.find_last_of('/');
 	string scriptDir, scriptFile;
 	// no slashes mean relative path was given e.g. hello.py
 	if (lastSlash == string::npos)
 	{
 		scriptDir = ".";
-		scriptFile = _virtualPath;
+		scriptFile = execPath;
 	}
 	// handles for /dir/hello.py, dir/hello.py and /hello.py
 	else
 	{
-		scriptDir = _virtualPath.substr(0, lastSlash);
+		scriptDir = execPath.substr(0, lastSlash);
 		if (scriptDir.empty())
 			scriptDir = "/";
-		scriptFile = _virtualPath.substr(lastSlash + 1);
+		scriptFile = execPath.substr(lastSlash + 1);
 	}
 	chdir(scriptDir.c_str());
 
@@ -356,15 +367,20 @@ void CGIHandler::_resolveChildStatus()
 
 // This function performs basic checks on the CGI output after normalizing the header separator:
 // 1) has a header-body separator
-// 2) has a content-type header
-// If either check fails, a runtime_error is thrown (error code 500).
+// 2) attempt to parse CGI headers and body
+// 3) has a "Content-Type" header at minimum
+// If any check fails, a MalformedOutputException is thrown (error code 502).
+// CGI headers are not governed by the HTTP RFC in the same way as HTTP request/response headers.
+// We have opted for case-sensitive matching of the Content-Type header for simplicity.
 void CGIHandler::_validateCGIOutput()
 {
 	_normalizeHeaderSeparator();
 	if (!_hasHeaderSeparator())
-		throw runtime_error("CGI: Malformed output - missing header-body separator.");
-	if (!_hasContentType())
-		throw runtime_error("CGI: Malformed output - missing Content-Type header.");
+		throw MalformedOutputException("missing header-body separator");
+	if (!_parseCGIOutput())
+		throw MalformedOutputException("malformed header");
+	if (_cgiHeaders.count("Content-Type") == 0)
+		throw MalformedOutputException("missing Content-Type header");
 }
 
 // CGI scripts are not strictly bound to HTTP formatting rules.
@@ -383,7 +399,7 @@ void CGIHandler::_normalizeHeaderSeparator()
 // If it does, sets the position of _headersEnd that will be used by hasContentType.
 bool CGIHandler::_hasHeaderSeparator()
 {
-	size_t pos = _cgiOutput.find("\r\n\r\n");	
+	size_t pos = _cgiOutput.find("\r\n\r\n");
 	if (pos != string::npos)
 	{
 		_headersEnd = pos + 4;
@@ -392,34 +408,37 @@ bool CGIHandler::_hasHeaderSeparator()
 	return false;
 }
 
-// This function checks for the presence of the "Content-Type" header in the CGI output and 
-// stores its value in _cgiOutputType if it exists.
-// Formatting checked: 
-// - "Content-Type:" must be at the start of the line
-// - optional whitespace after the colon
-// - the value must not be empty and will be stored trimmed of leading and trailing whitespaces
-// CGI headers are not governed by the HTTP RFC in the same way as HTTP request/response headers. 
-// We have opted for case-sensitive matching of the Content-Type header for simplicity.
-bool CGIHandler::_hasContentType()
+// This function will parse the headers and body of the CGI output.
+// If parsing fails at any point, it will return false.
+// Formatting checked:
+// - key: leading, internal and trailing whitespace is forbidden
+// - value: leading and trailing whitespace will be trimmed. internal whitespace is allowed.
+// - value must not be empty
+// - body is everything after headersEnd
+bool CGIHandler::_parseCGIOutput()
 {
-	string headerSection = _cgiOutput.substr(0, _headersEnd);
+	string headerSection = _cgiOutput.substr(0, _headersEnd - 4);
 	istringstream stream(headerSection);
 	string line;
 
 	while (getline(stream, line))
 	{
-		if (line.compare(0, 13, "Content-Type:") == 0)
-		{
-			// Python CGI output could contain \r in header lines when run on Windows.
-			string value = utils::trim(line.substr(13), " \t\r");
-			if (!value.empty())
-			{
-				_cgiOutputType = value;
-				return true;
-			}
-		}
+		size_t colonPos = line.find(':');
+		if (colonPos == string::npos || colonPos == 0)
+			return false;
+
+		string key = line.substr(0, colonPos);
+		if (key.find_first_of(" \t\r") != string::npos)
+			return false;
+
+		string value = utils::trim(line.substr(colonPos + 1), " \t\r");
+		if (value.empty())
+			return false;
+
+		_cgiHeaders[key] = value;
 	}
-	return false;
+	_cgiBody = _cgiOutput.substr(_headersEnd);
+	return true;
 }
 
 CGIHandler::UnchunkingException::UnchunkingException()
@@ -437,3 +456,6 @@ CGIHandler::AbnormalTerminationException::AbnormalTerminationException()
 
 CGIHandler::TimeoutException::TimeoutException()
 : runtime_error("CGI: Child process has timed out.") {}
+
+CGIHandler::MalformedOutputException::MalformedOutputException(string msg)
+: runtime_error("CGI: Malformed output - " + msg + ".") {}
