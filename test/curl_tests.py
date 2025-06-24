@@ -28,11 +28,12 @@ def run_curl_test(method, path, expected_status, data=None):
 
 # 200 OK
 # 400 BAD_REQUEST
+# 401 UNAUTHORIZED (not used in this test)
 # 403 FORBIDDEN
 # 404 NOT_FOUND
 # 405 METHOD_NOT_ALLOWED
 # 413 PAYLOAD_TOO_LARGE
-# 500 INTERNAL_SERVER_ERROR
+# 500 INTERNAL_SERVER_ERROR (not used in this test)
 # 502 BAD_GATEWAY
 # 504 GATEWAY_TIMEOUT
 
@@ -42,13 +43,20 @@ run_curl_test("GET", "/forbidden", 403)
 run_curl_test("GET", "/doesnotexist", 404)
 run_curl_test("POST", "/", 405)
 run_curl_test("DELETE", "/", 405)
+
+# test - upload file
+print("Testing file upload...")
 run_curl_test("POST", "/uploads", 200, data="short body")
 run_curl_test("POST", "/uploads", 413, data="@" * 10000)
-run_curl_test("GET", "/cgi-bin/throw_exception.py", 500)
-run_curl_test("GET", "/cgi-bin/throw_exception.py", 505)
 
-
-
-
+# test - delete file
+print("Testing file deletion...")
 run_curl_test("DELETE", "/to_be_deleted.txt", 200)
 run_curl_test("DELETE", "/to_be_deleted.txt", 200)
+
+# test - CGI
+print("Testing CGI...")
+run_curl_test("GET", "/cgi-bin/test_cgi.py", 200)
+run_curl_test("POST", "/cgi-bin/test_cgi.py", 200)
+run_curl_test("GET", "/cgi-bin/crash.py", 502)
+run_curl_test("GET", "/cgi-bin/infinite_loop.py", 504)

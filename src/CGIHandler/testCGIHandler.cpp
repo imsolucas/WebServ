@@ -1,6 +1,6 @@
-// #include "CGIHandler.hpp"
-// #include "Http.h"
-// #include <iostream>
+#include "CGIHandler.hpp"
+#include "Http.h"
+#include <iostream>
 
 // void testCGIHandler(const string &stream)
 // {
@@ -66,52 +66,52 @@
 // // 	std::cout << req.body << std::endl;  // Should output: name=John&age=36
 // // }
 
-// int testExecute()
-// {
-// 	try {
-// 		const char *request =
-// 		"GET /cgi-bin/test_cgi.py?name=john HTTP/1.1\r\n"
-// 		"Host: localhost\r\n"
-// 		"User-Agent: TestClient/1.0\r\n"
-// 		"Accept: */*\r\n"
-// 		"X-Custom-Header: custom_value\r\n"
-// 		"\r\n";
+int main()
+{
+	try {
+		const char *request =
+		"GET /cgi-bin/throw_exception.py HTTP/1.1\r\n"
+		"Host: localhost\r\n"
+		"User-Agent: TestClient/1.0\r\n"
+		"Accept: */*\r\n"
+		"X-Custom-Header: custom_value\r\n"
+		"\r\n";
 
-// 	HttpRequest req = deserialize(request);
-// 	CGIHandler handler(req, "public");
+	HttpRequest req = deserialize(request);
+	CGIHandler handler(req, "public");
 
-// 	// (Optional) Set up handler with request/headers/body as needed
-// 	// handler.setRequest(...);
+	// (Optional) Set up handler with request/headers/body as needed
+	// handler.setRequest(...);
 
-// 	int statusCode = handler.execute();
+	int statusCode = handler.execute();
 
-// 	if (statusCode == 200)
-// 	{
-// 		// Print raw CGI output (if needed for debug)
-// 		std::string output = handler.getCGIOutput();
-// 		std::cout << "CGI executed successfully:\n" << output << std::endl;
+	if (statusCode == 200)
+	{
+		// Print raw CGI output (if needed for debug)
+		std::string output = handler.getCGIOutput();
+		std::cout << "CGI executed successfully:\n" << output << std::endl;
 
-// 		// Print headers
-// 		const std::map<std::string, std::string> &headers = handler.getCGIHeaders();
-// 		std::cout << "Parsed CGI Headers:\n";
-// 		for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
-// 		{
-// 			std::cout << it->first << ": " << it->second << std::endl;
-// 		}
+		// Print headers
+		const std::map<std::string, std::string> &headers = handler.getCGIHeaders();
+		std::cout << "Parsed CGI Headers:\n";
+		for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
+		{
+			std::cout << it->first << ": " << it->second << std::endl;
+		}
 
-// 		// Print body
-// 		const std::string &body = handler.getCGIBody();
-// 		std::cout << "\nCGI Body:\n" << body << std::endl;
-// 	}
-// 	else
-// 	{
-// 		std::cerr << "CGI failed with status code: " << statusCode << std::endl;
-// 	}
-// 	} catch (const std::exception& e)
-// 	{
-// 		std::cerr << "Unhandled exception: " << e.what() << std::endl;
-// 		return 1;
-// 	}
+		// Print body
+		const std::string &body = handler.getCGIBody();
+		std::cout << "\nCGI Body:\n" << body << std::endl;
+	}
+	else
+	{
+		std::cerr << "CGI failed with status code: " << statusCode << std::endl;
+	}
+	} catch (const std::exception& e)
+	{
+		std::cerr << "Unhandled exception: " << e.what() << std::endl;
+		return 1;
+	}
 
-// 	return 0;
-// }
+	return 0;
+}
