@@ -51,47 +51,56 @@ HttpRequest parse(HttpMessage message)
 
 	vector<string> vec = utils::split(message.startLine, ' ');
 	if (vec.size() != 3)
-		throw runtime_error("BAD REQUEST: invalid start line\n");
+		throw runtime_error("BAD REQUEST: invalid start line");
 	req.method = vec[0];
 	if (req.method != "GET" && req.method != "POST"
 		&& req.method != "DELETE")
-		throw runtime_error("BAD REQUEST: invalid method\n");
+		throw runtime_error("BAD REQUEST: invalid method");
 	req.requestTarget = vec[1];
 	if (req.requestTarget.find('\r') != string::npos
 		|| req.requestTarget.find('\n') != string::npos)
-		throw runtime_error("BAD REQUEST: invalid request target\n");
+		throw runtime_error("BAD REQUEST: invalid request target");
 	req.protocol = vec[2];
 	if (req.protocol != "HTTP/1.1")
-		throw runtime_error("BAD REQUEST: invalid protocol\n");
+		throw runtime_error("BAD REQUEST: invalid protocol");
 
+	bool hostSeen = false;
 	for (vector<string>::iterator it = message.headers.begin();
 		it != message.headers.end(); ++it)
 	{
 		vec = utils::splitFirst(*it, ':');
+		if (vec.size() != 2)
+			throw runtime_error("BAD REQUEST: invalid header format");
 		vec[0] = utils::toLower(vec[0]); // RFC 9110: field names are case-insensitive
 		if (!utils::isPrint(vec[0]) || vec[0].find(' ') != string::npos
 			|| vec[0].find('\r') != string::npos
 			|| vec[0].find('\n') != string::npos)
-			throw runtime_error("BAD REQUEST: invalid header type\n");
+			throw runtime_error("BAD REQUEST: invalid header type");
+		if (vec[0] == "host")
+		{
+			if (hostSeen)
+				throw runtime_error("BAD REQUEST: duplicate host header");
+			hostSeen = true;
+		}
 		req.headers[vec[0]] = utils::trim(vec[1], " ");
 		if (!utils::isPrint(req.headers[vec[0]])
 			|| req.headers[vec[0]].find("\r\n") != string::npos)
-			throw runtime_error("BAD REQUEST: invalid header content\n");
+			throw runtime_error("BAD REQUEST: invalid header content");
 	}
 	if (req.headers.find("host") == req.headers.end())
-		throw runtime_error("BAD REQUEST: Host header missing\n");
+		throw runtime_error("BAD REQUEST: Host header missing");
 
 	req.body = message.body;
 	if (req.method == "GET" && !req.body.empty())
-		throw runtime_error("BAD REQUEST: invalid body\n");
+		throw runtime_error("BAD REQUEST: invalid body");
 	if (req.headers.find("content-length") != req.headers.end())
 	{
 		if (req.headers.find("transfer-encoding") != req.headers.end())
-			throw runtime_error("BAD REQUEST: conflicting headers\n");
+			throw runtime_error("BAD REQUEST: conflicting headers");
 		if (!utils::isNum(req.headers["content-length"]))
-			throw runtime_error("BAD REQUEST: invalid content length\n");
+			throw runtime_error("BAD REQUEST: invalid content length");
 		if (req.body.size() != (size_t)atoi(req.headers["content-length"].c_str()))
-			throw runtime_error("BAD REQUEST: wrong content length\n");
+			throw runtime_error("BAD REQUEST: wrong content length");
 	}
 
 	return (req);

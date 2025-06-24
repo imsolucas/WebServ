@@ -33,7 +33,7 @@ HttpResponse serveFile(HttpRequest &request, const string &file)
 	{
 		if (access(file.c_str(), R_OK) == -1)
 			return handleError(FORBIDDEN);
-		response.headers[Http::CONTENT_TYPE] = getContentType(file);
+		response.headers[Http::CONTENT_TYPE] = getContentType(file);  // TODO: append CGI output headers
 		response.body = utils::readFile(file);
 	}
 	response.headers[Http::CONTENT_LENGTH] = utils::toString(response.body.size());
