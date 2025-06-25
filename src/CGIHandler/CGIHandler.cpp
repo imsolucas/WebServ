@@ -19,8 +19,7 @@ using std::vector;
 CGIHandler::CGIHandler(HttpRequest &req, string root)
 : _req(req), _root(root), _headersEnd(string::npos), _cgiOutput(), _cgiBody() {}
 
-// If CGI executed successfully, function will return 0.
-// getCGIOutput can then be called to get the CGI output as a string.
+// If CGI executed successfully, function will return OK.
 // Otherwise, it will return the HTTP status code for any errors.
 StatusCode CGIHandler::execute()
 {

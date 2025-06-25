@@ -16,7 +16,8 @@ if ($method === "GET")
 } 
 elseif ($method === "POST") 
 {
-    $body = file_get_contents("php://input");
+	$stdin = fopen('php://stdin', 'r');
+    $body = stream_get_contents($stdin);
     echo "Received POST\n";
     echo "Data: $body\n";
 }

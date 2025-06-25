@@ -40,7 +40,7 @@ def run_curl_test(method, path, expected_status, data=None, is_file=False):
 test_counter = {"count": 1}
 
 def test_info(message):
-    print(f"{CYAN}{test_counter['count']}. {message}{RESET}")
+    print(f"{CYAN}\n{test_counter['count']}. {message}{RESET}")
     test_counter["count"] += 1
 
 # HTTP Status Codes Tested:
@@ -61,6 +61,7 @@ run_curl_test("GET", "/", 200)
 test_info("Testing invalid HTTP method")
 run_curl_test("FAKE_METHOD", "/", 400)
 
+# ⚠️ Make sure to chmod 000 forbidden/ to test this
 test_info("Testing access to forbidden path")
 run_curl_test("GET", "/forbidden", 403)
 
@@ -74,16 +75,19 @@ test_info("Testing disallowed method - DELETE on root")
 run_curl_test("DELETE", "/", 405)
 
 test_info("Testing file upload with small body")
-run_curl_test("POST", "/uploads/short.txt", 200, data="short body")
+run_curl_test("POST", "/uploads/short.txt", 201, data="short body")
 
 test_info("Testing file upload exceeding max body size")
 run_curl_test("POST", "/uploads/long.txt", 413, data="@" * 100000)
 
 test_info("Testing file upload with actual file contents")
-run_curl_test("POST", "/uploads/test.txt", 200, data="test.txt", is_file=True)
+run_curl_test("POST", "/uploads/test.txt", 201, data="test.txt", is_file=True)
 
-test_info("Testing file deletion")
+test_info("Testing file deletion with uploaded file")
 run_curl_test("DELETE", "/uploads/test.txt", 200)
+
+test_info("Testing file deletion with non-existent file")
+run_curl_test("DELETE", "/uploads/doesnotexist.txt", 404)
 
 test_info("Testing CGI script execution - GET")
 run_curl_test("GET", "/cgi-bin/test_cgi.php", 200)
