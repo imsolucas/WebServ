@@ -4,7 +4,7 @@
 # include "utils.hpp"
 # include "CGIHandler.hpp"
 # include "ClientManager.hpp"
-# include "Http.h"
+# include "Http.hpp"
 
 using std::map;
 using std::ostringstream;

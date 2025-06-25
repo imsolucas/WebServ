@@ -3,7 +3,7 @@
 # include <cstdlib>
 
 # include "utils.hpp"
-# include "Http.h"
+# include "Http.hpp"
 
 using std::runtime_error;
 using std::vector;
@@ -114,22 +114,26 @@ HttpMessage decode(string stream)
 
 	// Read start line
 	getline(iss, line);
-	if (line.empty())
+	if (line.empty() || line == "\r")
 		throw runtime_error("BAD REQUEST: empty start line");
 	if (line[line.length() - 1 == '\r'])
 		line.erase(line.length() - 1);
 	msg.startLine = line;
 
 	// Read headers until an empty line
+	bool foundEmptyLine = false;
 	while (getline(iss, line))
 	{
 		if (!line.empty() && line[line.length() - 1] == '\r')
 			line.erase(line.length() - 1);
 		if (line.empty())
+		{
+			foundEmptyLine = true;
 			break;
+		}
 		msg.headers.push_back(line);
 	}
-	if (!line.empty())
+	if (!foundEmptyLine)
 		throw runtime_error("BAD REQUEST: missing empty line");
 
 	// Read the body
