@@ -6,6 +6,7 @@
 # include "ClientManager.hpp"
 # include "Http.h"
 
+using std::map;
 using std::ostringstream;
 
 HttpResponse serveFile(HttpRequest &request, const string &file)
@@ -22,18 +23,23 @@ HttpResponse serveFile(HttpRequest &request, const string &file)
 	{
 		if (access(file.c_str(), X_OK) == -1)
 			return handleError(FORBIDDEN);
-		CGIHandler cgi(request);
+		CGIHandler cgi(request, utils::erase(file, request.requestTarget));
 		StatusCode status = cgi.execute();
 		if (status != OK)
 			return handleError(status);
-		response.headers[Http::CONTENT_TYPE] = cgi.getCGIOutputType();
-		response.body = cgi.getCGIOutput();
+		map<string, string> headers = cgi.getCGIHeaders();
+		for (map<string, string>::const_iterator it = headers.begin();
+			it != headers.end(); ++it)
+		{
+			response.headers[it->first] = it->second;
+		}
+		response.body = cgi.getCGIBody();
 	}
 	else if (request.method == Http::GET)
 	{
 		if (access(file.c_str(), R_OK) == -1)
 			return handleError(FORBIDDEN);
-		response.headers[Http::CONTENT_TYPE] = getContentType(file);  // TODO: append CGI output headers
+		response.headers[Http::CONTENT_TYPE] = getContentType(file);
 		response.body = utils::readFile(file);
 	}
 	response.headers[Http::CONTENT_LENGTH] = utils::toString(response.body.size());

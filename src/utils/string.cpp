@@ -24,7 +24,7 @@ string utils::genTimeStamp()
 
 // util function to convert hexadecimal numbers to integer to get
 // chunk size in CGI unchunking.
-int utils::hexStrToInt(const std::string& hexStr)
+int utils::hexStrToInt(const string& hexStr)
 {
 	istringstream stream(hexStr);
 	int value;
@@ -46,7 +46,7 @@ bool utils::isPrint(const string &string)
 	return true;
 }
 
-bool utils::isNum(const std::string &string)
+bool utils::isNum(const string &string)
 {
 	for (size_t i = 0; i < string.size(); ++i)
 		if (!isdigit(string[i]))
@@ -92,11 +92,22 @@ string utils::trim(const string& input, const string& whitespace)
 	// Find the first non-whitespace character
 	size_t start = input.find_first_not_of(whitespace);
 	// npos (no-position) means no matches
-	if (start == std::string::npos)
+	if (start == string::npos)
 		return ""; // If only whitespace characters, return empty string.
 	 // Find the last non-whitespace character
 	size_t end = input.find_last_not_of(whitespace);
 	return input.substr(start, end - start + 1);
+}
+
+// returns original string if substr is not found
+string utils::erase(const string &str, const string &substr)
+{
+	size_t pos = str.find(substr);
+	if (pos == string::npos) return str;
+
+	string result = str;
+	result.erase(pos, substr.length());
+	return result;
 }
 
 vector<string> utils::splitFirst(const string &str, char delimiter) {
