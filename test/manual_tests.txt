@@ -1,0 +1,56 @@
+TELNET COMMANDS
+Launch telnet with "telnet localhost 8080"
+
+Test 1:
+Error 400 Bad Request - Malformed body
+
+GET /no_version
+
+
+Test 2:
+CGI correctly unchunks body for chunked requests
+
+POST /cgi-bin/test_cgi.php HTTP/1.1
+Host: localhost
+Transfer-Encoding: chunked
+Content-Type: text/plain
+
+4
+test
+3
+123
+0
+
+Expected response body:
+Received POST
+Data: test123
+
+
+CURL COMMANDS
+Flags:
+-X: specify method (GET, POST, etc.)
+-s: silent mode (no progress bar)
+-o /dev/null: discards body
+
+1) Basic GET
+- curl http://localhost:8080/index.html
+2) POST with inline data
+- curl -X POST -d "key=value&x=123" http://localhost:8080/form
+3) POST with file contents
+- curl -X POST --data-binary "@test.txt" http://localhost:8080/uploads/test.txt
+4) DELETE request
+- curl -X DELETE http://localhost:8080/uploads/test.txt
+5) Show only status code
+- curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/
+
+
+SIEGE COMMANDS
+Flags:
+-b: benchmark mode (no delays betweeen requests)
+-c: number of concurrent users
+-t: duration
+
+1) Basic GET flood (default concurrency & duration)
+- siege -b http://localhost:8080/
+2) With custom concurrency and duration
+- siege -c 10 -t 10s http://localhost:8080/
