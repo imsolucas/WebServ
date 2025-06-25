@@ -46,6 +46,14 @@ HttpRequest parse(const HttpMessage &message)
 {
 	HttpRequest req;
 
+	// cout << "start line: " << message.startLine << "\n";
+	// for (vector<string>::const_iterator it = message.headers.begin();
+	// 	it != message.headers.end(); ++it)
+	// {
+	// 	cout << "header: " << *it + "\n";
+	// }
+	// cout << "body: " << message.body << "\n";
+
 	vector<string> vec = utils::split(message.startLine, ' ');
 	if (vec.size() != 3)
 		throw runtime_error("BAD REQUEST: invalid start line");
@@ -111,7 +119,7 @@ void parseHeader(const string& headerLine, map<string, string>& headers, bool& h
 	headers[vec[0]] = value;
 }
 
-
+// TODO: merge decode() into parse()
 HttpMessage decode(const string &stream)
 {
 	istringstream iss(stream);
