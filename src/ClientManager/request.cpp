@@ -9,6 +9,7 @@ using std::exception;
 using std::vector;
 using std::cerr;
 
+// TODO: redirection
 string ClientManager::_handleRequest(const ClientMeta &client)
 {
 	HttpResponse response;

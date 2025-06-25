@@ -15,9 +15,6 @@ using std::string;
 using std::cout;
 using std::getline;
 
-static HttpRequest parse(HttpMessage message);
-static HttpMessage decode(string stream);
-
 string serialize(const HttpResponse &response)
 {
 	string stream;
@@ -45,7 +42,7 @@ HttpRequest deserialize(const string &stream)
 	return req;
 }
 
-HttpRequest parse(HttpMessage message)
+HttpRequest parse(const HttpMessage &message)
 {
 	HttpRequest req;
 
@@ -65,27 +62,10 @@ HttpRequest parse(HttpMessage message)
 		throw runtime_error("BAD REQUEST: invalid protocol");
 
 	bool hostSeen = false;
-	for (vector<string>::iterator it = message.headers.begin();
+	for (vector<string>::const_iterator it = message.headers.begin();
 		it != message.headers.end(); ++it)
 	{
-		vec = utils::splitFirst(*it, ':');
-		if (vec.size() != 2)
-			throw runtime_error("BAD REQUEST: invalid header format");
-		vec[0] = utils::toLower(vec[0]); // RFC 9110: field names are case-insensitive
-		if (!utils::isPrint(vec[0]) || vec[0].find(' ') != string::npos
-			|| vec[0].find('\r') != string::npos
-			|| vec[0].find('\n') != string::npos)
-			throw runtime_error("BAD REQUEST: invalid header type");
-		if (vec[0] == "host")
-		{
-			if (hostSeen)
-				throw runtime_error("BAD REQUEST: duplicate host header");
-			hostSeen = true;
-		}
-		req.headers[vec[0]] = utils::trim(vec[1], " ");
-		if (!utils::isPrint(req.headers[vec[0]])
-			|| req.headers[vec[0]].find("\r\n") != string::npos)
-			throw runtime_error("BAD REQUEST: invalid header content");
+		parseHeader(*it, req.headers, hostSeen);
 	}
 	if (req.headers.find("host") == req.headers.end())
 		throw runtime_error("BAD REQUEST: Host header missing");
@@ -106,7 +86,33 @@ HttpRequest parse(HttpMessage message)
 	return (req);
 }
 
-HttpMessage decode(string stream)
+void parseHeader(const string& headerLine, map<string, string>& headers, bool& hostSeen) {
+	vector<string> vec = utils::splitFirst(headerLine, ':');
+	if (vec.size() != 2)
+		throw runtime_error("BAD REQUEST: invalid header format");
+
+	vec[0] = utils::toLower(vec[0]);
+	if (!utils::isPrint(vec[0]) || vec[0].find(' ') != string::npos
+		|| vec[0].find('\r') != string::npos
+		|| vec[0].find('\n') != string::npos)
+		throw runtime_error("BAD REQUEST: invalid header type");
+
+	if (vec[0] == "host")
+	{
+		if (hostSeen)
+			throw runtime_error("BAD REQUEST: duplicate host header");
+		hostSeen = true;
+	}
+
+	string value = utils::trim(vec[1], " ");
+	if (!utils::isPrint(value) || value.find("\r\n") != string::npos)
+		throw runtime_error("BAD REQUEST: invalid header content");
+
+	headers[vec[0]] = value;
+}
+
+
+HttpMessage decode(const string &stream)
 {
 	istringstream iss(stream);
 	string line;
