@@ -22,7 +22,7 @@ namespace utils
 	int hexStrToInt(const std::string& hexStr);
 	std::string trim(const std::string& input, const std::string& whitespace);
 	std::string erase(const std::string &string, const std::string &substr);
-	std::vector<std::string> splitFirst(const std::string &str, char demimiter);
+	std::vector<std::string> splitFirst(const std::string &str, char delimiter);
 	std::vector<std::string> split(const std::string &str, char delimiter);
 
 	// string.tpp
