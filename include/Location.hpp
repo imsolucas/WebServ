@@ -27,17 +27,17 @@ class Location {
         void removeAllowedMethod(const std::string &method);
         void clearAllowedMethods();
 
-        // Getters
-        const std::string &getPath() const;
-        const std::string &getRoot() const;
-        const std::string &getIndex() const;
-        const std::string &getCgiPath() const;
-        const std::string &getRedirect() const;
-        const std::string &getUploadStore() const;
-        bool getAutoindex() const;
-        size_t getClientMaxBodySizeInBytes() const;
-        const std::vector<std::string> &getAllowedMethods() const;
-        std::string getAllowedMethodsAsString() const;
+    // Getters
+    const std::string &getPath() const;
+    const std::string &getRoot() const;
+    const std::string &getIndex() const;
+    const std::string &getCgiPath() const;
+    const std::string &getRedirect() const;
+    const std::string &getUploadStore() const;
+    bool getAutoindex() const;
+    size_t getClientMaxBodySizeInBytes() const;
+    const std::vector<std::string> &getAllowedMethods() const;
+    std::string getAllowedMethodsAsString() const;
 
         // Utils
         bool isMethodAllowed(const std::string &method) const;

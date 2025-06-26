@@ -6,6 +6,12 @@
 # include <string>
 # include <vector>
 
+// CGI-specific exit codes
+# define CGI_EXIT_FAILURE 1
+# define CGI_EXIT_ENOEXEC 125
+# define CGI_EXIT_EACCES  126
+# define CGI_EXIT_ENOENT  127
+
 // 2-second timeout window for CGI scripts to execute
 # define TIMEOUT_MS 2000
 
@@ -18,6 +24,7 @@ class CGIHandler
 		const std::string &getCGIOutput() const;
 		const std::map<std::string, std::string> &getCGIHeaders() const;
 		const std::string &getCGIBody() const;
+		int getCGIStatusCode() const;
 
 	private:
 		HttpRequest &_req;
@@ -33,6 +40,7 @@ class CGIHandler
 		std::string _cgiOutput;
 		std::map<std::string, std::string> _cgiHeaders;
 		std::string _cgiBody;
+		int _cgiStatusCode;
 
 		void _unchunkBody();
 		void _setupPipes();
@@ -45,7 +53,8 @@ class CGIHandler
 		void _validateCGIOutput();
 		void _normalizeHeaderSeparator();
 		bool _hasHeaderSeparator();
-		bool _parseCGIOutput();
+		void _parseCGIOutput();
+		void _extractCGIStatusCode();
 
 	public:
 		class UnchunkingException : public std::runtime_error

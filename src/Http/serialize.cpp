@@ -83,6 +83,7 @@ HttpRequest deserialize(const string &stream)
 	if (req.headers.find("host") == req.headers.end())
 		throw runtime_error("BAD REQUEST: Host header missing");
 
+	// Parse body
 	if (req.method == "GET" && !req.body.empty())
 		throw runtime_error("BAD REQUEST: invalid body");
 	if (req.headers.find("content-length") != req.headers.end())

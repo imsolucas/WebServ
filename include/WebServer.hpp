@@ -21,7 +21,7 @@ class WebServer
 
 		void run();
 
-		std::vector<Server> getServers() const;
+		const std::vector<Server> &getServers() const;
 		void printTokens(const std::vector<std::string> &tokens) const;
 
 		std::vector<std::string> tokenize(const std::string &str);

@@ -35,6 +35,7 @@ class ClientManager
 			std::string requestBuffer;
 			RequestMeta requestMeta;
 			int errorCode;
+			bool keepAlive;
 
 			ClientMeta();
 		};
@@ -59,6 +60,7 @@ class ClientManager
 
 		std::string _handleRequest(const ClientMeta &client);
 
+		void _resetClientMeta(int fd);
 		void _addToClientMap(int fd, int listenerFd, int port);
 		void _removeFromClientMap(int fd);
 

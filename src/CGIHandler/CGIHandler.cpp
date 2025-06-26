@@ -17,7 +17,7 @@ using std::string;
 using std::vector;
 
 CGIHandler::CGIHandler(HttpRequest &req, string root)
-: _req(req), _root(root), _headersEnd(string::npos), _cgiOutput(), _cgiBody() {}
+: _req(req), _root(root), _headersEnd(string::npos), _cgiOutput(), _cgiBody(), _cgiStatusCode(200) {}
 
 // If CGI executed successfully, function will return OK.
 // getCGIOutput can then be called to get the CGI output as a string.
@@ -69,7 +69,7 @@ StatusCode CGIHandler::execute()
 		utils::printError(e.what());
 		return GATEWAY_TIMEOUT;
 	}
-	// catches for pipe, fork, waitpid and malformed output exceptions
+	// catches for pipe, fork, waitpid and ENOEXEC exceptions
 	catch (const exception& e)
 	{
 		utils::printError(e.what());
@@ -92,6 +92,11 @@ const string &CGIHandler::getCGIBody() const
 	return this->_cgiBody;
 }
 
+int CGIHandler::getCGIStatusCode() const
+{
+	return this->_cgiStatusCode;
+}
+
 // Format for chunked transfer encoding as per RFC 7230
 // <chunk-size in hex>\r\n
 // <chunk-data>\r\n
@@ -106,11 +111,11 @@ void CGIHandler::_unchunkBody()
 		|| _req.headers.at("transfer-encoding") != "chunked")
 		return;
 
-	istringstream stream(_req.body);
+	istringstream iss(_req.body);
 	string line, unchunkedBody;
 
 	// getline breaks lines on "\n" by default
-	while (getline(stream, line))
+	while (getline(iss, line))
 	{
 		if (!line.empty() && line[line.size() - 1] == '\r')
 			// erase last character of the string ('\r') to sanitize input for hexStrToInt
@@ -134,11 +139,11 @@ void CGIHandler::_unchunkBody()
 		vector<char> buffer(chunkSize);
 		// read() (an istream member function) extracts n characters from the stream and
 		// stores them in the array pointed to by s. It will also advance the stream.
-		stream.read(&buffer[0], chunkSize);
+		iss.read(&buffer[0], chunkSize);
 		// additional check to ensure chunk-size tallies with chunk-data length.
 		// gcount() returns the number of characters extracted by the most recent unformatted
 		// input operation (e.g. getline, read, etc.) performed on the object.
-		if (stream.gcount() != static_cast<std::streamsize>(chunkSize))
+		if (iss.gcount() != static_cast<std::streamsize>(chunkSize))
 		{
 			utils::printError("Chunk size does not match number of bytes of chunk data read.");
 			throw UnchunkingException();
@@ -147,7 +152,7 @@ void CGIHandler::_unchunkBody()
 		unchunkedBody.append(buffer.begin(), buffer.end());
 		// after appending the buffer, "\r\n" of the chunk-data still remains in the stream,
 		// so cleanly skip over it with getline
-		getline(stream, line);
+		getline(iss, line);
 	}
 	// once the body is unchunked, update the request body, content length
 	// and strip the transfer encoding header to prevent confusion.
@@ -281,15 +286,21 @@ void CGIHandler::_cgiChildProcess()
 	// exit and _exit are different in C++.
 	// exit will call destructors for global/static objects and may cause double-closing of fds.
 	// _exit will terminate the child process without touching the parent's runtime state.
-	if (errno == ENOENT)
+	switch (errno)
+	{
 		// script not found
-		_exit(127);
-	else if (errno == EACCES)
+		case ENOENT:
+			_exit(CGI_EXIT_ENOENT);
 		// permission denied
-		_exit(126);
-	else
+		case EACCES:
+			_exit(CGI_EXIT_EACCES);
+		// invalid executable format
+		case ENOEXEC:
+			_exit(CGI_EXIT_ENOEXEC);
 		// generic failure
-		_exit(1);
+		default:
+			_exit(CGI_EXIT_FAILURE);
+	}
 }
 
 // Parent will pipe POST request body to stdin of child then assemble CGI output from stdout of child.
@@ -353,12 +364,20 @@ void CGIHandler::_resolveChildStatus()
 	if (WIFEXITED(status))
 	{
 		int exitStatus = WEXITSTATUS(status);
-		if (exitStatus == 127)
-			throw ScriptNotFoundException();
-		else if (exitStatus == 126)
-			throw ScriptPermissionDeniedException();
-		else if (exitStatus != 0)
-			throw AbnormalTerminationException();
+		if (exitStatus != 0)
+		{
+			switch (exitStatus)
+			{
+				case CGI_EXIT_ENOENT:
+					throw ScriptNotFoundException();
+				case CGI_EXIT_EACCES:
+					throw ScriptPermissionDeniedException();
+				case CGI_EXIT_ENOEXEC:
+					throw runtime_error("CGI: Invalid executable format (ENOEXEC).");
+				default:
+					throw AbnormalTerminationException();
+			}
+		}
 	}
 	// child was terminated by signal e.g.SIGSEGV, SIGKILL
 	else if (WIFSIGNALED(status))
@@ -369,18 +388,20 @@ void CGIHandler::_resolveChildStatus()
 // 1) has a header-body separator
 // 2) attempt to parse CGI headers and body
 // 3) has a "Content-Type" header at minimum
+// 4) attempt to extract the CGI status code from the "Status" header
 // If any check fails, a MalformedOutputException is thrown (error code 502).
 // CGI headers are not governed by the HTTP RFC in the same way as HTTP request/response headers.
-// We have opted for case-sensitive matching of the Content-Type header for simplicity.
+// We have opted for case-sensitive matching of the headers for simplicity.
 void CGIHandler::_validateCGIOutput()
 {
 	_normalizeHeaderSeparator();
 	if (!_hasHeaderSeparator())
 		throw MalformedOutputException("missing header-body separator");
-	if (!_parseCGIOutput())
-		throw MalformedOutputException("malformed header");
+	_parseCGIOutput();
 	if (_cgiHeaders.count("Content-Type") == 0)
 		throw MalformedOutputException("missing Content-Type header");
+	if (_cgiHeaders.count("Status"))
+		_extractCGIStatusCode();
 }
 
 // CGI scripts are not strictly bound to HTTP formatting rules.
@@ -396,7 +417,7 @@ void CGIHandler::_normalizeHeaderSeparator()
 }
 
 // Checks that the output has a header-body separator.
-// If it does, sets the position of _headersEnd that will be used by hasContentType.
+// If it does, sets the position of _headersEnd.
 bool CGIHandler::_hasHeaderSeparator()
 {
 	size_t pos = _cgiOutput.find("\r\n\r\n");
@@ -409,36 +430,49 @@ bool CGIHandler::_hasHeaderSeparator()
 }
 
 // This function will parse the headers and body of the CGI output.
-// If parsing fails at any point, it will return false.
+// If parsing fails at any point, it will throw a MalformedOutputException.
 // Formatting checked:
 // - key: leading, internal and trailing whitespace is forbidden
 // - value: leading and trailing whitespace will be trimmed. internal whitespace is allowed.
 // - value must not be empty
 // - body is everything after headersEnd
-bool CGIHandler::_parseCGIOutput()
+void CGIHandler::_parseCGIOutput()
 {
 	string headerSection = _cgiOutput.substr(0, _headersEnd - 4);
-	istringstream stream(headerSection);
+	istringstream iss(headerSection);
 	string line;
 
-	while (getline(stream, line))
+	while (getline(iss, line))
 	{
 		size_t colonPos = line.find(':');
 		if (colonPos == string::npos || colonPos == 0)
-			return false;
+			throw MalformedOutputException("malformed header");
 
 		string key = line.substr(0, colonPos);
 		if (key.find_first_of(" \t\r") != string::npos)
-			return false;
+			throw MalformedOutputException("malformed header");
 
 		string value = utils::trim(line.substr(colonPos + 1), " \t\r");
 		if (value.empty())
-			return false;
+			throw MalformedOutputException("malformed header");
 
 		_cgiHeaders[key] = value;
 	}
 	_cgiBody = _cgiOutput.substr(_headersEnd);
-	return true;
+}
+
+// CGI scripts may optionally set a "Status" header to overwrite the HTTP response status code.
+// If the header is present, the status code will be extracted and removed from the headers map.
+// 100-599 is the valid range of HTTP status codes as defined by the RFC.
+void CGIHandler::_extractCGIStatusCode()
+{
+	string value = _cgiHeaders.at("Status");
+	istringstream iss(value);
+	int statusCode;
+ 	if (!(iss >> statusCode) || statusCode < 100 || statusCode > 599)
+	 	throw MalformedOutputException("invalid status code in headers");
+	_cgiStatusCode = statusCode;
+	_cgiHeaders.erase("Status");
 }
 
 CGIHandler::UnchunkingException::UnchunkingException()

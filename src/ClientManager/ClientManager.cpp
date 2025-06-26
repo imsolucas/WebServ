@@ -13,7 +13,7 @@ using std::vector;
 
 ClientManager::ClientMeta::ClientMeta()
 : state(STATE_INIT), listenerFd(0), port(0), server(NULL),
-  requestBuffer(), errorCode(0)
+  requestBuffer(), errorCode(0), keepAlive(true)
 {
 	requestMeta.headersEnd = string::npos;
 	requestMeta.chunkedRequest = false;
@@ -84,14 +84,37 @@ void ClientManager::sendToClient(int fd)
 	// Often used in server code to avoid crashes from broken pipes e.g. when client
 	// has closed their connection.
 	if (send(fd, response.c_str(), response.size(), MSG_NOSIGNAL) <= 0)
+	{
 		utils::printError("Failed to send response to client with fd " + utils::toString(fd) + ".");
-	// remove client regardless whether send succeeded or failed.
-	removeClient(fd);
+		removeClient(fd);
+		return;
+	}
+	if (!_clientMap[fd].keepAlive)
+	{
+		removeClient(fd);
+		return;
+	}
+	_resetClientMeta(fd);
+	_pollToggleQueue.push_back(fd);
 }
 
 bool ClientManager::isClient(int fd)
 {
 	return _clientMap.count(fd);
+}
+
+// listenerFd and port are constant across the lifetime of the connection.
+// server needs to be reset as the client could send a different Host header.
+void ClientManager::_resetClientMeta(int fd)
+{
+	ClientMeta &client = _clientMap[fd];
+	client.state = STATE_INIT;
+	client.server = NULL;
+	client.requestBuffer.clear();
+	client.errorCode = 0;
+	client.requestMeta.headersEnd = string::npos;
+	client.requestMeta.chunkedRequest = false;
+	client.requestMeta.contentLength = 0;
 }
 
 void ClientManager::_addToClientMap(int fd, int listenerFd, int port)
