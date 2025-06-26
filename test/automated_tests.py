@@ -28,7 +28,6 @@ failed_tests = 0
 # The output is compared to your expected status.
 
 import subprocess
-import re
 import json
 
 BASE_URL = "http://localhost:8080"
@@ -63,16 +62,16 @@ def run_siege_test(path, duration="10s", concurrency=10, min_availability=99.5):
     total_tests += 1
     url = BASE_URL + path
     siege_cmd = [
-        "siege", "-b", "-t", duration, "-c", str(concurrency), url
+        "siege", "--json", "-b", "-t", duration, "-c", str(concurrency), url
     ]
 
-    print(f"{YELLOW}⚙️  Siege test → {url} for {duration} with {concurrency} users{RESET}")
+    print(f"{YELLOW}🛡️  Siege test → {url} for {duration} with {concurrency} users{RESET}")
 
     try:
         result = subprocess.run(siege_cmd, capture_output=True, text=True)
 
         output = result.stdout
-        
+
         availability = 0.0
         siege_data = json.loads(output)
         if "availability" in siege_data:
@@ -99,23 +98,23 @@ def test_info(message):
 
 def test_header(title, color=YELLOW):
 	print(f"{color}\n{'-' * WIDTH}\n{title.center(WIDTH)}\n{'-' * WIDTH}{RESET}")
-    
+
 def test_summary():
     test_header("TEST SUMMARY", color=BOLD)
-    
+
     passed_line = f"PASSED: {passed_tests}/{total_tests}"
     failed_line = f"FAILED: {failed_tests}/{total_tests}"
     total_line  = f"TOTAL:  {total_tests}"
-    
+
     percentage = (passed_tests / total_tests * 100) if total_tests else 0
     score_line = f"SCORE:  {percentage:.1f}%"
-    
+
     print(f"{GREEN}{passed_line.center(WIDTH)}{RESET}")
     print(f"{RED}{failed_line.center(WIDTH)}{RESET}")
     print(f"{CYAN}{total_line.center(WIDTH)}{RESET}")
     print(f"{YELLOW}{score_line.center(WIDTH)}{RESET}")
     print(f"{BOLD}{'-' * WIDTH}{RESET}")
-    
+
 
 # HTTP Status Codes Tested:
 # 200 OK
