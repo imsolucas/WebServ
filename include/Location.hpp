@@ -25,15 +25,15 @@ public:
     void clearAllowedMethods();
 
     // Getters
-    std::string getPath() const;
-    std::string getRoot() const;
-    std::string getIndex() const;
-    std::string getCgiPath() const;
-    std::string getRedirect() const;
-    std::string getUploadStore() const;
+    const std::string &getPath() const;
+    const std::string &getRoot() const;
+    const std::string &getIndex() const;
+    const std::string &getCgiPath() const;
+    const std::string &getRedirect() const;
+    const std::string &getUploadStore() const;
     bool getAutoindex() const;
     size_t getClientMaxBodySizeInBytes() const;
-    std::vector<std::string> getAllowedMethods() const;
+    const std::vector<std::string> &getAllowedMethods() const;
     std::string getAllowedMethodsAsString() const;
 
     // Utils
