@@ -24,6 +24,7 @@ class CGIHandler
 		const std::string &getCGIOutput() const;
 		const std::map<std::string, std::string> &getCGIHeaders() const;
 		const std::string &getCGIBody() const;
+		int getCGIStatusCode() const;
 
 	private:
 		HttpRequest &_req;
@@ -39,6 +40,7 @@ class CGIHandler
 		std::string _cgiOutput;
 		std::map<std::string, std::string> _cgiHeaders;
 		std::string _cgiBody;
+		int _cgiStatusCode;
 
 		void _unchunkBody();
 		void _setupPipes();
@@ -51,7 +53,8 @@ class CGIHandler
 		void _validateCGIOutput();
 		void _normalizeHeaderSeparator();
 		bool _hasHeaderSeparator();
-		bool _parseCGIOutput();
+		void _parseCGIOutput();
+		void _extractCGIStatusCode();
 
 	public:
 		class UnchunkingException : public std::runtime_error

@@ -1,3 +1,12 @@
+# To run the automated tests:
+# 1) navigate to the project root directory
+# 2) launch the web server on port 8080 with:
+# 	"./webserv config/automated_tests.conf"
+# 3) setup the directory permissions:
+# 	"chmod 000 public/forbidden"
+# 4) run the script:
+# 	"python3 test/automated_tests.py"
+
 BOLD = "\033[1m"
 CYAN = "\033[96m"
 GREEN = "\033[92m"

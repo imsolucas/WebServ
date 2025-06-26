@@ -56,24 +56,12 @@
 // {
 // 	try 
 // 	{
-// 		// const char *request =
-// 		// "GET /cgi-bin/test_cgi.php HTTP/1.1\r\n"
-// 		// "Host: localhost\r\n"
-// 		// "User-Agent: TestClient/1.0\r\n"
-// 		// "Accept: */*\r\n"
-// 		// "X-Custom-Header: custom_value\r\n"
-// 		// "\r\n";
 // 		const char *request =
-// 		"POST /cgi-bin/test_cgi.php?name=john HTTP/1.1\r\n"
+// 		"GET /cgi-bin/test_cgi.php HTTP/1.1\r\n"
 // 		"Host: localhost\r\n"
-// 		"Transfer-Encoding: chunked\r\n"
-// 		"Content-Type: text/plain\r\n"
-// 		"\r\n"
-// 		"4\r\n"
-// 		"test\r\n"
-// 		"3\r\n"
-// 		"123\r\n"
-// 		"0\r\n"
+// 		"User-Agent: TestClient/1.0\r\n"
+// 		"Accept: */*\r\n"
+// 		"X-Custom-Header: custom_value\r\n"
 // 		"\r\n";
 
 // 		HttpRequest req = deserialize(request);
@@ -87,9 +75,13 @@
 // 			std::string output = handler.getCGIOutput();
 // 			std::cout << "CGI executed successfully:\n" << output << std::endl;
 
+// 			// Print CGI status code
+// 			int cgiStatusCode = handler.getCGIStatusCode();
+// 			std::cout << "\nCGI Status Code: " << cgiStatusCode << std::endl;
+
 // 			// Print headers
 // 			const std::map<std::string, std::string> &headers = handler.getCGIHeaders();
-// 			std::cout << "Parsed CGI Headers:\n";
+// 			std::cout << "\nCGI Headers:\n";
 // 			for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
 // 			{
 // 				std::cout << it->first << ": " << it->second << std::endl;
