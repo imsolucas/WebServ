@@ -14,6 +14,7 @@ using std::ostream;
 using std::string;
 using std::cout;
 using std::getline;
+using std::make_pair;
 
 string serialize(const HttpResponse &response)
 {
@@ -33,28 +34,17 @@ string serialize(const HttpResponse &response)
 
 HttpRequest deserialize(const string &stream)
 {
-	HttpMessage msg;
+	istringstream iss(stream);
+	string line;
 	HttpRequest req;
 
-	msg = decode(stream);
-	req = parse(msg);
-
-	return req;
-}
-
-HttpRequest parse(const HttpMessage &message)
-{
-	HttpRequest req;
-
-	// cout << "start line: " << message.startLine << "\n";
-	// for (vector<string>::const_iterator it = message.headers.begin();
-	// 	it != message.headers.end(); ++it)
-	// {
-	// 	cout << "header: " << *it + "\n";
-	// }
-	// cout << "body: " << message.body << "\n";
-
-	vector<string> vec = utils::split(message.startLine, ' ');
+	// Parse start line
+	getline(iss, line);
+	if (line.empty() || line == "\r")
+		throw runtime_error("BAD REQUEST: empty start line");
+	if (line[line.length() - 1] == '\r')
+		line.erase(line.length() - 1);
+	vector<string> vec = utils::split(line, ' ');
 	if (vec.size() != 3)
 		throw runtime_error("BAD REQUEST: invalid start line");
 	req.method = vec[0];
@@ -69,16 +59,30 @@ HttpRequest parse(const HttpMessage &message)
 	if (req.protocol != "HTTP/1.1")
 		throw runtime_error("BAD REQUEST: invalid protocol");
 
+	// Parse headers
+	bool foundEmptyLine = false;
 	bool hostSeen = false;
-	for (vector<string>::const_iterator it = message.headers.begin();
-		it != message.headers.end(); ++it)
+	while (getline(iss, line))
 	{
-		parseHeader(*it, req.headers, hostSeen);
+		pair<string, string> header = parseHeader(line);
+		if (header.first == "" && header.second == "")
+		{
+			foundEmptyLine = true;
+			break;
+		}
+		if (header.first == "host")
+		{
+			if (hostSeen)
+				throw runtime_error("BAD REQUEST: duplicate host header");
+			hostSeen = true;
+		}
+		req.headers.insert(header);
 	}
+	if (!foundEmptyLine)
+		throw runtime_error("BAD REQUEST: missing empty line");
 	if (req.headers.find("host") == req.headers.end())
 		throw runtime_error("BAD REQUEST: Host header missing");
 
-	req.body = message.body;
 	if (req.method == "GET" && !req.body.empty())
 		throw runtime_error("BAD REQUEST: invalid body");
 	if (req.headers.find("content-length") != req.headers.end())
@@ -87,14 +91,30 @@ HttpRequest parse(const HttpMessage &message)
 			throw runtime_error("BAD REQUEST: conflicting headers");
 		if (!utils::isNum(req.headers["content-length"]))
 			throw runtime_error("BAD REQUEST: invalid content length");
-		if (req.body.size() != (size_t)atoi(req.headers["content-length"].c_str()))
+
+		size_t contentLength = (size_t)atoi(req.headers["content-length"].c_str());
+		string body(contentLength, '\0');
+		iss.read(&body[0], contentLength);
+		size_t bytesRead = iss.gcount();
+		if (bytesRead != contentLength)
 			throw runtime_error("BAD REQUEST: wrong content length");
+		req.body = body.substr(0, bytesRead);
 	}
 
-	return (req);
+	return req;
 }
 
-void parseHeader(const string& headerLine, map<string, string>& headers, bool& hostSeen) {
+// returns empty pair if empty line is found
+pair<string, string> parseHeader(const string &line)
+{
+	string headerLine = line;
+	if (!headerLine.empty() && headerLine[headerLine.length() - 1] == '\r')
+		headerLine.erase(headerLine.length() - 1);
+	if (headerLine.empty())
+	{
+		return make_pair("", "");
+	}
+
 	vector<string> vec = utils::splitFirst(headerLine, ':');
 	if (vec.size() != 2)
 		throw runtime_error("BAD REQUEST: invalid header format");
@@ -105,58 +125,11 @@ void parseHeader(const string& headerLine, map<string, string>& headers, bool& h
 		|| vec[0].find('\n') != string::npos)
 		throw runtime_error("BAD REQUEST: invalid header type");
 
-	if (vec[0] == "host")
-	{
-		if (hostSeen)
-			throw runtime_error("BAD REQUEST: duplicate host header");
-		hostSeen = true;
-	}
-
 	string value = utils::trim(vec[1], " ");
 	if (!utils::isPrint(value) || value.find("\r\n") != string::npos)
 		throw runtime_error("BAD REQUEST: invalid header content");
 
-	headers[vec[0]] = value;
-}
-
-// TODO: merge decode() into parse()
-HttpMessage decode(const string &stream)
-{
-	istringstream iss(stream);
-	string line;
-	HttpMessage msg;
-
-	// Read start line
-	getline(iss, line);
-	if (line.empty() || line == "\r")
-		throw runtime_error("BAD REQUEST: empty start line");
-	if (line[line.length() - 1 == '\r'])
-		line.erase(line.length() - 1);
-	msg.startLine = line;
-
-	// Read headers until an empty line
-	bool foundEmptyLine = false;
-	while (getline(iss, line))
-	{
-		if (!line.empty() && line[line.length() - 1] == '\r')
-			line.erase(line.length() - 1);
-		if (line.empty())
-		{
-			foundEmptyLine = true;
-			break;
-		}
-		msg.headers.push_back(line);
-	}
-	if (!foundEmptyLine)
-		throw runtime_error("BAD REQUEST: missing empty line");
-
-	// Read the body
-	while (getline(iss, line))
-		msg.body += (line + "\n");
-	if (!msg.body.empty())
-		msg.body = msg.body.substr(0, msg.body.length() - 1);
-
-	return msg;
+	return make_pair(vec[0], value);
 }
 
 ostream &operator << (ostream &os, const HttpRequest &r)

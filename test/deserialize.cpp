@@ -22,6 +22,7 @@ static bool test_duplicate_host_header();
 static bool test_conflicting_content_length_and_transfer_encoding();
 static bool test_invalid_content_length_value();
 static bool test_missing_empty_line_after_headers();
+static bool test_body_read_correctly();
 
 void test_deserialize(TestSuite &t)
 {
@@ -38,6 +39,7 @@ void test_deserialize(TestSuite &t)
 	t.addTest(test_conflicting_content_length_and_transfer_encoding);
 	t.addTest(test_invalid_content_length_value);
 	t.addTest(test_missing_empty_line_after_headers);
+	t.addTest(test_body_read_correctly);
 }
 
 bool test_valid_get()
@@ -270,4 +272,29 @@ bool test_missing_empty_line_after_headers()
 		return assertEqual(message, string(e.what()), string("BAD REQUEST: missing empty line"));
 	}
 	return false;
+}
+
+bool test_body_read_correctly()
+{
+	string message = "deserialize body read correctly";
+	const char *stream =
+		"POST /submit HTTP/1.1\r\n"
+		"Host: example.com\r\n"
+		"Content-Length: 11\r\n"
+		"\r\n"
+		"hello world";
+	HttpRequest actual = deserialize(stream);
+
+	map<string, string> headers;
+	headers["host"] = "example.com";
+	headers["content-length"] = "11";
+	HttpRequest expected = {
+		"POST",
+		"/submit",
+		"HTTP/1.1",
+		headers,
+		"hello world"
+	};
+
+	return assertEqual(message, actual, expected);
 }
