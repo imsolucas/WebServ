@@ -24,7 +24,7 @@ std::vector<Server> WebServer::_parseConfig(const std::string &filePath)
 	}
 	file.close();
 	std::istringstream buffer(_buffer.str());
-	
+
 	std::vector<std::string> tokens = tokenize(buffer.str());
 	// printTokens(tokens);
 	std::vector<Server> servers = _parseTokens(tokens);
@@ -35,7 +35,7 @@ std::vector<Server> WebServer::_parseConfig(const std::string &filePath)
 	return servers;
 }
 
-std::vector<Server> WebServer::getServers() const
+const std::vector<Server> &WebServer::getServers() const
 {
 	return _servers;
 }

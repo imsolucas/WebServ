@@ -73,11 +73,11 @@ void Server::clearLocations()
 	locations.clear();
 }
 
-std::vector<int> Server::getPorts() const { return ports; }
-std::vector<std::string> Server::getServerNames() const { return server_names; }
-std::string Server::getRoot() const { return root; }
-std::vector<Location> Server::getLocations() const { return locations; }
-std::map<int, std::string> Server::getErrorPages() const { return error_pages; }
+const std::vector<int> &Server::getPorts() const { return ports; }
+const std::vector<std::string> &Server::getServerNames() const { return server_names; }
+const std::string &Server::getRoot() const { return root; }
+const std::vector<Location> &Server::getLocations() const { return locations; }
+const std::map<int, std::string> &Server::getErrorPages() const { return error_pages; }
 
 size_t Server::getClientMaxBodySizeInBytes() const
 {

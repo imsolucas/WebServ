@@ -26,12 +26,12 @@ public:
 	void clearLocations();
 
 	// Getters
-	std::vector<int> getPorts() const;
-	std::vector<std::string> getServerNames() const;
-	std::string getRoot() const;
-	std::vector<std::string> getIndexes() const;
-	std::vector<Location> getLocations() const;
-	std::map<int, std::string> getErrorPages() const;
+	const std::vector<int> &getPorts() const;
+	const std::vector<std::string> &getServerNames() const;
+	const std::string &getRoot() const;
+	const std::vector<std::string> &getIndexes() const;
+	const std::vector<Location> &getLocations() const;
+	const std::map<int, std::string> &getErrorPages() const;
 	size_t getClientMaxBodySizeInBytes() const;
 
 	// Utils
