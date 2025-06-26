@@ -53,5 +53,7 @@ class WebServer
 		std::vector<Server> _parseConfig(const std::string &filePath);
 		Server parseServerBlock(const std::vector<std::string> &tokens, size_t &i);
 		Location parseLocationBlock(const std::vector<std::string> &tokens, size_t &i);
-		bool _ConfigChecker(const std::vector<Server> &servers) const;
+		bool _checkLineSyntax(const std::string &line, size_t lineNumber) const;
+		std::string trim(const std::string &line) const;
+		std::vector<std::string> _getSemicolonDirectives() const;
 };
