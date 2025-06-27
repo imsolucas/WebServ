@@ -8,17 +8,11 @@
 # include <unistd.h> // close
 
 using std::cout;
+using std::getline;
+using std::istringstream;
+using std::map;
 using std::string;
 using std::vector;
-
-ClientManager::ClientMeta::ClientMeta()
-: state(STATE_INIT), listenerFd(0), port(0), server(NULL),
-  requestBuffer(), errorCode(0), keepAlive(true)
-{
-	requestMeta.headersEnd = string::npos;
-	requestMeta.chunkedRequest = false;
-	requestMeta.contentLength = 0;
-}
 
 ClientManager::ClientManager(std::vector<int> &pollRemoveQueue, std::vector<int> &pollToggleQueue,
 								std::vector<int> &pollAddQueue, const std::vector<Server> &servers)
@@ -103,6 +97,18 @@ bool ClientManager::isClient(int fd)
 	return _clientMap.count(fd);
 }
 
+ClientManager::ClientMeta::ClientMeta()
+: state(STATE_INIT), listenerFd(0), port(0), server(NULL),
+  requestBuffer(), errorCode(0), keepAlive(true)
+{
+	requestMeta.headersEnd = string::npos;
+	requestMeta.chunkedRequest = false;
+	requestMeta.contentLength = 0;
+}
+
+ClientManager::PreparsedRequest::PreparsedRequest()
+: method() {}
+
 // listenerFd and port are constant across the lifetime of the connection.
 // server needs to be reset as the client could send a different Host header.
 void ClientManager::_resetClientMeta(int fd)
@@ -146,8 +152,12 @@ void ClientManager::_handleIncomingData(int fd, const char *buffer, size_t bytes
 		{
 			if (_headersAreComplete(client))
 			{
-				_preparseHeaders(client);
-				client.state = STATE_HEADERS_PREPARSED;
+				bool success = _preparseHeaders(client);
+				if (success)
+					client.state = STATE_HEADERS_PREPARSED;
+				else
+					// if preparsing fails, we assume headers are complete.
+					client.state = STATE_REQUEST_READY;
 			}
 			else
 				break;
@@ -194,19 +204,32 @@ bool ClientManager::_headersAreComplete(ClientMeta &client)
 	return true;
 }
 
-void ClientManager::_preparseHeaders(ClientMeta &client)
+// This function will return a boolean to indicate whether the headers were successfully preparsed.
+bool ClientManager::_preparseHeaders(ClientMeta &client)
 {
-	string headers = client.requestBuffer.substr(0, client.requestMeta.headersEnd);
-	HttpRequest req = deserialize(headers); // TODO ?: custom logic for preparse
+	PreparsedRequest req;
+
+	const string &headers = client.requestBuffer.substr(0, client.requestMeta.headersEnd);
+	istringstream headerStream(headers);
+	string line;
+	getline(headerStream, line);
+	istringstream lineStream(line);
+	// extract first word from the first line of the request which should be the HTTP method.
+	lineStream >> req.method;
+
+	if (req.method != "GET" && req.method != "POST" && req.method != "DELETE")
+		return false;
+
 	_determineBodyEnd(client, req);
 	client.server = _selectServerBlock(client, req);
+	return true;
 }
 
 // This function will check the http request headers for either the
 // "Content-Length" or "Transfer-Encoding" field to determine when
 // the http request has been fully received.
 // GET requests are complete when the headers are received.
-void ClientManager::_determineBodyEnd(ClientMeta &client, const HttpRequest &req)
+void ClientManager::_determineBodyEnd(ClientMeta &client, const PreparsedRequest &req)
 {
 	if (req.method == "GET")
 		client.requestMeta.contentLength = 0;
@@ -230,7 +253,7 @@ void ClientManager::_determineBodyEnd(ClientMeta &client, const HttpRequest &req
 	}
 }
 
-const Server *ClientManager::_selectServerBlock(ClientMeta &client, const HttpRequest &req)
+const Server *ClientManager::_selectServerBlock(ClientMeta &client, const PreparsedRequest &req)
 {
 	string serverName = "";
 	if (req.headers.count("host"))
