@@ -20,7 +20,6 @@ CGIHandler::CGIHandler(HttpRequest &req, string root)
 : _req(req), _root(root), _headersEnd(string::npos), _cgiOutput(), _cgiBody(), _cgiStatusCode(200) {}
 
 // If CGI executed successfully, function will return OK.
-// getCGIOutput can then be called to get the CGI output as a string.
 // Otherwise, it will return the HTTP status code for any errors.
 StatusCode CGIHandler::execute()
 {
