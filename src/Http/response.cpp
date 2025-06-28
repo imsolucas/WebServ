@@ -85,6 +85,40 @@ HttpResponse listDirectory(const Location &location, const string &directory)
 	return response;
 }
 
+HttpResponse redirect(StatusCode code, const string &path)
+{
+	HttpResponse response;
+
+	response.protocol = "HTTP/1.1";
+	response.statusCode = code;
+	response.statusText = Http::statusText.find(code)->second;
+	response.headers[Http::SERVER] = "webserv";
+	response.headers[Http::DATE] = utils::genTimeStamp();
+	response.headers["Location"] = path;
+	response.headers[Http::CONTENT_LENGTH] = "0";
+
+	return response;
+}
+
+HttpResponse handleError(StatusCode code)
+{
+	HttpResponse response;
+
+	response.protocol = "HTTP/1.1";
+	response.statusCode = code;
+	response.statusText = Http::statusText.find(code)->second;
+	response.headers[Http::SERVER] = "webserv";
+	response.headers[Http::DATE] = utils::genTimeStamp();
+	response.headers[Http::CONTENT_TYPE] = "text/html";
+
+	string errorPage = "public/error/" + utils::toString(code) + ".html";
+	response.body = utils::readFile(errorPage);
+
+	response.headers[Http::CONTENT_LENGTH] = utils::toString(response.body.size());
+
+	return response;
+}
+
 string autoindex(const string &directory)
 {
 	ostringstream body;
@@ -127,21 +161,4 @@ const Location &matchURI(const string &URI, const vector<Location> &locations)
 		}
 	}
 	return *bestMatch;
-}
-
-HttpResponse handleError(StatusCode code)
-{
-	HttpResponse response;
-
-	response.protocol = "HTTP/1.1";
-	response.statusCode = code;
-	response.statusText = Http::statusText.find(code)->second;
-	response.headers[Http::CONTENT_TYPE] = "text/html";
-
-	string errorPage = "public/error/" + utils::toString(code) + ".html";
-	response.body = utils::readFile(errorPage);
-
-	response.headers[Http::CONTENT_LENGTH] = utils::toString(response.body.size());
-
-	return response;
 }

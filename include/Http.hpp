@@ -59,13 +59,6 @@ namespace Http
 
 class Location;
 
-struct HttpMessage
-{
-	std::string startLine;
-	std::vector<std::string> headers;
-	std::string body;
-};
-
 struct HttpRequest
 {
 	std::string	method;
@@ -98,6 +91,7 @@ HttpResponse serveFile(HttpRequest &request, const std::string &file);
 const Location &matchURI(const std::string &URI, const std::vector<Location> &locations);
 HttpResponse listDirectory(const Location &location, const std::string &directory);
 std::string autoindex(const std::string &directory);
+HttpResponse redirect(StatusCode code, const std::string &path);
 HttpResponse handleError(StatusCode code);
 
 PathType getPathType(const std::string &path);

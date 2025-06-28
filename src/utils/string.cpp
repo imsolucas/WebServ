@@ -110,12 +110,14 @@ string utils::erase(const string &str, const string &substr)
 	return result;
 }
 
+// sets first element to empty string if delimiter is not found
 vector<string> utils::splitFirst(const string &str, char delimiter) {
 	vector<string> result;
+
 	size_t pos = str.find(delimiter);
-	if (pos == string::npos) {
-		result.push_back(str);
-	} else {
+	if (pos == string::npos) result.push_back("");
+	else
+	{
 		result.push_back(str.substr(0, pos));
 		result.push_back(str.substr(pos + 1));
 	}

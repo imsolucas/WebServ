@@ -9,7 +9,6 @@ using std::exception;
 using std::vector;
 using std::cerr;
 
-// TODO: redirection
 string ClientManager::_handleRequest(const ClientMeta &client)
 {
 	HttpResponse response;
@@ -30,6 +29,14 @@ string ClientManager::_handleRequest(const ClientMeta &client)
 	if (!utils::contains(request.method, location.getAllowedMethods()))
 	{
 		response = handleError(METHOD_NOT_ALLOWED);
+		return serialize(response);
+	}
+
+	vector<string> redirection = utils::splitFirst(location.getRedirect(), ' ');
+	if (!redirection[0].empty())
+	{
+		StatusCode code = (StatusCode)atoi(redirection[0].c_str());
+		response = redirect(code, redirection[1]);
 		return serialize(response);
 	}
 
