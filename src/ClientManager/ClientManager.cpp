@@ -204,13 +204,40 @@ bool ClientManager::_preparseHeaders(ClientMeta &client)
 	const string &headers = client.requestBuffer.substr(0, client.requestMeta.headersEnd);
 	istringstream headerStream(headers);
 	string line;
+
+	// extract first word from the first line of the request (usually the HTTP method).
 	getline(headerStream, line);
 	istringstream lineStream(line);
-	// extract first word from the first line of the request which should be the HTTP method.
 	lineStream >> req.method;
 
 	if (req.method != "GET" && req.method != "POST" && req.method != "DELETE")
 		return false;
+	
+	// extract headers from the request.
+	while (getline(headerStream, line))
+	{
+		line = utils::trim(line, " \t\r");
+		if (line.empty())
+			continue;
+		size_t pos = line.find(':');
+		if (pos != string::npos)
+		{
+			string key = utils::trim(line.substr(0, pos), " \t\r");
+			string value = line.substr(pos + 1);
+			if (!key.empty() && !value.empty())
+				req.headers[utils::toLower(key)] = value;
+		}
+	}
+
+	if (req.method != "GET") 
+	{
+		bool hasTE = req.headers.count("transfer-encoding") && 
+			req.headers.at("transfer-encoding") == "chunked";
+		bool hasCL = req.headers.count("content-length");
+		// Transfer-Encoding and Content-Length are mutually exclusive.
+		if ((!hasTE && !hasCL) || (hasTE && hasCL))
+			return false;
+	}
 
 	_determineBodyEnd(client, req);
 	client.server = _selectServerBlock(client, req);
@@ -226,21 +253,13 @@ void ClientManager::_determineBodyEnd(ClientMeta &client, const PreparsedRequest
 	if (req.method == "GET")
 		client.requestMeta.contentLength = 0;
 	else if (req.headers.count("transfer-encoding"))
+		client.requestMeta.chunkedRequest = true;
+	else if (req.headers.count("content-length"))
 	{
-		if (req.headers.at("transfer-encoding") == "chunked")
-			client.requestMeta.chunkedRequest = true;
-	}
-	else
-	{
-		if (req.headers.count("content-length"))
-		{
-			// create a stringstream to extract the content length as an integer
-			std::stringstream ss(req.headers.at("content-length"));
-			// set content length to 0 if fail to parse a valid number
-			if (!(ss >> client.requestMeta.contentLength))
-				client.requestMeta.contentLength = 0;
-		}
-		else
+		// create a stringstream to extract the content length as an integer
+		std::stringstream ss(req.headers.at("content-length"));
+		// set content length to 0 if fail to parse a valid number
+		if (!(ss >> client.requestMeta.contentLength))
 			client.requestMeta.contentLength = 0;
 	}
 }
@@ -252,7 +271,10 @@ const Server *ClientManager::_selectServerBlock(ClientMeta &client, const Prepar
 	{
 		vector<string> vec = utils::split(req.headers.at("host"), ':');
 		// get server name from host header.
-		serverName = vec[0];
+		// host value will usually be in the format "example.com:8080".
+		// !vec.empty() will prevent out of bounds access if the host header is malformed.
+		if (!vec.empty())
+			serverName = vec[0];
 	}
 	// select server candidates with matching ports.
 	vector<const Server *> candidates;
