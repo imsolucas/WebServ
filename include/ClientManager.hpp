@@ -34,6 +34,7 @@ class ClientManager
 			size_t headersEnd;
 			bool chunkedRequest;
 			int contentLength;
+			bool maxBodySizeExceeded;
 		};
 
 		struct ClientMeta
@@ -44,8 +45,6 @@ class ClientManager
 			const Server *server;
 			std::string requestBuffer;
 			RequestMeta requestMeta;
-			int errorCode;
-			bool keepAlive;
 
 			ClientMeta();
 		};

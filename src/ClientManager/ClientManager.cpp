@@ -83,11 +83,6 @@ void ClientManager::sendToClient(int fd)
 		removeClient(fd);
 		return;
 	}
-	if (!_clientMap[fd].keepAlive)
-	{
-		removeClient(fd);
-		return;
-	}
 	_resetClientMeta(fd);
 	_pollToggleQueue.push_back(fd);
 }
@@ -98,12 +93,12 @@ bool ClientManager::isClient(int fd)
 }
 
 ClientManager::ClientMeta::ClientMeta()
-: state(STATE_INIT), listenerFd(0), port(0), server(NULL),
-  requestBuffer(), errorCode(0), keepAlive(true)
+: state(STATE_INIT), listenerFd(0), port(0), server(NULL), requestBuffer()
 {
 	requestMeta.headersEnd = string::npos;
 	requestMeta.chunkedRequest = false;
 	requestMeta.contentLength = 0;
+	requestMeta.maxBodySizeExceeded = false;
 }
 
 ClientManager::PreparsedRequest::PreparsedRequest()
@@ -117,10 +112,10 @@ void ClientManager::_resetClientMeta(int fd)
 	client.state = STATE_INIT;
 	client.server = NULL;
 	client.requestBuffer.clear();
-	client.errorCode = 0;
 	client.requestMeta.headersEnd = string::npos;
 	client.requestMeta.chunkedRequest = false;
 	client.requestMeta.contentLength = 0;
+	client.requestMeta.maxBodySizeExceeded = false;
 }
 
 void ClientManager::_addToClientMap(int fd, int listenerFd, int port)
@@ -167,7 +162,7 @@ void ClientManager::_handleIncomingData(int fd, const char *buffer, size_t bytes
 		{
 			if (_maxBodySizeExceeded(client))
 			{
-				client.errorCode = 413;
+				client.requestMeta.maxBodySizeExceeded = true;
 				cout << RED << "Request from client with fd " << fd << " exceeds the maximum body size.\n" << RESET;
 				break;
 			}
@@ -186,11 +181,8 @@ void ClientManager::_handleIncomingData(int fd, const char *buffer, size_t bytes
 		default:
 			break;
 	}
-	if (client.errorCode > 0)
-	{
-		cout << RED << "Error code: " << client.errorCode << ".\n" << RESET;
+	if (client.requestMeta.maxBodySizeExceeded)
 		_pollToggleQueue.push_back(fd);
-	}
 }
 
 bool ClientManager::_headersAreComplete(ClientMeta &client)

@@ -20,7 +20,7 @@ string ClientManager::_handleRequest(const ClientMeta &client)
 	}
 	catch (const exception &e)
 	{
-		cerr << RED << "Error: " << e.what() << "\n" << RESET;
+		utils::printError(e.what());
 		response = handleError(BAD_REQUEST);
 		return serialize(response);
 	}
