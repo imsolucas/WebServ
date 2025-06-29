@@ -210,9 +210,6 @@ bool ClientManager::_preparseHeaders(ClientMeta &client)
 	istringstream lineStream(line);
 	lineStream >> req.method;
 
-	if (req.method != "GET" && req.method != "POST" && req.method != "DELETE")
-		return false;
-	
 	// extract headers from the request.
 	while (getline(headerStream, line))
 	{
@@ -229,6 +226,14 @@ bool ClientManager::_preparseHeaders(ClientMeta &client)
 		}
 	}
 
+	// server block must be selected regardless of malformed requests
+	// so that handleRequest can construct a response.
+	client.server = _selectServerBlock(client, req);
+
+	// validate method and headers for determineBodyEnd to run correctly.
+	if (req.method != "GET" && req.method != "POST" && req.method != "DELETE")
+		return false;
+
 	if (req.method != "GET") 
 	{
 		bool hasTE = req.headers.count("transfer-encoding") && 
@@ -240,7 +245,6 @@ bool ClientManager::_preparseHeaders(ClientMeta &client)
 	}
 
 	_determineBodyEnd(client, req);
-	client.server = _selectServerBlock(client, req);
 	return true;
 }
 
