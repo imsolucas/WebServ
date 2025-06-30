@@ -50,7 +50,7 @@ HttpRequest deserialize(const string &stream)
 	req.method = vec[0];
 	if (req.method != "GET" && req.method != "POST"
 		&& req.method != "DELETE")
-		throw runtime_error("BAD REQUEST: invalid method");
+		throw runtime_error("NOT IMPLEMENTED: invalid method");
 	req.requestTarget = vec[1];
 	if (req.requestTarget.find('\r') != string::npos
 		|| req.requestTarget.find('\n') != string::npos)

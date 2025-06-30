@@ -27,7 +27,10 @@ string ClientManager::_handleRequest(const ClientMeta &client)
 	catch (const exception &e)
 	{
 		utils::printError(e.what());
-		response = handleError(BAD_REQUEST);
+		if (string(e.what()).find("NOT IMPLEMENTED"))
+			response = handleError(NOT_IMPLEMENTED);
+		else
+			response = handleError(BAD_REQUEST);
 		return serialize(response);
 	}
 
