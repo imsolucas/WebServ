@@ -143,16 +143,19 @@ string autoindex(const string &directory)
 	return body.str();
 }
 
-// does longest prefix match
-const Location &matchURI(const string &URI, const vector<Location> &locations)
+// does exact prefix match
+// returns NULL if nothing matches
+const Location *matchURI(const string &URI, const vector<Location> &locations)
 {
 	const Location *bestMatch = &locations[0];
 	size_t matchLen = 0;
 	for (vector<Location>::const_iterator i = locations.begin();
 		i != locations.end(); ++i)
 	{
+		if (URI == "/" && (*i).getPath() == "/")
+			return &(*i);
 		string prefix = (*i).getPath();
-		if (prefix != "/" && *(prefix.end() - 1) != '/')
+		if (*(prefix.end() - 1) != '/')
 			prefix += "/";
 		if (URI.find(prefix) == 0 && prefix.length() > matchLen)
 		{
@@ -160,5 +163,8 @@ const Location &matchURI(const string &URI, const vector<Location> &locations)
 			matchLen = prefix.length();
 		}
 	}
-	return *bestMatch;
+	if (bestMatch->getPath() == "/")
+		return NULL;
+
+	return bestMatch;
 }

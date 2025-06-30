@@ -88,7 +88,7 @@ HttpRequest	deserialize(const std::string &stream);
 std::pair<std::string, std::string> parseHeader(const std::string &line);
 
 HttpResponse serveFile(HttpRequest &request, const std::string &file);
-const Location &matchURI(const std::string &URI, const std::vector<Location> &locations);
+const Location *matchURI(const std::string &URI, const std::vector<Location> &locations);
 HttpResponse listDirectory(const Location &location, const std::string &directory);
 std::string autoindex(const std::string &directory);
 HttpResponse redirect(StatusCode code, const std::string &path);

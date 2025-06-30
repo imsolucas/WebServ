@@ -25,14 +25,21 @@ string ClientManager::_handleRequest(const ClientMeta &client)
 		return serialize(response);
 	}
 
-	const Location &location = matchURI(request.requestTarget, client.server->getLocations());
-	if (!utils::contains(request.method, location.getAllowedMethods()))
+	const Location *location = matchURI(request.requestTarget, client.server->getLocations());
+	if (location == NULL)
 	{
+		response = handleError(NOT_FOUND);
+		return serialize(response);
+	}
+	std::cout << *location;
+	if (!utils::contains(request.method, location->getAllowedMethods()))
+	{
+		std::cout << "wtf\n;";
 		response = handleError(METHOD_NOT_ALLOWED);
 		return serialize(response);
 	}
 
-	vector<string> redirection = utils::splitFirst(location.getRedirect(), ' ');
+	vector<string> redirection = utils::splitFirst(location->getRedirect(), ' ');
 	if (!redirection[0].empty())
 	{
 		StatusCode code = (StatusCode)atoi(redirection[0].c_str());
@@ -40,7 +47,7 @@ string ClientManager::_handleRequest(const ClientMeta &client)
 		return serialize(response);
 	}
 
-	string path = location.getRoot() + request.requestTarget;
+	string path = location->getRoot() + request.requestTarget;
 	PathType type = getPathType(path);
 	switch (type)
 	{
@@ -49,7 +56,7 @@ string ClientManager::_handleRequest(const ClientMeta &client)
 		break;
 
 		case DIRECTORY:
-			response = listDirectory(location, path);
+			response = listDirectory(*location, path);
 		break;
 
 		case NOT_EXIST:
