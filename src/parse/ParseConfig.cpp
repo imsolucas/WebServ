@@ -3,6 +3,7 @@
 #include <iostream>
 #include <unistd.h> // close
 using std::runtime_error;
+#include "utils.hpp"
 
 std::vector<Server> WebServer::_parseConfig(const std::string &filePath)
 {
@@ -21,7 +22,7 @@ std::vector<Server> WebServer::_parseConfig(const std::string &filePath)
 		size_t commentPos = line.find('#');
 		if (commentPos != std::string::npos)
 			line = line.substr(0, commentPos); // Remove comments
-		std::string trimmed = trim(line);
+		std::string trimmed = utils::trim(line, " \t\r\n");
 		if (trimmed.empty())
 			continue;
 		hasMeaningfulLine = true; // Found a non-empty line
@@ -85,15 +86,6 @@ bool WebServer::_checkLineSyntax(const std::string &line, size_t lineNumber) con
 		return false;
 	}
 	return true;
-}
-
-std::string WebServer::trim(const std::string &str) const
-{
-	size_t start = str.find_first_not_of(" \t\r\n");
-	size_t end = str.find_last_not_of(" \t\r\n");
-	if (start == std::string::npos || end == std::string::npos)
-		return "";
-	return str.substr(start, end - start + 1);
 }
 
 const std::vector<Server> &WebServer::getServers() const
