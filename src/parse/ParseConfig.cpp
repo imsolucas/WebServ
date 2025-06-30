@@ -37,6 +37,7 @@ std::vector<Server> WebServer::_parseConfig(const std::string &filePath)
 	if (!hasMeaningfulLine)
 		throw std::runtime_error("Configuration file is logically empty: " + filePath);
 	std::istringstream buffer(_buffer.str());
+
 	std::vector<std::string> tokens = tokenize(buffer.str());
 	std::vector<Server> servers = _parseTokens(tokens);
 	return servers;
@@ -95,7 +96,7 @@ std::string WebServer::trim(const std::string &str) const
 	return str.substr(start, end - start + 1);
 }
 
-std::vector<Server> WebServer::getServers() const
+const std::vector<Server> &WebServer::getServers() const
 {
 	return _servers;
 }

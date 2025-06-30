@@ -66,12 +66,12 @@ void Location::clearAllowedMethods()
 }
 
 // Getters
-std::string Location::getPath() const { return path; }
-std::string Location::getRoot() const { return root; }
-std::string Location::getIndex() const { return index; }
-std::string Location::getCgiPath() const { return cgi_path; }
-std::string Location::getRedirect() const { return redirect; }
-std::string Location::getUploadStore() const { return upload_store; }
+const std::string &Location::getPath() const { return path; }
+const std::string &Location::getRoot() const { return root; }
+const std::string &Location::getIndex() const { return index; }
+const std::string &Location::getCgiPath() const { return cgi_path; }
+const std::string &Location::getRedirect() const { return redirect; }
+const std::string &Location::getUploadStore() const { return upload_store; }
 bool Location::getAutoindex() const { return autoindex; }
 
 size_t Location::getClientMaxBodySizeInBytes() const
@@ -89,7 +89,7 @@ size_t Location::getClientMaxBodySizeInBytes() const
 	return size; // Assume bytes if no valid unit
 }
 
-std::vector<std::string> Location::getAllowedMethods() const
+const std::vector<std::string> &Location::getAllowedMethods() const
 {
 	return allowed_methods;
 }
