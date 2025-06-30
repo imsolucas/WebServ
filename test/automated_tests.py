@@ -137,10 +137,10 @@ run_curl_test("GET", "/", 200)
 
 # ⚠️ Make sure to chmod 000 forbidden/ to test this
 test_info("Testing access to forbidden path")
-run_curl_test("GET", "/forbidden", 403)
+run_curl_test("GET", "/forbidden/", 403)
 
 test_info("Testing non-existent path")
-run_curl_test("GET", "/doesnotexist", 404)
+run_curl_test("GET", "/doesnotexist/", 404)
 
 test_info("Testing disallowed method - POST on root")
 run_curl_test("POST", "/", 405)

@@ -30,6 +30,10 @@ bool assertEqual(const std::string &msg, const Output &actual, const Output &exp
 void printHeader(const std::string &msg);
 void printSummary(unsigned int tests, unsigned int passes, unsigned int fails);
 
-void test_http(TestSuite &t);
+void test_serialize(TestSuite &t);
+void test_deserialize(TestSuite &t);
+void test_matchURI(TestSuite &t);
+void test_handleError(TestSuite &t);
+void test_buildResponse(TestSuite &t);
 
 # include "test.tpp"

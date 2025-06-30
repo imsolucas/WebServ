@@ -4,7 +4,7 @@ import os
 import sys
 import urllib.parse
 
-UPLOAD_DIR = os.path.abspath("../public/uploads")
+UPLOAD_DIR = os.path.abspath("../uploads")
 
 print("Content-Type: text/plain\r\n")
 

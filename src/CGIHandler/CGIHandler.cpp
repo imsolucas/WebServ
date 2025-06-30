@@ -288,17 +288,17 @@ void CGIHandler::_cgiChildProcess()
 	switch (errno)
 	{
 		// script not found
-		case ENOENT: 
+		case ENOENT:
 			_exit(CGI_EXIT_ENOENT);
 		// permission denied
-		case EACCES: 
+		case EACCES:
 			_exit(CGI_EXIT_EACCES);
 		// invalid executable format
-		case ENOEXEC: 
-			_exit(CGI_EXIT_ENOEXEC); 
+		case ENOEXEC:
+			_exit(CGI_EXIT_ENOEXEC);
 		// generic failure
-		default: 
-			_exit(CGI_EXIT_FAILURE); 
+		default:
+			_exit(CGI_EXIT_FAILURE);
 	}
 }
 
