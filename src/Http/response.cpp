@@ -6,6 +6,8 @@
 # include "ClientManager.hpp"
 # include "Http.hpp"
 
+using std::exception;
+using std::runtime_error;
 using std::map;
 using std::ostringstream;
 
@@ -27,6 +29,8 @@ HttpResponse serveFile(HttpRequest &request, const string &file)
 		StatusCode status = cgi.execute();
 		if (status != OK)
 			return handleError(status);
+		response.statusCode = (StatusCode)cgi.getCGIStatusCode();
+		response.statusText = Http::statusText.find(response.statusCode)->second;
 		map<string, string> headers = cgi.getCGIHeaders();
 		for (map<string, string>::const_iterator it = headers.begin();
 			it != headers.end(); ++it)
@@ -61,7 +65,16 @@ HttpResponse listDirectory(const Location &location, const string &directory)
 	if (filePath.empty())
 	{
 		if (location.getAutoindex() == true)
-			response.body = autoindex(directory);
+		{
+			try
+			{
+				response.body = autoindex(directory);
+			}
+			catch (const exception &e)
+			{
+				return handleError(FORBIDDEN);
+			}
+		}
 		else
 			return handleError(FORBIDDEN);
 	}
@@ -130,6 +143,8 @@ string autoindex(const string &directory)
 		 << "<ul>\n";
 
 	vector<string> dirents = utils::readDirectory(directory);
+	if (dirents.empty())
+		throw runtime_error("FORBIDDEN");
 	for (vector<string>::const_iterator it = dirents.begin();
 		it != dirents.end(); ++it)
 	{
@@ -143,28 +158,19 @@ string autoindex(const string &directory)
 	return body.str();
 }
 
-// does exact prefix match
+// does exact path match
 // returns NULL if nothing matches
 const Location *matchURI(const string &URI, const vector<Location> &locations)
 {
-	const Location *bestMatch = &locations[0];
-	size_t matchLen = 0;
+	string prefix = URI.substr(0, URI.find_last_of('/')) + "/";
+
+	std::cout << "Prefix: " + prefix + "\n";
 	for (vector<Location>::const_iterator i = locations.begin();
 		i != locations.end(); ++i)
 	{
-		if (URI == "/" && (*i).getPath() == "/")
+		if (prefix == i->getPath())
 			return &(*i);
-		string prefix = (*i).getPath();
-		if (*(prefix.end() - 1) != '/')
-			prefix += "/";
-		if (URI.find(prefix) == 0 && prefix.length() > matchLen)
-		{
-			bestMatch = &(*i);
-			matchLen = prefix.length();
-		}
 	}
-	if (bestMatch->getPath() == "/")
-		return NULL;
 
-	return bestMatch;
+	return NULL;
 }

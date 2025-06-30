@@ -26,6 +26,7 @@ string utils::readFile(const string &path)
 }
 
 // return directory entries
+// return empty vector if directory cannot be opened
 vector<string> utils::readDirectory(const string &path)
 {
 	vector<string> entries;
