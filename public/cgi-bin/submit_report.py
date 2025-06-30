@@ -4,7 +4,7 @@ import os
 import sys
 import html
 
-UPLOAD_DIR = os.path.abspath("../public/uploads")
+UPLOAD_DIR = os.path.abspath("../uploads")
 
 def parse_multipart(stdin, boundary, content_length):
     body = stdin.read(content_length)
@@ -147,7 +147,7 @@ def main():
     except Exception as e:
         print("Content-Type: text/html\r\n")
         print()
-        print(f"<html><body><h2>❌ Error: {html.escape(str(e))}</h2></body></html>")
+        print(f"<html><body><h2>Error: {html.escape(str(e))}</h2></body></html>")
 
 if __name__ == "__main__":
     main()
