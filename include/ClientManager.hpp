@@ -1,6 +1,5 @@
 # pragma once
 
-# include "Http.hpp"
 # include "Server.hpp"
 
 # include <map>
@@ -11,6 +10,17 @@
 class ClientManager
 {
 	public:
+		ClientManager(std::vector<int> &pollRemoveQueue, std::vector<int> &pollToggleQueue,
+						std::vector<int> &pollAddQueue, const std::vector<Server> &servers);
+
+		void addClient(int listenerFd, int port);
+		void removeClient(int fd);
+		void recvFromClient(int fd);
+		void sendToClient(int fd);
+
+		bool isClient(int fd);
+
+	private:
 		enum ClientState
 		{
 			STATE_INIT,
@@ -24,6 +34,7 @@ class ClientManager
 			size_t headersEnd;
 			bool chunkedRequest;
 			int contentLength;
+			bool maxBodySizeExceeded;
 		};
 
 		struct ClientMeta
@@ -34,23 +45,18 @@ class ClientManager
 			const Server *server;
 			std::string requestBuffer;
 			RequestMeta requestMeta;
-			int errorCode;
-			bool keepAlive;
 
 			ClientMeta();
 		};
 
-		ClientManager(std::vector<int> &pollRemoveQueue, std::vector<int> &pollToggleQueue,
-						std::vector<int> &pollAddQueue, const std::vector<Server> &servers);
+		struct PreparsedRequest
+		{
+			std::string method;
+			std::map<std::string, std::string> headers;
 
-		void addClient(int listenerFd, int port);
-		void removeClient(int fd);
-		void recvFromClient(int fd);
-		void sendToClient(int fd);
+			PreparsedRequest();
+		};
 
-		bool isClient(int fd);
-
-	private:
 		// maps client fd to client meta
 		std::map<int, ClientMeta> _clientMap;
 		std::vector<int> &_pollRemoveQueue;
@@ -58,17 +64,17 @@ class ClientManager
 		std::vector<int> &_pollAddQueue;
 		const std::vector<Server> &_servers;
 
-		std::string _handleRequest(const ClientMeta &client);
-
 		void _resetClientMeta(int fd);
 		void _addToClientMap(int fd, int listenerFd, int port);
 		void _removeFromClientMap(int fd);
 
 		void _handleIncomingData(int fd, const char *buffer, size_t bytesReceived);
 		bool _headersAreComplete(ClientMeta &client);
-		void _preparseHeaders(ClientMeta &client);
-		void _determineBodyEnd(ClientMeta &client, const HttpRequest &req);
-		const Server *_selectServerBlock(ClientMeta &client, const HttpRequest &req);
+		bool _preparseHeaders(ClientMeta &client);
+		void _determineBodyEnd(ClientMeta &client, const PreparsedRequest &req);
+		const Server *_selectServerBlock(ClientMeta &client, const PreparsedRequest &req);
 		bool _maxBodySizeExceeded(const ClientMeta &client);
 		bool _bodyIsComplete(const ClientMeta &client);
+
+		std::string _handleRequest(const ClientMeta &client);
 };
