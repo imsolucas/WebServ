@@ -179,19 +179,19 @@ test_info("Testing unimplemented HTTP method")
 run_curl_test("PUT", "/", 501)
 
 test_info("Testing file upload with small body")
-run_curl_upload_test("/cgi-bin/curl_upload_file.py", 201, "short.txt", "uploads/short.txt")
+run_curl_upload_test("/cgi-bin/curl_upload_file.py", 201, "short.txt", "test-upload/short.txt")
 
 test_info("Testing file upload with medium body")
-run_curl_upload_test("/cgi-bin/curl_upload_file.py", 201, "medium.txt", "uploads/medium.txt")
+run_curl_upload_test("/cgi-bin/curl_upload_file.py", 201, "medium.txt", "test-upload/medium.txt")
 
 test_info("Testing file upload with body exceeding max body size")
-run_curl_upload_test("/cgi-bin/curl_upload_file.py", 413, "long.txt", "uploads/long.txt")
+run_curl_upload_test("/cgi-bin/curl_upload_file.py", 413, "long.txt", "test-upload/long.txt")
 
 test_info("Testing file deletion with uploaded file")
-run_curl_test("DELETE", "/cgi-bin/curl_delete_file.py", 200, data="file=uploads/short.txt")
+run_curl_test("DELETE", "/cgi-bin/curl_delete_file.py", 200, data="file=test-upload/short.txt")
 
 test_info("Testing file deletion with non-existent file")
-run_curl_test("DELETE", "/cgi-bin/curl_delete_file.py", 404, data="file=doesnotexist.txt")
+run_curl_test("DELETE", "/cgi-bin/curl_delete_file.py", 404, data="file=test-upload/doesnotexist.txt")
 
 test_info("Testing CGI script execution - GET")
 run_curl_test("GET", "/cgi-bin/test_cgi.php", 200)
