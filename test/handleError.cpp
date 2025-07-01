@@ -2,6 +2,9 @@
 # include "Http.hpp"
 # include "test.hpp"
 
+using std::map;
+using std::string;
+
 static bool test_400();
 static bool test_401();
 static bool test_403();
@@ -25,12 +28,15 @@ void test_handleError(TestSuite &t)
 
 bool test_400()
 {
-	HttpResponse actual = handleError(BAD_REQUEST);
+	map<int, string> emptyMap;
+	HttpResponse actual = handleError(BAD_REQUEST, emptyMap);
 
 	HttpResponse expected;
 	expected.protocol = "HTTP/1.1";
 	expected.statusCode = BAD_REQUEST;
 	expected.statusText = Http::statusText.find(BAD_REQUEST)->second;
+	expected.headers[Http::SERVER] = "webserv";
+	expected.headers[Http::DATE] = actual.headers[Http::DATE];
 	expected.headers[Http::CONTENT_TYPE] = "text/html";
 	expected.body =
 		"<!DOCTYPE html>\n"
@@ -48,12 +54,15 @@ bool test_400()
 
 bool test_401()
 {
-	HttpResponse actual = handleError(UNAUTHORIZED);
+	map<int, string> emptyMap;
+	HttpResponse actual = handleError(UNAUTHORIZED, emptyMap);
 
 	HttpResponse expected;
 	expected.protocol = "HTTP/1.1";
 	expected.statusCode = UNAUTHORIZED;
 	expected.statusText = Http::statusText.find(UNAUTHORIZED)->second;
+	expected.headers[Http::SERVER] = "webserv";
+	expected.headers[Http::DATE] = actual.headers[Http::DATE];
 	expected.headers[Http::CONTENT_TYPE] = "text/html";
 	expected.body =
 		"<!DOCTYPE html>\n"
@@ -71,12 +80,15 @@ bool test_401()
 
 bool test_403()
 {
-	HttpResponse actual = handleError(FORBIDDEN);
+	map<int, string> emptyMap;
+	HttpResponse actual = handleError(FORBIDDEN, emptyMap);
 
 	HttpResponse expected;
 	expected.protocol = "HTTP/1.1";
 	expected.statusCode = FORBIDDEN;
 	expected.statusText = Http::statusText.find(FORBIDDEN)->second;
+	expected.headers[Http::SERVER] = "webserv";
+	expected.headers[Http::DATE] = actual.headers[Http::DATE];
 	expected.headers[Http::CONTENT_TYPE] = "text/html";
 	expected.body =
 		"<!DOCTYPE html>\n"
@@ -94,12 +106,15 @@ bool test_403()
 
 bool test_404()
 {
-	HttpResponse actual = handleError(NOT_FOUND);
+	map<int, string> emptyMap;
+	HttpResponse actual = handleError(NOT_FOUND, emptyMap);
 
 	HttpResponse expected;
 	expected.protocol = "HTTP/1.1";
 	expected.statusCode = NOT_FOUND;
 	expected.statusText = Http::statusText.find(NOT_FOUND)->second;
+	expected.headers[Http::SERVER] = "webserv";
+	expected.headers[Http::DATE] = actual.headers[Http::DATE];
 	expected.headers[Http::CONTENT_TYPE] = "text/html";
 	expected.body =
 		"<!DOCTYPE html>\n"
@@ -117,12 +132,15 @@ bool test_404()
 
 bool test_405()
 {
-	HttpResponse actual = handleError(METHOD_NOT_ALLOWED);
+	map<int, string> emptyMap;
+	HttpResponse actual = handleError(METHOD_NOT_ALLOWED, emptyMap);
 
 	HttpResponse expected;
 	expected.protocol = "HTTP/1.1";
 	expected.statusCode = METHOD_NOT_ALLOWED;
 	expected.statusText = Http::statusText.find(METHOD_NOT_ALLOWED)->second;
+	expected.headers[Http::SERVER] = "webserv";
+	expected.headers[Http::DATE] = actual.headers[Http::DATE];
 	expected.headers[Http::CONTENT_TYPE] = "text/html";
 	expected.body =
 		"<!DOCTYPE html>\n"
@@ -140,12 +158,15 @@ bool test_405()
 
 bool test_413()
 {
-	HttpResponse actual = handleError(CONTENT_TOO_LARGE);
+	map<int, string> emptyMap;
+	HttpResponse actual = handleError(CONTENT_TOO_LARGE, emptyMap);
 
 	HttpResponse expected;
 	expected.protocol = "HTTP/1.1";
 	expected.statusCode = CONTENT_TOO_LARGE;
 	expected.statusText = Http::statusText.find(CONTENT_TOO_LARGE)->second;
+	expected.headers[Http::SERVER] = "webserv";
+	expected.headers[Http::DATE] = actual.headers[Http::DATE];
 	expected.headers[Http::CONTENT_TYPE] = "text/html";
 	expected.body =
 		"<!DOCTYPE html>\n"
@@ -163,12 +184,15 @@ bool test_413()
 
 bool test_500()
 {
-	HttpResponse actual = handleError(INTERNAL_SERVER_ERROR);
+	map<int, string> emptyMap;
+	HttpResponse actual = handleError(INTERNAL_SERVER_ERROR, emptyMap);
 
 	HttpResponse expected;
 	expected.protocol = "HTTP/1.1";
 	expected.statusCode = INTERNAL_SERVER_ERROR;
 	expected.statusText = Http::statusText.find(INTERNAL_SERVER_ERROR)->second;
+	expected.headers[Http::SERVER] = "webserv";
+	expected.headers[Http::DATE] = actual.headers[Http::DATE];
 	expected.headers[Http::CONTENT_TYPE] = "text/html";
 	expected.body =
 		"<!DOCTYPE html>\n"
@@ -186,12 +210,15 @@ bool test_500()
 
 bool test_502()
 {
-	HttpResponse actual = handleError(BAD_GATEWAY);
+	map<int, string> emptyMap;
+	HttpResponse actual = handleError(BAD_GATEWAY, emptyMap);
 
 	HttpResponse expected;
 	expected.protocol = "HTTP/1.1";
 	expected.statusCode = BAD_GATEWAY;
 	expected.statusText = Http::statusText.find(BAD_GATEWAY)->second;
+	expected.headers[Http::SERVER] = "webserv";
+	expected.headers[Http::DATE] = actual.headers[Http::DATE];
 	expected.headers[Http::CONTENT_TYPE] = "text/html";
 	expected.body =
 		"<!DOCTYPE html>\n"

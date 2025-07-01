@@ -87,12 +87,12 @@ std::string	serialize(const HttpResponse &response);
 HttpRequest	deserialize(const std::string &stream);
 std::pair<std::string, std::string> parseHeader(const std::string &line);
 
-HttpResponse serveFile(HttpRequest &request, const std::string &file);
+HttpResponse serveFile(HttpRequest &request, const std::string &file, const std::map<int, std::string> &errorPages);
 const Location *matchURI(const std::string &URI, const std::vector<Location> &locations);
-HttpResponse listDirectory(const Location &location, const std::string &directory);
+HttpResponse listDirectory(const Location &location, const std::string &directory, const std::map<int, std::string> &errorPages);
 std::string autoindex(const std::string &directory);
 HttpResponse redirect(StatusCode code, const std::string &path);
-HttpResponse handleError(StatusCode code);
+HttpResponse handleError(StatusCode code, const std::map<int, std::string> &errorPages);
 
 PathType getPathType(const std::string &path);
 std::string getContentType(const std::string &file);

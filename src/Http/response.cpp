@@ -11,7 +11,7 @@ using std::runtime_error;
 using std::map;
 using std::ostringstream;
 
-HttpResponse serveFile(HttpRequest &request, const string &file)
+HttpResponse serveFile(HttpRequest &request, const string &file, const map<int, string> &errorPages)
 {
 	HttpResponse response;
 
@@ -24,11 +24,11 @@ HttpResponse serveFile(HttpRequest &request, const string &file)
 	if (isCGI(file))
 	{
 		if (access(file.c_str(), X_OK) == -1)
-			return handleError(FORBIDDEN);
+			return handleError(FORBIDDEN, errorPages);
 		CGIHandler cgi(request, utils::erase(file, request.requestTarget));
 		StatusCode status = cgi.execute();
 		if (status != OK)
-			return handleError(status);
+			return handleError(status, errorPages);
 		response.statusCode = (StatusCode)cgi.getCGIStatusCode();
 		response.statusText = Http::statusText.find(response.statusCode)->second;
 		map<string, string> headers = cgi.getCGIHeaders();
@@ -42,7 +42,7 @@ HttpResponse serveFile(HttpRequest &request, const string &file)
 	else if (request.method == Http::GET)
 	{
 		if (access(file.c_str(), R_OK) == -1)
-			return handleError(FORBIDDEN);
+			return handleError(FORBIDDEN, errorPages);
 		response.headers[Http::CONTENT_TYPE] = getContentType(file);
 		response.body = utils::readFile(file);
 	}
@@ -51,7 +51,7 @@ HttpResponse serveFile(HttpRequest &request, const string &file)
 	return response;
 }
 
-HttpResponse listDirectory(const Location &location, const string &directory)
+HttpResponse listDirectory(const Location &location, const string &directory, const map<int, string> &errorPages)
 {
 	HttpResponse response;
 	response.protocol = "HTTP/1.1";
@@ -67,10 +67,11 @@ HttpResponse listDirectory(const Location &location, const string &directory)
 		if (location.getAutoindex() == true)
 		{
 			response.body = autoindex(directory);
-			if (response.body.empty()) return handleError(FORBIDDEN);
+			if (response.body.empty())
+				return handleError(FORBIDDEN, errorPages);
 		}
 		else
-			return handleError(FORBIDDEN);
+			return handleError(FORBIDDEN, errorPages);
 	}
 	else
 	{
@@ -78,7 +79,7 @@ HttpResponse listDirectory(const Location &location, const string &directory)
 		if (getPathType(filePath) == R_FILE)
 		{
 			if (access(filePath.c_str(), R_OK) == -1)
-				return handleError(FORBIDDEN);
+				return handleError(FORBIDDEN, errorPages);
 			response.body = utils::readFile(filePath);
 		}
 		else
@@ -107,9 +108,10 @@ HttpResponse redirect(StatusCode code, const string &path)
 	return response;
 }
 
-HttpResponse handleError(StatusCode code)
+HttpResponse handleError(StatusCode code, const map<int, string> &errorPages)
 {
 	HttpResponse response;
+	string errorPage;
 
 	response.protocol = "HTTP/1.1";
 	response.statusCode = code;
@@ -118,7 +120,10 @@ HttpResponse handleError(StatusCode code)
 	response.headers[Http::DATE] = utils::genTimeStamp();
 	response.headers[Http::CONTENT_TYPE] = "text/html";
 
-	string errorPage = "public/error/" + utils::toString(code) + ".html";
+	if (errorPages.find(code) != errorPages.end())
+		errorPage = errorPages.find(code)->second;
+	else
+		errorPage = "public/error/" + utils::toString(code) + ".html";
 	response.body = utils::readFile(errorPage);
 
 	response.headers[Http::CONTENT_LENGTH] = utils::toString(response.body.size());

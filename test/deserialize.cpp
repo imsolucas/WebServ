@@ -149,7 +149,7 @@ bool test_invalid_method()
 	try {
 		HttpRequest actual = deserialize(stream);
 	} catch (const exception &e) {
-		return assertEqual(message, string(e.what()), string("BAD REQUEST: invalid method"));
+		return assertEqual(message, string(e.what()), string("NOT IMPLEMENTED: invalid method"));
 	}
 	return false; // Should not reach here
 }
