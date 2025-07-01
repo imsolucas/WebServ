@@ -2,7 +2,7 @@
 #include "colors.h"
 
 Server::Server()
-: root("/var/www/html"), client_max_body_size(std::pair<size_t, std::string>(1, "MB")) {} // 1 MB default
+: client_max_body_size(std::pair<size_t, std::string>(1, "MB")) {} // 1 MB default
 
 Server::~Server() {}
 
@@ -24,7 +24,6 @@ void Server::addServerName(const std::string &server_name)
 // 		indexes.push_back(index);
 // }
 
-void Server::setRoot(const std::string &root) { this->root = root; }
 
 void Server::setClientMaxBodySize(size_t size, const std::string &unit)
 {
@@ -75,7 +74,6 @@ void Server::clearLocations()
 
 const std::vector<int> &Server::getPorts() const { return ports; }
 const std::vector<std::string> &Server::getServerNames() const { return server_names; }
-const std::string &Server::getRoot() const { return root; }
 const std::vector<Location> &Server::getLocations() const { return locations; }
 const std::map<int, std::string> &Server::getErrorPages() const { return error_pages; }
 
@@ -111,7 +109,6 @@ void Server::printConfig() const {
 	}
 	std::cout << RESET << std::endl;
 
-	std::cout << BOLD << MAGENTA << "Root: " << GREEN << root << RESET << std::endl;
 
 	std::cout << BOLD << MAGENTA << "Client Max Body Size: " << GREEN
 			  << client_max_body_size.first << " " << client_max_body_size.second

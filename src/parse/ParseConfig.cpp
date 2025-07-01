@@ -218,13 +218,6 @@ Server WebServer::parseServerBlock(const std::vector<std::string> &tokens, size_
 				throw std::runtime_error("Missing ';' after server_name");
 			++i;
 		}
-		else if (token == "root")
-		{
-			if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
-				throw std::runtime_error("Invalid 'root' syntax");
-			server.setRoot(tokens[i + 1]);
-			i += 3; // Move past "root <path>;"
-		}
 		else if (token == "error_page")
 		{
 			if (i + 2 >= tokens.size())
@@ -339,13 +332,6 @@ Location WebServer::parseLocationBlock(const std::vector<std::string> &tokens, s
 			if (tokens[i] != ";")
 				throw std::runtime_error("Expected ';' after client_max_body_size");
 			i++; // Skip ';'
-		}
-		else if (token == "cgi_path")
-		{
-			if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
-				throw std::runtime_error("Invalid 'cgi_path' syntax in location block");
-			loc.setCgiPath(tokens[i + 1]);
-			i += 3; // Move past "cgi_path <path>;"
 		}
 		else if (token == "redirect")
 		{
