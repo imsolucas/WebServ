@@ -52,8 +52,6 @@ std::vector<std::string> WebServer::_getSemicolonDirectives() const {
 	directives.push_back("error_page");
 	directives.push_back("client_max_body_size");
 	directives.push_back("limit_except");
-	directives.push_back("cgi_path");
-	directives.push_back("upload_store");
 	directives.push_back("redirect");
 	directives.push_back("return");
 	return directives;
