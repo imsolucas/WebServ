@@ -218,18 +218,6 @@ Server WebServer::parseServerBlock(const std::vector<std::string> &tokens, size_
 				throw std::runtime_error("Missing ';' after server_name");
 			++i;
 		}
-		else if (token == "index")
-		{
-			i++;
-			while (i < tokens.size() && tokens[i] != ";")
-			{
-				server.addIndex(tokens[i]);
-				i++;
-			}
-			if (tokens[i] != ";")
-				throw std::runtime_error("Missing ';' after index");
-			++i;
-		}
 		else if (token == "root")
 		{
 			if (i + 2 >= tokens.size() || tokens[i + 2] != ";")

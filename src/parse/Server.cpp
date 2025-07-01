@@ -18,11 +18,11 @@ void Server::addServerName(const std::string &server_name)
 		server_names.push_back(server_name);
 }
 
-void Server::addIndex(const std::string &index)
-{
-	if (std::find(indexes.begin(), indexes.end(), index) == indexes.end())
-		indexes.push_back(index);
-}
+// void Server::addIndex(const std::string &index)
+// {
+// 	if (std::find(indexes.begin(), indexes.end(), index) == indexes.end())
+// 		indexes.push_back(index);
+// }
 
 void Server::setRoot(const std::string &root) { this->root = root; }
 
@@ -112,13 +112,6 @@ void Server::printConfig() const {
 	std::cout << RESET << std::endl;
 
 	std::cout << BOLD << MAGENTA << "Root: " << GREEN << root << RESET << std::endl;
-
-	std::cout << BOLD << MAGENTA << "Index Files: " << RESET;
-	for (size_t i = 0; i < indexes.size(); ++i) {
-		std::cout << GREEN << indexes[i];
-		if (i + 1 < indexes.size()) std::cout << ", ";
-	}
-	std::cout << RESET << std::endl;
 
 	std::cout << BOLD << MAGENTA << "Client Max Body Size: " << GREEN
 			  << client_max_body_size.first << " " << client_max_body_size.second
