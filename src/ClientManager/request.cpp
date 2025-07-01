@@ -27,7 +27,7 @@ string ClientManager::_handleRequest(const ClientMeta &client)
 	catch (const exception &e)
 	{
 		utils::printError(e.what());
-		if (string(e.what()).find("NOT IMPLEMENTED"))
+		if (string(e.what()).find("NOT IMPLEMENTED") != string::npos)
 			response = handleError(NOT_IMPLEMENTED);
 		else
 			response = handleError(BAD_REQUEST);
@@ -40,7 +40,6 @@ string ClientManager::_handleRequest(const ClientMeta &client)
 		response = handleError(NOT_FOUND);
 		return serialize(response);
 	}
-	std::cout << *location;
 	if (!utils::contains(request.method, location->getAllowedMethods()))
 	{
 		response = handleError(METHOD_NOT_ALLOWED);
@@ -56,7 +55,6 @@ string ClientManager::_handleRequest(const ClientMeta &client)
 	}
 
 	string path = location->getRoot() + request.requestTarget;
-	std::cout << "Path: " + path + "\n";
 	PathType type = getPathType(path);
 	switch (type)
 	{

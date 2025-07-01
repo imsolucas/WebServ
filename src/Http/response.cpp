@@ -66,14 +66,8 @@ HttpResponse listDirectory(const Location &location, const string &directory)
 	{
 		if (location.getAutoindex() == true)
 		{
-			try
-			{
-				response.body = autoindex(directory);
-			}
-			catch (const exception &e)
-			{
-				return handleError(FORBIDDEN);
-			}
+			response.body = autoindex(directory);
+			if (response.body.empty()) return handleError(FORBIDDEN);
 		}
 		else
 			return handleError(FORBIDDEN);
@@ -132,6 +126,7 @@ HttpResponse handleError(StatusCode code)
 	return response;
 }
 
+// returns empty string if readDirectory() fails
 string autoindex(const string &directory)
 {
 	ostringstream body;
@@ -143,8 +138,7 @@ string autoindex(const string &directory)
 		 << "<ul>\n";
 
 	vector<string> dirents = utils::readDirectory(directory);
-	if (dirents.empty())
-		throw runtime_error("FORBIDDEN");
+	if (dirents.empty()) return "";
 	for (vector<string>::const_iterator it = dirents.begin();
 		it != dirents.end(); ++it)
 	{
@@ -164,7 +158,6 @@ const Location *matchURI(const string &URI, const vector<Location> &locations)
 {
 	string prefix = URI.substr(0, URI.find_last_of('/')) + "/";
 
-	std::cout << "Prefix: " + prefix + "\n";
 	for (vector<Location>::const_iterator i = locations.begin();
 		i != locations.end(); ++i)
 	{
