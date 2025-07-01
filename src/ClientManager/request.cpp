@@ -45,6 +45,11 @@ string ClientManager::_handleRequest(const ClientMeta &client)
 		response = handleError(METHOD_NOT_ALLOWED);
 		return serialize(response);
 	}
+	if (request.body.size() > location->getClientMaxBodySizeInBytes())
+	{
+		response = handleError(CONTENT_TOO_LARGE);
+		return serialize(response);
+	}
 
 	vector<string> redirection = utils::splitFirst(location->getRedirect(), ' ');
 	if (!redirection[0].empty())
