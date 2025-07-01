@@ -7,6 +7,13 @@ import cgi
 # Define upload directory (absolute path)
 UPLOAD_DIR = os.path.abspath("../uploads")
 
+# Only POST method is allowed for this script
+if os.environ.get("REQUEST_METHOD", "") != "POST":
+    print("Status: 405 Method Not Allowed")
+    print("Content-Type: text/plain\r\n")
+    print("Only POST method is allowed.")
+    sys.exit(0)
+
 # Parse the form data
 form = cgi.FieldStorage()
 

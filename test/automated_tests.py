@@ -33,17 +33,14 @@ import subprocess
 
 BASE_URL = "http://localhost:8080"
 
-def run_curl_test(method, path, expected_status, data=None, is_file=False):
+def run_curl_test(method, path, expected_status, data=None):
     global total_tests, passed_tests, failed_tests
     total_tests += 1
     url = BASE_URL + path
     curl_cmd = ["curl", "-s", "-o", "/dev/null", "-w", "%{http_code}", "-X", method, url]
 
     if data:
-        if is_file:
-            curl_cmd += ["--data-binary", f"@{data}"]
-        else:
-            curl_cmd += ["--data", data]
+        curl_cmd += ["--data", data]
 
     try:
         result = subprocess.run(curl_cmd, capture_output=True, text=True)
@@ -191,7 +188,7 @@ test_info("Testing file upload with body exceeding max body size")
 run_curl_upload_test("/cgi-bin/curl_upload_file.py", 413, "long.txt", "uploads/long.txt")
 
 test_info("Testing file deletion with uploaded file")
-run_curl_test("DELETE", "/cgi-bin/curl_delete_file.py", 200, data="file=test.txt")
+run_curl_test("DELETE", "/cgi-bin/curl_delete_file.py", 200, data="file=uploads/short.txt")
 
 test_info("Testing file deletion with non-existent file")
 run_curl_test("DELETE", "/cgi-bin/curl_delete_file.py", 404, data="file=doesnotexist.txt")

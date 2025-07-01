@@ -43,6 +43,21 @@ Flags:
 5) Show only status code
 - curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/
 
+Manual curl command for curl CGI scripts:
+1) curl_upload_file.py
+curl -X POST \
+  -F "filename=short.txt" \
+  -F "content=@./test/uploads/short.txt" \
+  http://localhost:8080/cgi-bin/curl_upload_file.py
+
+Note: content=@ is relative to the directory in which the curl command is run.
+
+2) curl_delete_file.py
+curl -X DELETE \
+  --data "file=uploads/medium.txt" \
+  http://localhost:8080/cgi-bin/curl_delete_file.py
+
+
 
 SIEGE COMMANDS
 Flags:
