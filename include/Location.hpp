@@ -16,7 +16,6 @@ public:
     void setRoot(const std::string &root);
     void setIndex(const std::string &index);
     void setRedirect(const std::string &redirect);
-    void setUploadStore(const std::string &upload_store);
     void setAutoindex(bool autoindex);
     void setClientMaxBodySize(size_t size, const std::string &unit);
     void addAllowedMethod(const std::string &method);
@@ -28,7 +27,6 @@ public:
     const std::string &getRoot() const;
     const std::string &getIndex() const;
     const std::string &getRedirect() const;
-    const std::string &getUploadStore() const;
     bool getAutoindex() const;
     size_t getClientMaxBodySizeInBytes() const;
     const std::vector<std::string> &getAllowedMethods() const;
@@ -43,7 +41,6 @@ private:
     std::string root;                // e.g., "/var/www/html"
     std::string index;               // e.g., "index.html"
     std::string redirect;            // e.g., "301 http://example.com"
-    std::string upload_store;        // Upload destination directory
     bool autoindex;                  // Directory listing toggle
     std::pair<size_t, std::string> client_max_body_size; // Max body size for client requests
     std::vector<std::string> allowed_methods; // Allowed HTTP methods

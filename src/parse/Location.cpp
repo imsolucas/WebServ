@@ -7,7 +7,6 @@ Location::Location()
 	  root("/var/www/html"),
 	  index(""),
 	  redirect(""),
-	  upload_store(""),
 	  autoindex(false),
 	  client_max_body_size(std::pair<size_t, std::string>(1, "MB")) // 1 MB default
 {
@@ -20,7 +19,6 @@ Location::Location(const std::string &path)
 	  root("/var/www/html"),
 	  index(""),
 	  redirect(""),
-	  upload_store(""),
 	  autoindex(false),
 	  client_max_body_size(std::pair<size_t, std::string>(1, "MB")) // 1 MB default
 {
@@ -35,7 +33,6 @@ void Location::setPath(const std::string &path) { this->path = path; }
 void Location::setRoot(const std::string &root) { this->root = root; }
 void Location::setIndex(const std::string &index) { this->index = index; }
 void Location::setRedirect(const std::string &redirect) { this->redirect = redirect; }
-void Location::setUploadStore(const std::string &upload_store) { this->upload_store = upload_store; }
 void Location::setAutoindex(bool autoindex) { this->autoindex = autoindex; }
 
 void Location::setClientMaxBodySize(size_t size, const std::string &unit)
@@ -67,7 +64,6 @@ const std::string &Location::getPath() const { return path; }
 const std::string &Location::getRoot() const { return root; }
 const std::string &Location::getIndex() const { return index; }
 const std::string &Location::getRedirect() const { return redirect; }
-const std::string &Location::getUploadStore() const { return upload_store; }
 bool Location::getAutoindex() const { return autoindex; }
 
 size_t Location::getClientMaxBodySizeInBytes() const
@@ -120,7 +116,6 @@ void Location::printConfig() const
 	std::cout << BOLD << MAGENTA << "Root: " << GREEN << root << RESET << std::endl;
 	std::cout << BOLD << MAGENTA << "Index: " << GREEN << index << RESET << std::endl;
 	std::cout << BOLD << MAGENTA << "Redirect: " << GREEN << redirect << RESET << std::endl;
-	std::cout << BOLD << MAGENTA << "Upload Store: " << GREEN << upload_store << RESET << std::endl;
 	std::cout << BOLD << MAGENTA << "Autoindex: " << GREEN << (autoindex ? "true" : "false") << RESET << std::endl;
 	std::cout << BOLD << MAGENTA << "Client Max Body Size: " << GREEN
 			  << client_max_body_size.first << " " << client_max_body_size.second

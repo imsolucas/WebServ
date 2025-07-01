@@ -340,13 +340,6 @@ Location WebServer::parseLocationBlock(const std::vector<std::string> &tokens, s
 			loc.setRedirect(tokens[i + 1]);
 			i += 3; // Move past "redirect <url>;"
 		}
-		else if (token == "upload_store")
-		{
-			if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
-				throw std::runtime_error("Invalid 'upload_store' syntax in location block");
-			loc.setUploadStore(tokens[i + 1]);
-			i += 3; // Move past "upload_store <path>;"
-		}
 		else if (token == "return")
 		{
 			if (i + 2 >= tokens.size())
