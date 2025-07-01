@@ -4,7 +4,7 @@ import os
 import sys
 import cgi
 
-UPLOAD_DIR = os.path.abspath("../public/uploads")
+UPLOAD_DIR = os.path.abspath("../uploads")
 
 print("Content-Type: text/plain\r\n")
 
@@ -26,6 +26,6 @@ try:
     with open(filepath, "w") as f:
         f.write(content)
 
-    print(f"✅ Saved as: {safe_filename}")
+    print(f"Saved as: {safe_filename}")
 except Exception as e:
-    print(f"❌ Error: {str(e)}")
+    print(f"Error: {str(e)}")

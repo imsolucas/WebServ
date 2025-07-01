@@ -3,7 +3,7 @@
 import os
 import json
 
-UPLOAD_DIR = os.path.abspath("../public/uploads")
+UPLOAD_DIR = os.path.abspath("../uploads")
 
 print("Content-Type: application/json\r\n")
 
