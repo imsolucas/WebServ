@@ -15,7 +15,6 @@ public:
     void setPath(const std::string &path);
     void setRoot(const std::string &root);
     void setIndex(const std::string &index);
-    void setCgiPath(const std::string &cgi_path);
     void setRedirect(const std::string &redirect);
     void setUploadStore(const std::string &upload_store);
     void setAutoindex(bool autoindex);
@@ -28,7 +27,6 @@ public:
     const std::string &getPath() const;
     const std::string &getRoot() const;
     const std::string &getIndex() const;
-    const std::string &getCgiPath() const;
     const std::string &getRedirect() const;
     const std::string &getUploadStore() const;
     bool getAutoindex() const;
@@ -44,7 +42,6 @@ private:
     std::string path;                // e.g., "/upload"
     std::string root;                // e.g., "/var/www/html"
     std::string index;               // e.g., "index.html"
-    std::string cgi_path;            // e.g., "/usr/bin/php-cgi"
     std::string redirect;            // e.g., "301 http://example.com"
     std::string upload_store;        // Upload destination directory
     bool autoindex;                  // Directory listing toggle

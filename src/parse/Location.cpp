@@ -6,7 +6,6 @@ Location::Location()
 	: path("/"),
 	  root("/var/www/html"),
 	  index(""),
-	  cgi_path("/usr/bin/php-cgi"),
 	  redirect(""),
 	  upload_store(""),
 	  autoindex(false),
@@ -20,7 +19,6 @@ Location::Location(const std::string &path)
 	: path(path),
 	  root("/var/www/html"),
 	  index(""),
-	  cgi_path("/usr/bin/php-cgi"),
 	  redirect(""),
 	  upload_store(""),
 	  autoindex(false),
@@ -36,7 +34,6 @@ Location::~Location() {}
 void Location::setPath(const std::string &path) { this->path = path; }
 void Location::setRoot(const std::string &root) { this->root = root; }
 void Location::setIndex(const std::string &index) { this->index = index; }
-void Location::setCgiPath(const std::string &cgi_path) { this->cgi_path = cgi_path; }
 void Location::setRedirect(const std::string &redirect) { this->redirect = redirect; }
 void Location::setUploadStore(const std::string &upload_store) { this->upload_store = upload_store; }
 void Location::setAutoindex(bool autoindex) { this->autoindex = autoindex; }
@@ -69,7 +66,6 @@ void Location::clearAllowedMethods()
 const std::string &Location::getPath() const { return path; }
 const std::string &Location::getRoot() const { return root; }
 const std::string &Location::getIndex() const { return index; }
-const std::string &Location::getCgiPath() const { return cgi_path; }
 const std::string &Location::getRedirect() const { return redirect; }
 const std::string &Location::getUploadStore() const { return upload_store; }
 bool Location::getAutoindex() const { return autoindex; }
@@ -123,7 +119,6 @@ void Location::printConfig() const
 	std::cout << BOLD << MAGENTA << "Path: " << GREEN << path << RESET << std::endl;
 	std::cout << BOLD << MAGENTA << "Root: " << GREEN << root << RESET << std::endl;
 	std::cout << BOLD << MAGENTA << "Index: " << GREEN << index << RESET << std::endl;
-	std::cout << BOLD << MAGENTA << "CGI Path: " << GREEN << cgi_path << RESET << std::endl;
 	std::cout << BOLD << MAGENTA << "Redirect: " << GREEN << redirect << RESET << std::endl;
 	std::cout << BOLD << MAGENTA << "Upload Store: " << GREEN << upload_store << RESET << std::endl;
 	std::cout << BOLD << MAGENTA << "Autoindex: " << GREEN << (autoindex ? "true" : "false") << RESET << std::endl;
