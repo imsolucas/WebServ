@@ -4,7 +4,7 @@ import os
 import sys
 import urllib.parse
 
-UPLOAD_DIR = os.path.abspath("../public/uploads")
+UPLOAD_DIR = os.path.abspath("../uploads")
 
 print("Content-Type: text/plain\r\n")
 
@@ -26,6 +26,6 @@ try:
 		raise Exception("File not found")
 
 	os.remove(path)
-	print(f"✅ Deleted {filename}")
+	print(f" Deleted {filename}")
 except Exception as e:
-	print(f"❌ Error: {str(e)}")
+	print(f"Error: {str(e)}")
