@@ -66,17 +66,17 @@ def main():
         print("<html><body>")
         if filename:
             # Success message if file was saved
-            print(f"<h2>✅ Upload successful: {filename}</h2>")
+            print(f"<h2>Upload successful: {filename}</h2>")
             print(f"<p>Saved to /uploads/{filename}</p>")
         else:
             # No file found in the upload
-            print("<h2>❌ No file received.</h2>")
+            print("<h2>No file received.</h2>")
         print("</body></html>")
 
     except Exception as e:
         # In case of error, show it in the response
         print("Content-Type: text/html\r\n")
-        print(f"<html><body><h2>❌ Error: {str(e)}</h2></body></html>")
+        print(f"<html><body><h2>Error: {str(e)}</h2></body></html>")
 
 # Run the script
 if __name__ == "__main__":

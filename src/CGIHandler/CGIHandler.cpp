@@ -309,9 +309,9 @@ void CGIHandler::_cgiParentProcess()
 	close(_stdinPipe[0]);
 	close(_stdoutPipe[1]);
 
-	// if the request method is POST, write the request body to the pipe
-	// to pass it as STDIN to execve.
-	if (_req.method == "POST")
+	// if the request method is POST or DELETE (used by curl_delete_file.py), write the
+	// request body to the pipe to pass it as STDIN to execve.
+	if (_req.method == "POST" || _req.method == "DELETE")
 		write(_stdinPipe[1], _req.body.c_str(), _req.body.size());
 	// signal EOF for child process to start reading.
 	close(_stdinPipe[1]);

@@ -30,7 +30,11 @@ HttpResponse serveFile(HttpRequest &request, const string &file, const map<int, 
 		if (status != OK)
 			return handleError(status, errorPages);
 		response.statusCode = (StatusCode)cgi.getCGIStatusCode();
-		response.statusText = Http::statusText.find(response.statusCode)->second;
+		map<StatusCode, string>::const_iterator statusIt = Http::statusText.find(response.statusCode);
+		if (statusIt != Http::statusText.end())
+			response.statusText = statusIt->second;
+		else
+			response.statusText = "Unknown";
 		map<string, string> headers = cgi.getCGIHeaders();
 		for (map<string, string>::const_iterator it = headers.begin();
 			it != headers.end(); ++it)
