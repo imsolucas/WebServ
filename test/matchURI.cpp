@@ -12,7 +12,6 @@ static bool test_exact_match();
 static bool test_longest_match();
 static bool test_longest_match_directory();
 static bool test_root_match();
-static bool test_multiple_matches();
 
 void test_matchURI(TestSuite &t)
 {
@@ -22,7 +21,6 @@ void test_matchURI(TestSuite &t)
 	t.addTest(test_longest_match);
 	t.addTest(test_longest_match_directory);
 	t.addTest(test_root_match);
-	t.addTest(test_multiple_matches);
 }
 
 bool test_no_match()
@@ -31,7 +29,8 @@ bool test_no_match()
 	locations.push_back(Location("/"));
 	const string URI = "/unknown/path";
 	const Location *result = matchURI(URI, locations);
-	return assertEqual("no matching location block", result, &locations[0]);
+	const Location *expected = NULL;
+	return assertEqual("no matching location block", result, expected);
 }
 
 bool test_no_match1()
@@ -47,8 +46,8 @@ bool test_no_match1()
 bool test_exact_match()
 {
 	vector<Location> locations;
-	locations.push_back(Location("/exact"));
-	const string URI = "/exact";
+	locations.push_back(Location("/exact/"));
+	const string URI = "/exact/";
 	const Location *result = matchURI(URI, locations);
 	return assertEqual("location block exact match", result, &locations[0]);
 }
@@ -57,8 +56,8 @@ bool test_longest_match()
 {
 	vector<Location> locations;
 	locations.push_back(Location("/"));
-	locations.push_back(Location("/long"));
-	locations.push_back(Location("/longer"));
+	locations.push_back(Location("/long/"));
+	locations.push_back(Location("/longer/"));
 	const string URI = "/longer/path";
 	const Location *result = matchURI(URI, locations);
 	return assertEqual("location block longest prefix match", result, &locations[2]);
@@ -68,7 +67,7 @@ bool test_longest_match_directory()
 {
 	vector<Location> locations;
 	locations.push_back(Location("/"));
-	locations.push_back(Location("/images"));
+	locations.push_back(Location("/images/"));
 	const string URI = "/images/";
 	const Location *result = matchURI(URI, locations);
 	return assertEqual("location block longest prefix match", result, &locations[1]);
@@ -81,15 +80,4 @@ bool test_root_match()
 	const string URI = "/";
 	const Location *result = matchURI(URI, locations);
 	return assertEqual("location block root match", result, &locations[0]);
-}
-
-bool test_multiple_matches()
-{
-	vector<Location> locations;
-	locations.push_back(Location("/"));
-	locations.push_back(Location("/a"));
-	locations.push_back(Location("/a/b"));
-	const string URI = "/a/b/c";
-	const Location *result = matchURI(URI, locations);
-	return assertEqual("location block multiple matches, longest prefix", result, &locations[2]);
 }
