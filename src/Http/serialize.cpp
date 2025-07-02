@@ -80,16 +80,16 @@ HttpRequest deserialize(const string &stream)
 	}
 	if (!foundEmptyLine)
 		throw runtime_error("BAD REQUEST: missing empty line");
-	if (req.headers.find("host") == req.headers.end())
+	if (!req.headers.count("host"))
 		throw runtime_error("BAD REQUEST: Host header missing");
 
 	// Parse body
 	if (req.method == "GET" && !req.body.empty())
 		throw runtime_error("BAD REQUEST: invalid body");
-	if (req.headers.find("content-length") != req.headers.end())
+	if (req.headers.count("content-length") && req.headers.count("transfer-encoding"))
+		throw runtime_error("BAD REQUEST: conflicting headers");
+	if (req.headers.count("content-length"))
 	{
-		if (req.headers.find("transfer-encoding") != req.headers.end())
-			throw runtime_error("BAD REQUEST: conflicting headers");
 		if (!utils::isNum(req.headers["content-length"]))
 			throw runtime_error("BAD REQUEST: invalid content length");
 
@@ -101,6 +101,7 @@ HttpRequest deserialize(const string &stream)
 			throw runtime_error("BAD REQUEST: wrong content length");
 		req.body = body.substr(0, bytesRead);
 	}
+		// read transfer-encoding: chunk body
 
 	return req;
 }
