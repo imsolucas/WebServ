@@ -27,22 +27,20 @@ failed_tests = 0
 # -w "%{http_code}": print only the HTTP status code
 # The output is compared to your expected status.
 
-import subprocess
 import json
+import os
+import subprocess
 
 BASE_URL = "http://localhost:8080"
 
-def run_curl_test(method, path, expected_status, data=None, is_file=False):
+def run_curl_test(method, path, expected_status, data=None):
     global total_tests, passed_tests, failed_tests
     total_tests += 1
     url = BASE_URL + path
     curl_cmd = ["curl", "-s", "-o", "/dev/null", "-w", "%{http_code}", "-X", method, url]
 
     if data:
-        if is_file:
-            curl_cmd += ["--data-binary", f"@{data}"]
-        else:
-            curl_cmd += ["--data", data]
+        curl_cmd += ["--data", data]
 
     try:
         result = subprocess.run(curl_cmd, capture_output=True, text=True)
@@ -56,6 +54,35 @@ def run_curl_test(method, path, expected_status, data=None, is_file=False):
     except Exception as e:
         failed_tests += 1
         print(f"{RED}❌ {method} {url} → Exception: {e}{RESET}")
+
+def run_curl_upload_test(path, expected_status, filename, content):
+    global total_tests, passed_tests, failed_tests
+    total_tests += 1
+
+	 # Get the absolute path to the script directory
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    content_path = os.path.join(script_dir, content)
+
+    url = BASE_URL + path
+    curl_cmd = [
+        "curl", "-s", "-o", "/dev/null", "-w", "%{http_code}", "-X", "POST",
+        "-F", f"filename={filename}",
+        "-F", f"content=@{content_path}",
+        url
+    ]
+
+    try:
+        result = subprocess.run(curl_cmd, capture_output=True, text=True)
+        status = result.stdout.strip()
+        if status == str(expected_status):
+            passed_tests += 1
+            print(f"{GREEN}✅ POST {url} → {status}{RESET}")
+        else:
+            failed_tests += 1
+            print(f"{RED}❌ POST {url} → expected {expected_status}, got {YELLOW}{status}{RESET}")
+    except Exception as e:
+        failed_tests += 1
+        print(f"{RED}❌ POST {url} → Exception: {e}{RESET}")
 
 def run_siege_test(path, duration="10s", concurrency=10, min_availability=99.5):
     global total_tests, passed_tests, failed_tests
@@ -152,19 +179,19 @@ test_info("Testing unimplemented HTTP method")
 run_curl_test("PUT", "/", 501)
 
 test_info("Testing file upload with small body")
-run_curl_test("POST", "/uploads/short.txt", 201, data="short body")
+run_curl_upload_test("/cgi-bin/curl_upload_file.py", 201, "short.txt", "test-upload/short.txt")
 
-test_info("Testing file upload exceeding max body size")
-run_curl_test("POST", "/uploads/long.txt", 413, data="@" * 100000)
+test_info("Testing file upload with medium body")
+run_curl_upload_test("/cgi-bin/curl_upload_file.py", 201, "medium.txt", "test-upload/medium.txt")
 
-test_info("Testing file upload with actual file contents")
-run_curl_test("POST", "/uploads/test.txt", 201, data="test.txt", is_file=True)
+test_info("Testing file upload with body exceeding max body size")
+run_curl_upload_test("/cgi-bin/curl_upload_file.py", 413, "long.txt", "test-upload/long.txt")
 
 test_info("Testing file deletion with uploaded file")
-run_curl_test("DELETE", "/uploads/test.txt", 200)
+run_curl_test("DELETE", "/cgi-bin/curl_delete_file.py", 200, data="file=test-upload/short.txt")
 
 test_info("Testing file deletion with non-existent file")
-run_curl_test("DELETE", "/uploads/doesnotexist.txt", 404)
+run_curl_test("DELETE", "/cgi-bin/curl_delete_file.py", 404, data="file=test-upload/doesnotexist.txt")
 
 test_info("Testing CGI script execution - GET")
 run_curl_test("GET", "/cgi-bin/test_cgi.php", 200)
