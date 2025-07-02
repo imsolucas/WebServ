@@ -36,7 +36,11 @@ string ClientManager::_handleRequest(const ClientMeta &client)
 		return serialize(response);
 	}
 
-	const Location *location = matchURI(request.requestTarget, client.server->getLocations());
+	string requestTarget = request.requestTarget;
+	if (requestTarget.find('?') != string::npos)
+		requestTarget = utils::splitFirst(request.requestTarget, '?')[0];
+
+	const Location *location = matchURI(requestTarget, client.server->getLocations());
 	if (location == NULL)
 	{
 		response = handleError(NOT_FOUND, errorPages);
@@ -61,7 +65,7 @@ string ClientManager::_handleRequest(const ClientMeta &client)
 		return serialize(response);
 	}
 
-	string path = location->getRoot() + request.requestTarget;
+	string path = location->getRoot() + requestTarget;
 	PathType type = getPathType(path);
 	switch (type)
 	{
