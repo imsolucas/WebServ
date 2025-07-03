@@ -94,16 +94,25 @@ HttpRequest deserialize(const string &stream)
 			throw runtime_error("BAD REQUEST: invalid content length");
 
 		size_t contentLength = (size_t)atoi(req.headers["content-length"].c_str());
-		string body(contentLength, '\0');
-		iss.read(&body[0], contentLength);
-		size_t bytesRead = iss.gcount();
-		if (bytesRead != contentLength)
-			throw runtime_error("BAD REQUEST: wrong content length");
-		req.body = body.substr(0, bytesRead);
+		req.body = parseBody(iss, contentLength);
 	}
+	if (req.headers.count("transfer-encoding"))
+	{
 		// read transfer-encoding: chunk body
 
+	}
+
 	return req;
+}
+
+string parseBody(istringstream &iss, size_t contentLength)
+{
+	string body(contentLength, '\0');
+	iss.read(&body[0], contentLength);
+	size_t bytesRead = iss.gcount();
+	if (bytesRead != contentLength)
+		throw runtime_error("BAD REQUEST: wrong content length");
+	return body.substr(0, bytesRead);
 }
 
 // returns empty pair if empty line is found

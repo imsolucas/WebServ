@@ -86,6 +86,7 @@ std::ostream &operator << (std::ostream &os, const HttpResponse &r);
 std::string	serialize(const HttpResponse &response);
 HttpRequest	deserialize(const std::string &stream);
 std::pair<std::string, std::string> parseHeader(const std::string &line);
+std::string parseBody(std::istringstream &iss, size_t contentLength);
 
 HttpResponse serveFile(HttpRequest &request, const std::string &file, const std::map<int, std::string> &errorPages);
 const Location *matchURI(const std::string &URI, const std::vector<Location> &locations);
