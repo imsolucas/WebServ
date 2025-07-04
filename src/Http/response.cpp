@@ -25,7 +25,7 @@ HttpResponse serveFile(HttpRequest &request, const string &file, const map<int, 
 	{
 		if (access(file.c_str(), X_OK) == -1)
 			return handleError(FORBIDDEN, errorPages);
-		CGIHandler cgi(request, utils::erase(file, request.requestTarget));
+		CGIHandler cgi(request, utils::splitFirst(file, '/')[0]);
 		StatusCode status = cgi.execute();
 		if (status != OK)
 			return handleError(status, errorPages);
