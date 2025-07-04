@@ -25,7 +25,14 @@ StatusCode CGIHandler::execute()
 {
 	try
 	{
-		_unchunkBody();
+		// chunked request bodies were unchunked in parseChunkedBody.
+		// strip the transfer encoding header and set the content length header so that the
+		// environment variable can be correctly set up.
+		if (_req.headers.count("transfer-encoding") && _req.headers.at("transfer-encoding") == "chunked")
+		{
+			_req.headers["content-length"] = utils::toString(_req.body.size());
+			_req.headers.erase("transfer-encoding");
+		}
 		_setupPipes();
 		_setupEnv();
 		_childPid = fork();
@@ -37,11 +44,6 @@ StatusCode CGIHandler::execute()
 			_cgiParentProcess();
 		_validateCGIOutput();
 		return OK;
-	}
-	catch (const UnchunkingException& e)
-	{
-		utils::printError(e.what());
-		return BAD_REQUEST;
 	}
 	catch (const ScriptNotFoundException& e)
 	{
@@ -94,71 +96,6 @@ const string &CGIHandler::getCGIBody() const
 int CGIHandler::getCGIStatusCode() const
 {
 	return this->_cgiStatusCode;
-}
-
-// Format for chunked transfer encoding as per RFC 7230
-// <chunk-size in hex>\r\n
-// <chunk-data>\r\n
-// ...
-// 0\r\n
-// \r\n
-// For each chunk-size and chunk-data line pair:
-// get chunk-size -> read that many bytes of chunk-data -> append those bytes to the unchunked body.
-void CGIHandler::_unchunkBody()
-{
-	if (!_req.headers.count("transfer-encoding")
-		|| _req.headers.at("transfer-encoding") != "chunked")
-		return;
-
-	istringstream iss(_req.body);
-	string line, unchunkedBody;
-
-	// getline breaks lines on "\n" by default
-	while (getline(iss, line))
-	{
-		if (!line.empty() && line[line.size() - 1] == '\r')
-			// erase last character of the string ('\r') to sanitize input for hexStrToInt
-			line.erase(line.length() - 1);
-		size_t chunkSize = 0;
-		try
-		{
-			chunkSize = utils::hexStrToInt(line);
-		}
-		catch (const exception& e)
-		{
-			utils::printError(e.what());
-			throw UnchunkingException();
-		}
-		// unchunking is completed when there are no more chunks to process
-		// i.e. the "0\r\n\r\n" line is encountered.
-		if (chunkSize == 0)
-			break;
-
-		// character array can be accurately sized because chunk-size is known.
-		vector<char> buffer(chunkSize);
-		// read() (an istream member function) extracts n characters from the stream and
-		// stores them in the array pointed to by s. It will also advance the stream.
-		iss.read(&buffer[0], chunkSize);
-		// additional check to ensure chunk-size tallies with chunk-data length.
-		// gcount() returns the number of characters extracted by the most recent unformatted
-		// input operation (e.g. getline, read, etc.) performed on the object.
-		if (iss.gcount() != static_cast<std::streamsize>(chunkSize))
-		{
-			utils::printError("Chunk size does not match number of bytes of chunk data read.");
-			throw UnchunkingException();
-		}
-		// append to the unchunked body with the range of the character array.
-		unchunkedBody.append(buffer.begin(), buffer.end());
-		// after appending the buffer, "\r\n" of the chunk-data still remains in the stream,
-		// so cleanly skip over it with getline
-		getline(iss, line);
-	}
-	// once the body is unchunked, update the request body, content length
-	// and strip the transfer encoding header to prevent confusion.
-	_req.body = unchunkedBody;
-	// content length header was previously absent in chunked transfer, so add it in.
-	_req.headers["content-length"] = utils::toString(_req.body.size());
-	_req.headers.erase("transfer-encoding");
 }
 
 void CGIHandler::_setupPipes()
@@ -473,9 +410,6 @@ void CGIHandler::_extractCGIStatusCode()
 	_cgiStatusCode = statusCode;
 	_cgiHeaders.erase("Status");
 }
-
-CGIHandler::UnchunkingException::UnchunkingException()
-: runtime_error("CGI: Failed to unchunk request body.") {}
 
 CGIHandler::ScriptNotFoundException::ScriptNotFoundException()
 : runtime_error("CGI: Script not found (ENOENT).") {}

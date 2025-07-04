@@ -23,7 +23,7 @@ string utils::genTimeStamp()
 }
 
 // util function to convert hexadecimal numbers to integer to get
-// chunk size in CGI unchunking.
+// chunk size when unchunking chunked request bodies.
 int utils::hexStrToInt(const string& hexStr)
 {
 	istringstream iss(hexStr);
