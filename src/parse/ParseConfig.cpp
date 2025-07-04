@@ -53,8 +53,6 @@ std::vector<std::string> WebServer::_getSemicolonDirectives() const {
 	directives.push_back("error_page");
 	directives.push_back("client_max_body_size");
 	directives.push_back("limit_except");
-	directives.push_back("cgi_path");
-	directives.push_back("upload_store");
 	directives.push_back("redirect");
 	directives.push_back("return");
 	return directives;
@@ -210,25 +208,6 @@ Server WebServer::parseServerBlock(const std::vector<std::string> &tokens, size_
 				throw std::runtime_error("Missing ';' after server_name");
 			++i;
 		}
-		else if (token == "index")
-		{
-			i++;
-			while (i < tokens.size() && tokens[i] != ";")
-			{
-				server.addIndex(tokens[i]);
-				i++;
-			}
-			if (tokens[i] != ";")
-				throw std::runtime_error("Missing ';' after index");
-			++i;
-		}
-		else if (token == "root")
-		{
-			if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
-				throw std::runtime_error("Invalid 'root' syntax");
-			server.setRoot(tokens[i + 1]);
-			i += 3; // Move past "root <path>;"
-		}
 		else if (token == "error_page")
 		{
 			if (i + 2 >= tokens.size())
@@ -344,26 +323,12 @@ Location WebServer::parseLocationBlock(const std::vector<std::string> &tokens, s
 				throw std::runtime_error("Expected ';' after client_max_body_size");
 			i++; // Skip ';'
 		}
-		else if (token == "cgi_path")
-		{
-			if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
-				throw std::runtime_error("Invalid 'cgi_path' syntax in location block");
-			loc.setCgiPath(tokens[i + 1]);
-			i += 3; // Move past "cgi_path <path>;"
-		}
 		else if (token == "redirect")
 		{
 			if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
 				throw std::runtime_error("Invalid 'redirect' syntax in location block");
 			loc.setRedirect(tokens[i + 1]);
 			i += 3; // Move past "redirect <url>;"
-		}
-		else if (token == "upload_store")
-		{
-			if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
-				throw std::runtime_error("Invalid 'upload_store' syntax in location block");
-			loc.setUploadStore(tokens[i + 1]);
-			i += 3; // Move past "upload_store <path>;"
 		}
 		else if (token == "return")
 		{
