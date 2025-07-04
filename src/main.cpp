@@ -12,7 +12,8 @@ using std::string;
 
 int main(int argc, char *argv[])
 {
-	signal(SIGINT, handleSignal);
+	signal(SIGINT, handleSignal); // CTRL-C
+	signal(SIGTERM, handleSignal); // kill <pid>
 
 	if (argc < 1 || argc > 2)
 	{

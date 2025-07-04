@@ -38,6 +38,7 @@ class CGIHandler
 		std::vector<char *> _env;
 		std::string _virtualPath;
 		pid_t _childPid;
+		int _childStatus;
 		size_t _headersEnd;
 		std::string _cgiOutput;
 		std::map<std::string, std::string> _cgiHeaders;
@@ -50,6 +51,7 @@ class CGIHandler
 		void _addHeaderToEnv(std::string key, std::string headerField);
 		void _cgiChildProcess();
 		void _cgiParentProcess();
+		void _waitForChild();
 		void _resolveChildStatus();
 		void _validateCGIOutput();
 		void _normalizeHeaderSeparator();
