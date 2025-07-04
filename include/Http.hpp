@@ -87,6 +87,7 @@ std::string	serialize(const HttpResponse &response);
 HttpRequest	deserialize(const std::string &stream);
 std::pair<std::string, std::string> parseHeader(const std::string &line);
 std::string parseBody(std::istringstream &iss, size_t contentLength);
+std::string parseChunkedBody(std::istringstream &iss);
 
 HttpResponse serveFile(HttpRequest &request, const std::string &file, const std::map<int, std::string> &errorPages);
 const Location *matchURI(const std::string &URI, const std::vector<Location> &locations);

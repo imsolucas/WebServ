@@ -1,4 +1,5 @@
 # include <iostream>
+# include <iomanip>
 # include <sstream>
 # include <cstdlib>
 
@@ -6,6 +7,7 @@
 # include "Http.hpp"
 
 using std::runtime_error;
+using std::exception;
 using std::vector;
 using std::map;
 using std::pair;
@@ -97,10 +99,7 @@ HttpRequest deserialize(const string &stream)
 		req.body = parseBody(iss, contentLength);
 	}
 	if (req.headers.count("transfer-encoding"))
-	{
-		// read transfer-encoding: chunk body
-
-	}
+		req.body = parseChunkedBody(iss);
 
 	return req;
 }
@@ -109,10 +108,36 @@ string parseBody(istringstream &iss, size_t contentLength)
 {
 	string body(contentLength, '\0');
 	iss.read(&body[0], contentLength);
+
 	size_t bytesRead = iss.gcount();
 	if (bytesRead != contentLength)
 		throw runtime_error("BAD REQUEST: wrong content length");
+
 	return body.substr(0, bytesRead);
+}
+
+string parseChunkedBody(istringstream &iss)
+{
+	ostringstream body;
+	string line;
+
+	while (getline(iss, line))
+	{
+		if (!line.empty() && line[line.length() - 1] == '\r')
+			line.erase(line.length() - 1);
+		if (line.empty()) continue;
+
+		size_t size = utils::hexStrToInt(line);
+		if (size == 0) break;
+
+		body << parseBody(iss, size);
+
+		char cr, lf;
+		if (!iss.get(cr) || !iss.get(lf) || cr != '\r' || lf != '\n')
+			throw runtime_error("BAD REQUEST: invalid chunk format");
+	}
+
+	return body.str();
 }
 
 // returns empty pair if empty line is found

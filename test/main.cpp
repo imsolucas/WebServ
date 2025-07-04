@@ -10,5 +10,6 @@ int main()
 	test_deserialize(t);
 	test_handleError(t);
 	test_matchURI(t);
+	test_parseChunkedBody(t);
 	t.run();
 }
