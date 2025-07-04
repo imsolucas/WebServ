@@ -6,10 +6,11 @@
 # include <iostream>
 # include <unistd.h> // close
 
-using std::cerr;
 using std::cout;
-using std::string;
+using std::map;
 using std::runtime_error;
+using std::string;
+using std::vector;
 
 WebServer::WebServer(const string &config)
 : _servers(_parseConfig(config)),
@@ -17,8 +18,8 @@ WebServer::WebServer(const string &config)
 {
 	_listenerManager._setupAllListeners(_servers);
 	// add listeners to poll
-	std::map<int, int> listenerMap = _listenerManager.getListenerMap();
-	for (std::map<int, int>::iterator it = listenerMap.begin(); it != listenerMap.end(); ++it)
+	map<int, int> listenerMap = _listenerManager.getListenerMap();
+	for (map<int, int>::iterator it = listenerMap.begin(); it != listenerMap.end(); ++it)
 		_addToPoll(it->first);
 }
 
@@ -83,13 +84,13 @@ void WebServer::_handleClientEvents(const pollfd &client)
 // remove -> toggle -> add to minimize search space for remove and modify
 void WebServer::_updatePoll()
 {
-	for (std::vector<int>::iterator it = _pollRemoveQueue.begin(); it != _pollRemoveQueue.end(); ++it)
+	for (vector<int>::iterator it = _pollRemoveQueue.begin(); it != _pollRemoveQueue.end(); ++it)
 		_removeFromPoll(*it);
 
-	for (std::vector<int>::iterator it = _pollToggleQueue.begin(); it != _pollToggleQueue.end(); ++it)
+	for (vector<int>::iterator it = _pollToggleQueue.begin(); it != _pollToggleQueue.end(); ++it)
 		_togglePollEvent(*it);
 
-	for (std::vector<int>::iterator it = _pollAddQueue.begin(); it != _pollAddQueue.end(); ++it)
+	for (vector<int>::iterator it = _pollAddQueue.begin(); it != _pollAddQueue.end(); ++it)
 		_addToPoll(*it);
 
 	_pollRemoveQueue.clear();
@@ -99,7 +100,7 @@ void WebServer::_updatePoll()
 
 void WebServer::_removeFromPoll(int fd)
 {
-	for (std::vector<pollfd>::iterator it = _poll.begin(); it != _poll.end(); ++it)
+	for (vector<pollfd>::iterator it = _poll.begin(); it != _poll.end(); ++it)
 	{
 		if (it->fd == fd)
 		{
@@ -113,7 +114,7 @@ void WebServer::_removeFromPoll(int fd)
 // change poll from POLLIN to POLLOUT to send response to client
 void WebServer::_togglePollEvent(int fd)
 {
-	for (std::vector<pollfd>::iterator it = _poll.begin(); it != _poll.end(); ++it)
+	for (vector<pollfd>::iterator it = _poll.begin(); it != _poll.end(); ++it)
 	{
 		if (it->fd == fd)
 		{

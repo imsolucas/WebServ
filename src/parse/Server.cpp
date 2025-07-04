@@ -1,16 +1,19 @@
-#include "Server.hpp"
-#include "colors.h"
+# include "Server.hpp"
+# include "colors.h"
 
-using std::vector;
+# include <algorithm> // find
+
+using std::cerr;
+using std::cout;
+using std::endl;
+using std::invalid_argument;
 using std::map;
 using std::pair;
-using std::invalid_argument;
 using std::string;
-using std::cout;
-using std::cerr;
+using std::vector;
 
 Server::Server()
-: client_max_body_size(std::pair<size_t, std::string>(1, "MB")) {} // 1 MB default
+: client_max_body_size(pair<size_t, string>(1, "MB")) {} // 1 MB default
 
 Server::~Server() {}
 
@@ -25,13 +28,6 @@ void Server::addServerName(const string &server_name)
 	if (find(server_names.begin(), server_names.end(), server_name) == server_names.end())
 		server_names.push_back(server_name);
 }
-
-// void Server::addIndex(const std::string &index)
-// {
-// 	if (std::find(indexes.begin(), indexes.end(), index) == indexes.end())
-// 		indexes.push_back(index);
-// }
-
 
 void Server::setClientMaxBodySize(size_t size, const string &unit)
 {
@@ -80,10 +76,10 @@ void Server::clearLocations()
 	locations.clear();
 }
 
-const std::vector<int> &Server::getPorts() const { return ports; }
-const std::vector<std::string> &Server::getServerNames() const { return server_names; }
-const std::vector<Location> &Server::getLocations() const { return locations; }
-const std::map<int, std::string> &Server::getErrorPages() const { return error_pages; }
+const vector<int> &Server::getPorts() const { return ports; }
+const vector<string> &Server::getServerNames() const { return server_names; }
+const vector<Location> &Server::getLocations() const { return locations; }
+const map<int, string> &Server::getErrorPages() const { return error_pages; }
 
 size_t Server::getClientMaxBodySizeInBytes() const
 {
@@ -120,7 +116,7 @@ void Server::printConfig() const {
 
 	cout << BOLD << MAGENTA << "Client Max Body Size: " << GREEN
 			  << client_max_body_size.first << " " << client_max_body_size.second
-			  << RESET << std::endl;
+			  << RESET << endl;
 
 	if (!error_pages.empty()) {
 		cout << BOLD << MAGENTA << "Error Pages: " << RESET << '\n';
@@ -129,7 +125,7 @@ void Server::printConfig() const {
 		}
 	}
 
-	std::cout << std::endl;
+	cout << endl;
 
 	if (!locations.empty()) {
 		cout << BOLD << CYAN << "--- Locations ---" << RESET << '\n';

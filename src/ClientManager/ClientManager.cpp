@@ -12,10 +12,11 @@ using std::getline;
 using std::istringstream;
 using std::map;
 using std::string;
+using std::stringstream;
 using std::vector;
 
-ClientManager::ClientManager(std::vector<int> &pollRemoveQueue, std::vector<int> &pollToggleQueue,
-								std::vector<int> &pollAddQueue, const std::vector<Server> &servers)
+ClientManager::ClientManager(vector<int> &pollRemoveQueue, vector<int> &pollToggleQueue,
+								vector<int> &pollAddQueue, const vector<Server> &servers)
 : _pollRemoveQueue(pollRemoveQueue), _pollToggleQueue(pollToggleQueue), _pollAddQueue(pollAddQueue), _servers(servers) {}
 
 void ClientManager::addClient(int listenerFd, int port)
@@ -261,7 +262,7 @@ void ClientManager::_determineBodyEnd(ClientMeta &client, const PreparsedRequest
 	else if (req.headers.count("content-length"))
 	{
 		// create a stringstream to extract the content length as an integer
-		std::stringstream ss(req.headers.at("content-length"));
+		stringstream ss(req.headers.at("content-length"));
 		// set content length to 0 if fail to parse a valid number
 		if (!(ss >> client.requestMeta.contentLength))
 			client.requestMeta.contentLength = 0;
@@ -301,7 +302,7 @@ const Server *ClientManager::_selectServerBlock(ClientMeta &client, const Prepar
 	for (vector<const Server *>::const_iterator serverIt = candidates.begin(); serverIt != candidates.end(); ++serverIt)
 	{
 		const vector<string> &serverNames = (*serverIt)->getServerNames();
-		for (std::vector<string>::const_iterator nameIt = serverNames.begin(); nameIt != serverNames.end(); ++nameIt)
+		for (vector<string>::const_iterator nameIt = serverNames.begin(); nameIt != serverNames.end(); ++nameIt)
 		{
 			if (*nameIt == serverName)
 				return *serverIt;

@@ -10,16 +10,18 @@
 # include <unistd.h> // close
 
 using std::cout;
+using std::map;
 using std::runtime_error;
 using std::string;
+using std::vector;
 
-void ListenerManager::_setupAllListeners(const std::vector<Server>&servers)
+void ListenerManager::_setupAllListeners(const vector<Server>&servers)
 {
-	std::vector<Server>::const_iterator serverIt = servers.begin();
+	vector<Server>::const_iterator serverIt = servers.begin();
 	for (; serverIt != servers.end(); ++serverIt)
 	{
-		std::vector<int>ports = serverIt->getPorts();
-		std::vector<int>::const_iterator portIt = ports.begin();
+		vector<int>ports = serverIt->getPorts();
+		vector<int>::const_iterator portIt = ports.begin();
 		for (; portIt != ports.end(); ++portIt)
 			_setUpListener(*portIt);
 	}
@@ -30,7 +32,7 @@ bool ListenerManager::isListener(int fd)
 	return _listenerMap.count(fd);
 }
 
-const std::map<int, int> &ListenerManager::getListenerMap() const
+const map<int, int> &ListenerManager::getListenerMap() const
 {
 	return _listenerMap;
 }

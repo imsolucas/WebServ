@@ -20,7 +20,9 @@ class CGIHandler
 	public:
 		// http request will be modified for unchunked bodies
 		CGIHandler(HttpRequest &req, std::string root);
+		
 		StatusCode execute();
+
 		const std::string &getCGIOutput() const;
 		const std::map<std::string, std::string> &getCGIHeaders() const;
 		const std::string &getCGIBody() const;

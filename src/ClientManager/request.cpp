@@ -1,3 +1,4 @@
+# include <cstdlib> // atoi
 # include <unistd.h>
 
 # include "colors.h"
@@ -8,7 +9,6 @@
 using std::exception;
 using std::vector;
 using std::map;
-using std::cerr;
 
 string ClientManager::_handleRequest(const ClientMeta &client)
 {

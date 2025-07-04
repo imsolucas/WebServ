@@ -1,51 +1,64 @@
-#include "WebServer.hpp"
+# include "WebServer.hpp"
+# include "utils.hpp"
 
-#include <iostream>
-#include <unistd.h> // close
+# include <algorithm> // count
+# include <iostream>
+# include <unistd.h> // close
+
+using std::cerr;
+using std::cout;
+using std::count;
+using std::endl;
+using std::getline;
+using std::ifstream;
+using std::istringstream;
+using std::ostringstream;
 using std::runtime_error;
-#include "utils.hpp"
+using std::string;
+using std::stringstream;
+using std::vector;
 
-std::vector<Server> WebServer::_parseConfig(const std::string &filePath)
+vector<Server> WebServer::_parseConfig(const string &filePath)
 {
-	std::string line;
-	std::ifstream file(filePath.c_str());
-	std::stringstream _buffer;
+	string line;
+	ifstream file(filePath.c_str());
+	stringstream _buffer;
 	size_t lineNumber = 0;
 	bool hasMeaningfulLine = false;
 
 	if (!file.is_open())
-		throw std::runtime_error("Failed to open configuration file: " + filePath);
+		throw runtime_error("Failed to open configuration file: " + filePath);
 
-	while (std::getline(file, line))
+	while (getline(file, line))
 	{
 		lineNumber++;
 		size_t commentPos = line.find('#');
-		if (commentPos != std::string::npos)
+		if (commentPos != string::npos)
 			line = line.substr(0, commentPos); // Remove comments
-		std::string trimmed = utils::trim(line, " \t\r\n");
+		string trimmed = utils::trim(line, " \t\r\n");
 		if (trimmed.empty())
 			continue;
 		hasMeaningfulLine = true; // Found a non-empty line
 		if (!_checkLineSyntax(trimmed, lineNumber))
 		{
-			std::ostringstream oss;
+			ostringstream oss;
 			oss << "Invalid syntax at line " << lineNumber << ": " << trimmed;
-			throw std::runtime_error(oss.str());
+			throw runtime_error(oss.str());
 		}
 		_buffer << line << "\n"; // Add line to buffer
 	}
 	file.close();
 	if (!hasMeaningfulLine)
-		throw std::runtime_error("Configuration file is logically empty: " + filePath);
-	std::istringstream buffer(_buffer.str());
+		throw runtime_error("Configuration file is logically empty: " + filePath);
+	istringstream buffer(_buffer.str());
 
-	std::vector<std::string> tokens = tokenize(buffer.str());
-	std::vector<Server> servers = _parseTokens(tokens);
+	vector<string> tokens = tokenize(buffer.str());
+	vector<Server> servers = _parseTokens(tokens);
 	return servers;
 }
 
-std::vector<std::string> WebServer::_getSemicolonDirectives() const {
-	std::vector<std::string> directives;
+vector<string> WebServer::_getSemicolonDirectives() const {
+	vector<string> directives;
 	directives.push_back("listen");
 	directives.push_back("server_name");
 	directives.push_back("index");
@@ -58,51 +71,51 @@ std::vector<std::string> WebServer::_getSemicolonDirectives() const {
 	return directives;
 }
 
-bool WebServer::_checkLineSyntax(const std::string &line, size_t lineNumber) const
+bool WebServer::_checkLineSyntax(const string &line, size_t lineNumber) const
 {
-	std::vector<std::string> mustEndWithSemicolon = _getSemicolonDirectives();
+	vector<string> mustEndWithSemicolon = _getSemicolonDirectives();
 
 	for (size_t i = 0; i < mustEndWithSemicolon.size(); ++i)
 	{
-		const std::string &directive = mustEndWithSemicolon[i];
-		if (line.find(directive) != std::string::npos &&
-			line.find("{") == std::string::npos &&
-			line.find("}") == std::string::npos &&
+		const string &directive = mustEndWithSemicolon[i];
+		if (line.find(directive) != string::npos &&
+			line.find("{") == string::npos &&
+			line.find("}") == string::npos &&
 			!line.empty() && line[line.length() - 1] != ';')
 		{
-			std::cerr << "[Syntax Error] Line " << lineNumber
+			cerr << "[Syntax Error] Line " << lineNumber
 					  << ": missing ';' after '" << directive << "'\n'";
 			return false;
 		}
 	}
 
-	int openCount = std::count(line.begin(), line.end(), '{');
-	int closeCount = std::count(line.begin(), line.end(), '}');
+	int openCount = count(line.begin(), line.end(), '{');
+	int closeCount = count(line.begin(), line.end(), '}');
 	if (openCount > 1 || closeCount > 1)
 	{
-		std::cerr << "[Syntax Error] Line" << lineNumber << ": too many braces on one line\n";
+		cerr << "[Syntax Error] Line" << lineNumber << ": too many braces on one line\n";
 		return false;
 	}
 	return true;
 }
 
-const std::vector<Server> &WebServer::getServers() const
+const vector<Server> &WebServer::getServers() const
 {
 	return _servers;
 }
 
-void WebServer::printTokens(const std::vector<std::string> &tokens) const
+void WebServer::printTokens(const vector<string> &tokens) const
 {
-	for (std::vector<std::string>::const_iterator it = tokens.begin(); it != tokens.end(); ++it)
+	for (vector<string>::const_iterator it = tokens.begin(); it != tokens.end(); ++it)
 	{
-		std::cout << *it << std::endl;
+		cout << *it << endl;
 	}
 }
 
-std::vector<std::string> WebServer::tokenize(const std::string &str)
+vector<string> WebServer::tokenize(const string &str)
 {
-	std::vector<std::string> tokens;
-	std::string token;
+	vector<string> tokens;
+	string token;
 
 	for (size_t i = 0; i < str.size(); ++i)
 	{
@@ -115,7 +128,7 @@ std::vector<std::string> WebServer::tokenize(const std::string &str)
 				tokens.push_back(token);
 				token.clear();
 			}
-			tokens.push_back(std::string(1, c));
+			tokens.push_back(string(1, c));
 		}
 		else if (isspace(c))
 		{
@@ -137,9 +150,9 @@ std::vector<std::string> WebServer::tokenize(const std::string &str)
 	return tokens;
 }
 
-std::vector<Server> WebServer::_parseTokens(const std::vector<std::string> &tokens)
+vector<Server> WebServer::_parseTokens(const vector<string> &tokens)
 {
-	std::vector<Server> servers;
+	vector<Server> servers;
 	size_t i = 0;
 
 	while (i < tokens.size())
@@ -153,7 +166,7 @@ std::vector<Server> WebServer::_parseTokens(const std::vector<std::string> &toke
 		{
 			++i; // Move past "server"
 			if (i >= tokens.size() || tokens[i] != "{")
-				throw std::runtime_error("Expected '{' after 'server'");
+				throw runtime_error("Expected '{' after 'server'");
 			++i; // Move past '{'
 			Server server = parseServerBlock(tokens, i);
 			server.printConfig();
@@ -161,13 +174,13 @@ std::vector<Server> WebServer::_parseTokens(const std::vector<std::string> &toke
 		}
 		else
 		{
-			throw std::runtime_error("Unknown directive: " + tokens[i]);
+			throw runtime_error("Unknown directive: " + tokens[i]);
 		}
 	}
 	return servers;
 }
 
-Server WebServer::parseServerBlock(const std::vector<std::string> &tokens, size_t &i)
+Server WebServer::parseServerBlock(const vector<string> &tokens, size_t &i)
 {
 	Server server;
 
@@ -178,7 +191,7 @@ Server WebServer::parseServerBlock(const std::vector<std::string> &tokens, size_
 			++i; // Skip empty statement
 			continue;
 		}
-		const std::string &token = tokens[i];
+		const string &token = tokens[i];
 		if (token == "}")
 		{
 			++i;
@@ -189,11 +202,11 @@ Server WebServer::parseServerBlock(const std::vector<std::string> &tokens, size_
 			++i; // Move past "listen"
 			while (i < tokens.size() && tokens[i] != ";")
 			{
-				server.addPort(std::atoi(tokens[i].c_str()));
+				server.addPort(atoi(tokens[i].c_str()));
 				i++;
 			}
 			if (i >= tokens.size() || tokens[i] != ";")
-				throw std::runtime_error("Missing ';' after listen");
+				throw runtime_error("Missing ';' after listen");
 			++i;
 		}
 		else if (token == "server_name")
@@ -205,25 +218,25 @@ Server WebServer::parseServerBlock(const std::vector<std::string> &tokens, size_
 				i++;
 			}
 			if (tokens[i] != ";")
-				throw std::runtime_error("Missing ';' after server_name");
+				throw runtime_error("Missing ';' after server_name");
 			++i;
 		}
 		else if (token == "error_page")
 		{
 			if (i + 2 >= tokens.size())
-				throw std::runtime_error("Invalid error_page");
-			int code = std::atoi(tokens[i + 1].c_str());
-			std::string page = tokens[i + 2];
+				throw runtime_error("Invalid error_page");
+			int code = atoi(tokens[i + 1].c_str());
+			string page = tokens[i + 2];
 			server.addErrorPage(code, page);
 			i += 3;
 		}
 		else if (token == "client_max_body_size")
 		{
 			if (i + 2 >= tokens.size())
-				throw std::runtime_error("Invalid 'client_max_body_size' syntax");
+				throw runtime_error("Invalid 'client_max_body_size' syntax");
 
 			size_t size = static_cast<size_t>(atoi(tokens[i + 1].c_str()));
-			std::string unit = "MB"; // Default to MB
+			string unit = "MB"; // Default to MB
 
 			if (tokens[i + 2] != ";")
 			{
@@ -234,7 +247,7 @@ Server WebServer::parseServerBlock(const std::vector<std::string> &tokens, size_
 			server.setClientMaxBodySize(size, unit);
 			i += 2; // Skip size + optional unit
 			if (tokens[i] != ";")
-				throw std::runtime_error("Expected ';' after client_max_body_size");
+				throw runtime_error("Expected ';' after client_max_body_size");
 			i++; // Skip ';'
 		}
 		else if (token == "location")
@@ -245,22 +258,22 @@ Server WebServer::parseServerBlock(const std::vector<std::string> &tokens, size_
 		}
 		else
 		{
-			throw std::runtime_error("Unknown directive: " + token);
+			throw runtime_error("Unknown directive: " + token);
 		}
 	}
 	return server;
 }
 
-Location WebServer::parseLocationBlock(const std::vector<std::string> &tokens, size_t &i)
+Location WebServer::parseLocationBlock(const vector<string> &tokens, size_t &i)
 {
 	if (i >= tokens.size())
-		throw std::runtime_error("Expected location path");
+		throw runtime_error("Expected location path");
 
-	std::string path = tokens[i++];
+	string path = tokens[i++];
 	Location loc(path);
 
 	if (i >= tokens.size() || tokens[i] != "{")
-		throw std::runtime_error("Expected '{' after location path");
+		throw runtime_error("Expected '{' after location path");
 
 	++i; // Move past '{'
 	while (i < tokens.size())
@@ -270,7 +283,7 @@ Location WebServer::parseLocationBlock(const std::vector<std::string> &tokens, s
 			++i; // Skip empty statement
 			continue;
 		}
-		const std::string &token = tokens[i];
+		const string &token = tokens[i];
 		if (token == "}")
 		{
 			++i;
@@ -279,14 +292,14 @@ Location WebServer::parseLocationBlock(const std::vector<std::string> &tokens, s
 		else if (token == "root")
 		{
 			if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
-				throw std::runtime_error("Invalid 'root' syntax in location block");
+				throw runtime_error("Invalid 'root' syntax in location block");
 			loc.setRoot(tokens[i + 1]);
 			i += 3; // Move past "root <path>;"
 		}
 		else if (token == "index")
 		{
 			if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
-				throw std::runtime_error("Invalid 'index' syntax in location block");
+				throw runtime_error("Invalid 'index' syntax in location block");
 			loc.setIndex(tokens[i + 1]);
 			i += 3; // Move past "index <file>;"
 		}
@@ -300,16 +313,16 @@ Location WebServer::parseLocationBlock(const std::vector<std::string> &tokens, s
 				i++;
 			}
 			if (i >= tokens.size() || tokens[i] != ";")
-				throw std::runtime_error("Invalid 'limit_except' syntax");
+				throw runtime_error("Invalid 'limit_except' syntax");
 			i++; // Move past ";"
 		}
 		else if (token == "client_max_body_size")
 		{
 			if (i + 2 >= tokens.size())
-				throw std::runtime_error("Invalid 'client_max_body_size' syntax");
+				throw runtime_error("Invalid 'client_max_body_size' syntax");
 
 			size_t size = static_cast<size_t>(atoi(tokens[i + 1].c_str()));
-			std::string unit = "MB"; // Default to MB
+			string unit = "MB"; // Default to MB
 
 			if (tokens[i + 2] != ";")
 			{
@@ -320,21 +333,21 @@ Location WebServer::parseLocationBlock(const std::vector<std::string> &tokens, s
 			loc.setClientMaxBodySize(size, unit);
 			i += 2; // Skip size + optional unit
 			if (tokens[i] != ";")
-				throw std::runtime_error("Expected ';' after client_max_body_size");
+				throw runtime_error("Expected ';' after client_max_body_size");
 			i++; // Skip ';'
 		}
 		else if (token == "redirect")
 		{
 			if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
-				throw std::runtime_error("Invalid 'redirect' syntax in location block");
+				throw runtime_error("Invalid 'redirect' syntax in location block");
 			loc.setRedirect(tokens[i + 1]);
 			i += 3; // Move past "redirect <url>;"
 		}
 		else if (token == "return")
 		{
 			if (i + 2 >= tokens.size())
-				throw std::runtime_error("Invalid return directive");
-			std::string redirect = tokens[i + 1] + " " + tokens[i + 2];
+				throw runtime_error("Invalid return directive");
+			string redirect = tokens[i + 1] + " " + tokens[i + 2];
 			loc.setRedirect(redirect);
 			i += 3;
 		}
@@ -348,7 +361,7 @@ Location WebServer::parseLocationBlock(const std::vector<std::string> &tokens, s
 		}
 		else
 		{
-			throw std::runtime_error("Unknown directive in location block: " + token);
+			throw runtime_error("Unknown directive in location block: " + token);
 		}
 	}
 	return loc;

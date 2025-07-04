@@ -6,17 +6,15 @@
 # include "utils.hpp"
 # include "Http.hpp"
 
-using std::runtime_error;
-using std::exception;
-using std::vector;
-using std::map;
-using std::pair;
-using std::istringstream;
-using std::ostream;
-using std::string;
-using std::cout;
 using std::getline;
+using std::istringstream;
 using std::make_pair;
+using std::map;
+using std::ostream;
+using std::pair;
+using std::runtime_error;
+using std::string;
+using std::vector;
 
 string serialize(const HttpResponse &response)
 {
