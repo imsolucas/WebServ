@@ -11,9 +11,7 @@ Location::Location()
 	: path("/"),
 	  root(""),
 	  index(""),
-	  cgi_path("/usr/bin/php-cgi"),
 	  redirect(""),
-	  upload_store(""),
 	  autoindex(false),
 	  client_max_body_size(pair<size_t, string>(1, "MB")) // 1 MB default
 {
@@ -25,9 +23,7 @@ Location::Location(const string &path)
 	: path(path),
 	  root(""),
 	  index(""),
-	  cgi_path("/usr/bin/php-cgi"),
 	  redirect(""),
-	  upload_store(""),
 	  autoindex(false),
 	  client_max_body_size(pair<size_t, string>(1, "MB")) // 1 MB default
 {
@@ -38,12 +34,10 @@ Location::Location(const string &path)
 Location::~Location() {}
 
 // Setters
-void Location::setPath(const string &path) { this->path = path; }
-void Location::setRoot(const string &root) { this->root = root; }
-void Location::setIndex(const string &index) { this->index = index; }
-void Location::setCgiPath(const string &cgi_path) { this->cgi_path = cgi_path; }
-void Location::setRedirect(const string &redirect) { this->redirect = redirect; }
-void Location::setUploadStore(const string &upload_store) { this->upload_store = upload_store; }
+void Location::setPath(const std::string &path) { this->path = path; }
+void Location::setRoot(const std::string &root) { this->root = root; }
+void Location::setIndex(const std::string &index) { this->index = index; }
+void Location::setRedirect(const std::string &redirect) { this->redirect = redirect; }
 void Location::setAutoindex(bool autoindex) { this->autoindex = autoindex; }
 
 void Location::setClientMaxBodySize(size_t size, const string &unit)
@@ -71,12 +65,10 @@ void Location::clearAllowedMethods()
 }
 
 // Getters
-const string &Location::getPath() const { return path; }
-const string &Location::getRoot() const { return root; }
-const string &Location::getIndex() const { return index; }
-const string &Location::getCgiPath() const { return cgi_path; }
-const string &Location::getRedirect() const { return redirect; }
-const string &Location::getUploadStore() const { return upload_store; }
+const std::string &Location::getPath() const { return path; }
+const std::string &Location::getRoot() const { return root; }
+const std::string &Location::getIndex() const { return index; }
+const std::string &Location::getRedirect() const { return redirect; }
 bool Location::getAutoindex() const { return autoindex; }
 
 size_t Location::getClientMaxBodySizeInBytes() const
@@ -127,9 +119,7 @@ bool Location::operator == (const Location &rhs) const
 	return path == rhs.path &&
 			root == rhs.root &&
 			index == rhs.index &&
-			cgi_path == rhs.cgi_path &&
 			redirect == rhs.redirect &&
-			upload_store == rhs.upload_store &&
 			autoindex == rhs.autoindex &&
 			client_max_body_size == rhs.client_max_body_size &&
 			allowed_methods == rhs.allowed_methods;
@@ -141,9 +131,7 @@ ostream &operator << (ostream &os, const Location &rhs)
 	os << BOLD << MAGENTA << "Path: " << GREEN << rhs.getPath() << RESET << '\n';
 	os << BOLD << MAGENTA << "Root: " << GREEN << rhs.getRoot() << RESET << '\n';
 	os << BOLD << MAGENTA << "Index: " << GREEN << rhs.getIndex() << RESET << '\n';
-	os << BOLD << MAGENTA << "CGI Path: " << GREEN << rhs.getCgiPath() << RESET << '\n';
 	os << BOLD << MAGENTA << "Redirect: " << GREEN << rhs.getRedirect() << RESET << '\n';
-	os << BOLD << MAGENTA << "Upload Store: " << GREEN << rhs.getUploadStore() << RESET << '\n';
 	os << BOLD << MAGENTA << "Autoindex: " << GREEN << (rhs.getAutoindex() ? "true" : "false") << RESET << '\n';
 	os << BOLD << MAGENTA << "Client Max Body Size: " << GREEN
 		<< rhs.getClientMaxBodySizeInBytes() << RESET << '\n';

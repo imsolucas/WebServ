@@ -3,7 +3,6 @@
 import os
 import sys
 
-# Absolute path to the upload destination directory
 UPLOAD_DIR = os.path.abspath("../uploads")
 
 # Parses the multipart form data and extracts the uploaded file
@@ -76,7 +75,8 @@ def main():
     except Exception as e:
         # In case of error, show it in the response
         print("Content-Type: text/html\r\n")
-        print(f"<html><body><h2>Error: {str(e)}</h2></body></html>")
+        print()
+        print(f"<html><body><h2>Error: {html.escape(str(e))}</h2></body></html>")
 
 # Run the script
 if __name__ == "__main__":

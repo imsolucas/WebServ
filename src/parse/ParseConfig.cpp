@@ -1,38 +1,89 @@
-# include "WebServer.hpp"
+#include "WebServer.hpp"
 
-# include <iostream>
-# include <unistd.h> // close
+#include <iostream>
+#include <unistd.h> // close
+using std::runtime_error;
+#include "utils.hpp"
 
 std::vector<Server> WebServer::_parseConfig(const std::string &filePath)
 {
 	std::string line;
 	std::ifstream file(filePath.c_str());
 	std::stringstream _buffer;
+	size_t lineNumber = 0;
+	bool hasMeaningfulLine = false;
 
 	if (!file.is_open())
-	{
 		throw std::runtime_error("Failed to open configuration file: " + filePath);
-	}
+
 	while (std::getline(file, line))
 	{
+		lineNumber++;
 		size_t commentPos = line.find('#');
 		if (commentPos != std::string::npos)
-		{
 			line = line.substr(0, commentPos); // Remove comments
+		std::string trimmed = utils::trim(line, " \t\r\n");
+		if (trimmed.empty())
+			continue;
+		hasMeaningfulLine = true; // Found a non-empty line
+		if (!_checkLineSyntax(trimmed, lineNumber))
+		{
+			std::ostringstream oss;
+			oss << "Invalid syntax at line " << lineNumber << ": " << trimmed;
+			throw std::runtime_error(oss.str());
 		}
 		_buffer << line << "\n"; // Add line to buffer
 	}
 	file.close();
+	if (!hasMeaningfulLine)
+		throw std::runtime_error("Configuration file is logically empty: " + filePath);
 	std::istringstream buffer(_buffer.str());
 
 	std::vector<std::string> tokens = tokenize(buffer.str());
-	// printTokens(tokens);
 	std::vector<Server> servers = _parseTokens(tokens);
-	// if (!_ConfigChecker(servers))
-	// {
-	// 	throw std::runtime_error("Configuration validation failed.");
-	// }
 	return servers;
+}
+
+std::vector<std::string> WebServer::_getSemicolonDirectives() const {
+	std::vector<std::string> directives;
+	directives.push_back("listen");
+	directives.push_back("server_name");
+	directives.push_back("index");
+	directives.push_back("root");
+	directives.push_back("error_page");
+	directives.push_back("client_max_body_size");
+	directives.push_back("limit_except");
+	directives.push_back("redirect");
+	directives.push_back("return");
+	return directives;
+}
+
+bool WebServer::_checkLineSyntax(const std::string &line, size_t lineNumber) const
+{
+	std::vector<std::string> mustEndWithSemicolon = _getSemicolonDirectives();
+
+	for (size_t i = 0; i < mustEndWithSemicolon.size(); ++i)
+	{
+		const std::string &directive = mustEndWithSemicolon[i];
+		if (line.find(directive) != std::string::npos &&
+			line.find("{") == std::string::npos &&
+			line.find("}") == std::string::npos &&
+			!line.empty() && line[line.length() - 1] != ';')
+		{
+			std::cerr << "[Syntax Error] Line " << lineNumber
+					  << ": missing ';' after '" << directive << "'\n'";
+			return false;
+		}
+	}
+
+	int openCount = std::count(line.begin(), line.end(), '{');
+	int closeCount = std::count(line.begin(), line.end(), '}');
+	if (openCount > 1 || closeCount > 1)
+	{
+		std::cerr << "[Syntax Error] Line" << lineNumber << ": too many braces on one line\n";
+		return false;
+	}
+	return true;
 }
 
 const std::vector<Server> &WebServer::getServers() const
@@ -148,31 +199,14 @@ Server WebServer::parseServerBlock(const std::vector<std::string> &tokens, size_
 		else if (token == "server_name")
 		{
 			i++;
-			while (i < tokens.size() && tokens[i] != ";") {
+			while (i < tokens.size() && tokens[i] != ";")
+			{
 				server.addServerName(tokens[i]);
 				i++;
 			}
 			if (tokens[i] != ";")
 				throw std::runtime_error("Missing ';' after server_name");
 			++i;
-		}
-		else if (token == "index")
-		{
-			i++;
-			while (i < tokens.size() && tokens[i] != ";") {
-				server.addIndex(tokens[i]);
-				i++;
-			}
-			if (tokens[i] != ";")
-				throw std::runtime_error("Missing ';' after index");
-			++i;
-		}
-		else if (token == "root")
-		{
-			if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
-				throw std::runtime_error("Invalid 'root' syntax");
-			server.setRoot(tokens[i + 1]);
-			i += 3; // Move past "root <path>;"
 		}
 		else if (token == "error_page")
 		{
@@ -191,7 +225,8 @@ Server WebServer::parseServerBlock(const std::vector<std::string> &tokens, size_
 			size_t size = static_cast<size_t>(atoi(tokens[i + 1].c_str()));
 			std::string unit = "MB"; // Default to MB
 
-			if (tokens[i + 2] != ";") {
+			if (tokens[i + 2] != ";")
+			{
 				unit = tokens[i + 2];
 				i++; // Account for the unit token
 			}
@@ -276,7 +311,8 @@ Location WebServer::parseLocationBlock(const std::vector<std::string> &tokens, s
 			size_t size = static_cast<size_t>(atoi(tokens[i + 1].c_str()));
 			std::string unit = "MB"; // Default to MB
 
-			if (tokens[i + 2] != ";") {
+			if (tokens[i + 2] != ";")
+			{
 				unit = tokens[i + 2];
 				i++; // Account for the unit token
 			}
@@ -287,26 +323,12 @@ Location WebServer::parseLocationBlock(const std::vector<std::string> &tokens, s
 				throw std::runtime_error("Expected ';' after client_max_body_size");
 			i++; // Skip ';'
 		}
-		else if (token == "cgi_path")
-		{
-			if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
-				throw std::runtime_error("Invalid 'cgi_path' syntax in location block");
-			loc.setCgiPath(tokens[i + 1]);
-			i += 3; // Move past "cgi_path <path>;"
-		}
 		else if (token == "redirect")
 		{
 			if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
 				throw std::runtime_error("Invalid 'redirect' syntax in location block");
 			loc.setRedirect(tokens[i + 1]);
 			i += 3; // Move past "redirect <url>;"
-		}
-		else if (token == "upload_store")
-		{
-			if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
-				throw std::runtime_error("Invalid 'upload_store' syntax in location block");
-			loc.setUploadStore(tokens[i + 1]);
-			i += 3; // Move past "upload_store <path>;"
 		}
 		else if (token == "return")
 		{

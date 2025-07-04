@@ -10,7 +10,7 @@ using std::cout;
 using std::cerr;
 
 Server::Server()
-: root("/var/www/html"), client_max_body_size(std::pair<size_t, std::string>(1, "MB")) {} // 1 MB default
+: client_max_body_size(std::pair<size_t, std::string>(1, "MB")) {} // 1 MB default
 
 Server::~Server() {}
 
@@ -26,13 +26,12 @@ void Server::addServerName(const string &server_name)
 		server_names.push_back(server_name);
 }
 
-void Server::addIndex(const string &index)
-{
-	if (find(indexes.begin(), indexes.end(), index) == indexes.end())
-		indexes.push_back(index);
-}
+// void Server::addIndex(const std::string &index)
+// {
+// 	if (std::find(indexes.begin(), indexes.end(), index) == indexes.end())
+// 		indexes.push_back(index);
+// }
 
-void Server::setRoot(const string &root) { this->root = root; }
 
 void Server::setClientMaxBodySize(size_t size, const string &unit)
 {
@@ -81,11 +80,10 @@ void Server::clearLocations()
 	locations.clear();
 }
 
-const vector<int> &Server::getPorts() const { return ports; }
-const vector<string> &Server::getServerNames() const { return server_names; }
-const string &Server::getRoot() const { return root; }
-const vector<Location> &Server::getLocations() const { return locations; }
-const map<int, string> &Server::getErrorPages() const { return error_pages; }
+const std::vector<int> &Server::getPorts() const { return ports; }
+const std::vector<std::string> &Server::getServerNames() const { return server_names; }
+const std::vector<Location> &Server::getLocations() const { return locations; }
+const std::map<int, std::string> &Server::getErrorPages() const { return error_pages; }
 
 size_t Server::getClientMaxBodySizeInBytes() const
 {
@@ -119,14 +117,6 @@ void Server::printConfig() const {
 	}
 	cout << RESET << '\n';
 
-	cout << BOLD << MAGENTA << "Root: " << GREEN << root << RESET << '\n';
-
-	cout << BOLD << MAGENTA << "Index Files: " << RESET;
-	for (size_t i = 0; i < indexes.size(); ++i) {
-		cout << GREEN << indexes[i];
-		if (i + 1 < indexes.size()) cout << ", ";
-	}
-	cout << RESET << '\n';
 
 	cout << BOLD << MAGENTA << "Client Max Body Size: " << GREEN
 			  << client_max_body_size.first << " " << client_max_body_size.second

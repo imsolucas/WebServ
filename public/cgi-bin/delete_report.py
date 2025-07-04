@@ -26,6 +26,6 @@ try:
 		raise Exception("File not found")
 
 	os.remove(path)
-	print(f"✅ Deleted {filename}")
+	print(f" Deleted {filename}")
 except Exception as e:
-	print(f"❌ Error: {str(e)}")
+	print(f"Error: {str(e)}")
