@@ -1,29 +1,10 @@
 TELNET COMMANDS
 Launch telnet with "telnet localhost 8080"
 
-Test 1:
+Example:
 Error 400 Bad Request - Malformed body
 
 GET /no_version
-
-
-Test 2:
-CGI correctly unchunks body for chunked requests
-
-POST /cgi-bin/test_cgi.php HTTP/1.1
-Host: localhost
-Transfer-Encoding: chunked
-Content-Type: text/plain
-
-4
-test
-3
-123
-0
-
-Expected response body:
-Received POST
-Data: test123
 
 
 CURL COMMANDS
