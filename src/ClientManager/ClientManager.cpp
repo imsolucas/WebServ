@@ -3,23 +3,16 @@
 # include "utils.hpp"
 
 # include <fcntl.h>
-# include <fstream> // TODO: DELETE
 # include <iostream>
 # include <sys/socket.h> // accept, recv, send
 # include <unistd.h> // close
 
 using std::cout;
+using std::getline;
+using std::istringstream;
+using std::map;
 using std::string;
 using std::vector;
-
-ClientManager::ClientMeta::ClientMeta()
-: state(STATE_INIT), listenerFd(0), port(0), server(NULL),
-  requestBuffer(), errorCode(0), keepAlive(true)
-{
-	requestMeta.headersEnd = string::npos;
-	requestMeta.chunkedRequest = false;
-	requestMeta.contentLength = 0;
-}
 
 ClientManager::ClientManager(std::vector<int> &pollRemoveQueue, std::vector<int> &pollToggleQueue,
 								std::vector<int> &pollAddQueue, const std::vector<Server> &servers)
@@ -80,38 +73,13 @@ void ClientManager::recvFromClient(int fd)
 
 void ClientManager::sendToClient(int fd)
 {
-	// TODO: DELETE - ONLY FOR TESTING PURPOSES
-	// -----------------------------------------------------------------------------------
-	std::ifstream page("public/upload.html");
-	string line, body;
-
-	while (std::getline(page, line))
-	body += line + "\n";
-
-	// attempt to send a http response.
-	// Modern browsers will reuse persistent connections due to HTTP/1.1 keep-alive, which is on by default.
-	// So removing "Connection: close" will cause the browser to reuse the same client fd even across
-	// different tabs.
-	string response =
-		"HTTP/1.1 200 OK\r\n"
-		"Content-Type: text/html\r\n"
-		"Content-Length: " + utils::toString(body.size()) + "\r\n"
-		"Connection: close\r\n"
-		"\r\n" +
-		body;
-	// -----------------------------------------------------------------------------------
-
+	string response = _handleRequest(_clientMap[fd]);
 	// MSG_NOSIGNAL flag prevents SIGPIPE if the client has already closed the connection.
 	// Often used in server code to avoid crashes from broken pipes e.g. when client
 	// has closed their connection.
 	if (send(fd, response.c_str(), response.size(), MSG_NOSIGNAL) <= 0)
 	{
 		utils::printError("Failed to send response to client with fd " + utils::toString(fd) + ".");
-		removeClient(fd);
-		return;
-	}
-	if (!_clientMap[fd].keepAlive)
-	{
 		removeClient(fd);
 		return;
 	}
@@ -124,6 +92,18 @@ bool ClientManager::isClient(int fd)
 	return _clientMap.count(fd);
 }
 
+ClientManager::ClientMeta::ClientMeta()
+: state(STATE_INIT), listenerFd(0), port(0), server(NULL), requestBuffer()
+{
+	requestMeta.headersEnd = string::npos;
+	requestMeta.chunkedRequest = false;
+	requestMeta.contentLength = 0;
+	requestMeta.maxBodySizeExceeded = false;
+}
+
+ClientManager::PreparsedRequest::PreparsedRequest()
+: method() {}
+
 // listenerFd and port are constant across the lifetime of the connection.
 // server needs to be reset as the client could send a different Host header.
 void ClientManager::_resetClientMeta(int fd)
@@ -132,10 +112,10 @@ void ClientManager::_resetClientMeta(int fd)
 	client.state = STATE_INIT;
 	client.server = NULL;
 	client.requestBuffer.clear();
-	client.errorCode = 0;
 	client.requestMeta.headersEnd = string::npos;
 	client.requestMeta.chunkedRequest = false;
 	client.requestMeta.contentLength = 0;
+	client.requestMeta.maxBodySizeExceeded = false;
 }
 
 void ClientManager::_addToClientMap(int fd, int listenerFd, int port)
@@ -167,8 +147,12 @@ void ClientManager::_handleIncomingData(int fd, const char *buffer, size_t bytes
 		{
 			if (_headersAreComplete(client))
 			{
-				_preparseHeaders(client);
-				client.state = STATE_HEADERS_PREPARSED;
+				bool success = _preparseHeaders(client);
+				if (success)
+					client.state = STATE_HEADERS_PREPARSED;
+				else
+					// if preparsing fails, we assume headers are complete.
+					client.state = STATE_REQUEST_READY;
 			}
 			else
 				break;
@@ -178,7 +162,7 @@ void ClientManager::_handleIncomingData(int fd, const char *buffer, size_t bytes
 		{
 			if (_maxBodySizeExceeded(client))
 			{
-				client.errorCode = 413;
+				client.requestMeta.maxBodySizeExceeded = true;
 				cout << RED << "Request from client with fd " << fd << " exceeds the maximum body size.\n" << RESET;
 				break;
 			}
@@ -197,11 +181,8 @@ void ClientManager::_handleIncomingData(int fd, const char *buffer, size_t bytes
 		default:
 			break;
 	}
-	if (client.errorCode > 0)
-	{
-		cout << RED << "Error code: " << client.errorCode << ".\n" << RESET;
+	if (client.requestMeta.maxBodySizeExceeded)
 		_pollToggleQueue.push_back(fd);
-	}
 }
 
 bool ClientManager::_headersAreComplete(ClientMeta &client)
@@ -215,50 +196,89 @@ bool ClientManager::_headersAreComplete(ClientMeta &client)
 	return true;
 }
 
-void ClientManager::_preparseHeaders(ClientMeta &client)
+// This function will return a boolean to indicate whether the headers were successfully preparsed.
+bool ClientManager::_preparseHeaders(ClientMeta &client)
 {
-	string headers = client.requestBuffer.substr(0, client.requestMeta.headersEnd);
-	HttpRequest req = deserialize(headers);
-	_determineBodyEnd(client, req);
+	PreparsedRequest req;
+
+	const string &headers = client.requestBuffer.substr(0, client.requestMeta.headersEnd);
+	istringstream headerStream(headers);
+	string line;
+
+	// extract first word from the first line of the request (usually the HTTP method).
+	getline(headerStream, line);
+	istringstream lineStream(line);
+	lineStream >> req.method;
+
+	// extract headers from the request.
+	while (getline(headerStream, line))
+	{
+		line = utils::trim(line, " \t\r");
+		if (line.empty())
+			continue;
+		size_t pos = line.find(':');
+		if (pos != string::npos)
+		{
+			string key = utils::trim(line.substr(0, pos), " \t\r");
+			string value = line.substr(pos + 1);
+			if (!key.empty() && !value.empty())
+				req.headers[utils::toLower(key)] = value;
+		}
+	}
+
+	// server block must be selected regardless of malformed requests
+	// so that handleRequest can construct a response.
 	client.server = _selectServerBlock(client, req);
+
+	// validate method and headers for determineBodyEnd to run correctly.
+	if (req.method != "GET" && req.method != "POST" && req.method != "DELETE")
+		return false;
+
+	if (req.method != "GET") 
+	{
+		bool hasTE = req.headers.count("transfer-encoding") && 
+			req.headers.at("transfer-encoding") == "chunked";
+		bool hasCL = req.headers.count("content-length");
+		// Transfer-Encoding and Content-Length are mutually exclusive.
+		if ((!hasTE && !hasCL) || (hasTE && hasCL))
+			return false;
+	}
+
+	_determineBodyEnd(client, req);
+	return true;
 }
 
 // This function will check the http request headers for either the
 // "Content-Length" or "Transfer-Encoding" field to determine when
 // the http request has been fully received.
 // GET requests are complete when the headers are received.
-void ClientManager::_determineBodyEnd(ClientMeta &client, const HttpRequest &req)
+void ClientManager::_determineBodyEnd(ClientMeta &client, const PreparsedRequest &req)
 {
 	if (req.method == "GET")
 		client.requestMeta.contentLength = 0;
 	else if (req.headers.count("transfer-encoding"))
+		client.requestMeta.chunkedRequest = true;
+	else if (req.headers.count("content-length"))
 	{
-		if (req.headers.at("transfer-encoding") == "chunked")
-			client.requestMeta.chunkedRequest = true;
-	}
-	else
-	{
-		if (req.headers.count("content-length"))
-		{
-			// create a stringstream to extract the content length as an integer
-			std::stringstream ss(req.headers.at("content-length"));
-			// set content length to 0 if fail to parse a valid number
-			if (!(ss >> client.requestMeta.contentLength))
-				client.requestMeta.contentLength = 0;
-		}
-		else
+		// create a stringstream to extract the content length as an integer
+		std::stringstream ss(req.headers.at("content-length"));
+		// set content length to 0 if fail to parse a valid number
+		if (!(ss >> client.requestMeta.contentLength))
 			client.requestMeta.contentLength = 0;
 	}
 }
 
-const Server *ClientManager::_selectServerBlock(ClientMeta &client, const HttpRequest &req)
+const Server *ClientManager::_selectServerBlock(ClientMeta &client, const PreparsedRequest &req)
 {
 	string serverName = "";
 	if (req.headers.count("host"))
 	{
 		vector<string> vec = utils::split(req.headers.at("host"), ':');
 		// get server name from host header.
-		serverName = vec[0];
+		// host value will usually be in the format "example.com:8080".
+		// !vec.empty() will prevent out of bounds access if the host header is malformed.
+		if (!vec.empty())
+			serverName = vec[0];
 	}
 	// select server candidates with matching ports.
 	vector<const Server *> candidates;

@@ -1,29 +1,10 @@
 TELNET COMMANDS
 Launch telnet with "telnet localhost 8080"
 
-Test 1:
+Example:
 Error 400 Bad Request - Malformed body
 
 GET /no_version
-
-
-Test 2:
-CGI correctly unchunks body for chunked requests
-
-POST /cgi-bin/test_cgi.php HTTP/1.1
-Host: localhost
-Transfer-Encoding: chunked
-Content-Type: text/plain
-
-4
-test
-3
-123
-0
-
-Expected response body:
-Received POST
-Data: test123
 
 
 CURL COMMANDS
@@ -42,6 +23,21 @@ Flags:
 - curl -X DELETE http://localhost:8080/uploads/test.txt
 5) Show only status code
 - curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/
+
+Manual curl command for curl CGI scripts:
+1) curl_upload_file.py
+curl -X POST \
+  -F "filename=short.txt" \
+  -F "content=@./test/test-upload/short.txt" \
+  http://localhost:8080/cgi-bin/curl_upload_file.py
+
+Note: content=@ is relative to the directory in which the curl command is run.
+
+2) curl_delete_file.py
+curl -X DELETE \
+  --data "file=test-upload/medium.txt" \
+  http://localhost:8080/cgi-bin/curl_delete_file.py
+
 
 
 SIEGE COMMANDS

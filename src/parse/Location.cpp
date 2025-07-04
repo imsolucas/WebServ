@@ -1,26 +1,31 @@
 #include "Includes.h"
 #include "Location.hpp"
 
+using std::vector;
+using std::pair;
+using std::ostream;
+using std::cout;
+
 // Constructors
 Location::Location()
 	: path("/"),
-	  root("/var/www/html"),
+	  root(""),
 	  index(""),
 	  redirect(""),
 	  autoindex(false),
-	  client_max_body_size(std::pair<size_t, std::string>(1, "MB")) // 1 MB default
+	  client_max_body_size(pair<size_t, string>(1, "MB")) // 1 MB default
 {
 	allowed_methods.push_back("GET");
 	allowed_methods.push_back("POST");
 }
 
-Location::Location(const std::string &path)
+Location::Location(const string &path)
 	: path(path),
-	  root("/var/www/html"),
+	  root(""),
 	  index(""),
 	  redirect(""),
 	  autoindex(false),
-	  client_max_body_size(std::pair<size_t, std::string>(1, "MB")) // 1 MB default
+	  client_max_body_size(pair<size_t, string>(1, "MB")) // 1 MB default
 {
 	allowed_methods.push_back("GET");
 	allowed_methods.push_back("POST");
@@ -35,21 +40,21 @@ void Location::setIndex(const std::string &index) { this->index = index; }
 void Location::setRedirect(const std::string &redirect) { this->redirect = redirect; }
 void Location::setAutoindex(bool autoindex) { this->autoindex = autoindex; }
 
-void Location::setClientMaxBodySize(size_t size, const std::string &unit)
+void Location::setClientMaxBodySize(size_t size, const string &unit)
 {
 	client_max_body_size.first = size;
 	client_max_body_size.second = unit;
 }
 
-void Location::addAllowedMethod(const std::string &method)
+void Location::addAllowedMethod(const string &method)
 {
-	if (std::find(allowed_methods.begin(), allowed_methods.end(), method) == allowed_methods.end())
+	if (find(allowed_methods.begin(), allowed_methods.end(), method) == allowed_methods.end())
 		allowed_methods.push_back(method);
 }
 
-void Location::removeAllowedMethod(const std::string &method)
+void Location::removeAllowedMethod(const string &method)
 {
-	std::vector<std::string>::iterator it = std::find(allowed_methods.begin(), allowed_methods.end(), method);
+	vector<string>::iterator it = find(allowed_methods.begin(), allowed_methods.end(), method);
 	if (it != allowed_methods.end())
 		allowed_methods.erase(it);
 }
@@ -69,7 +74,7 @@ bool Location::getAutoindex() const { return autoindex; }
 size_t Location::getClientMaxBodySizeInBytes() const
 {
 	size_t size = client_max_body_size.first;
-	std::string unit = client_max_body_size.second;
+	string unit = client_max_body_size.second;
 
 	if (unit == "KB" || unit == "kb")
 		return size * 1024;
@@ -81,15 +86,15 @@ size_t Location::getClientMaxBodySizeInBytes() const
 	return size; // Assume bytes if no valid unit
 }
 
-const std::vector<std::string> &Location::getAllowedMethods() const
+const vector<string> &Location::getAllowedMethods() const
 {
 	return allowed_methods;
 }
 
-std::string Location::getAllowedMethodsAsString() const
+string Location::getAllowedMethodsAsString() const
 {
-	std::string result;
-	for (std::vector<std::string>::const_iterator it = allowed_methods.begin(); it != allowed_methods.end(); ++it)
+	string result;
+	for (vector<string>::const_iterator it = allowed_methods.begin(); it != allowed_methods.end(); ++it)
 	{
 		result += *it;
 		if (it + 1 != allowed_methods.end())
@@ -99,9 +104,9 @@ std::string Location::getAllowedMethodsAsString() const
 }
 
 // Utils
-bool Location::isMethodAllowed(const std::string &method) const
+bool Location::isMethodAllowed(const string &method) const
 {
-	for (std::vector<std::string>::const_iterator it = allowed_methods.begin(); it != allowed_methods.end(); ++it)
+	for (vector<string>::const_iterator it = allowed_methods.begin(); it != allowed_methods.end(); ++it)
 	{
 		if (*it == method)
 			return true;
@@ -109,24 +114,30 @@ bool Location::isMethodAllowed(const std::string &method) const
 	return false;
 }
 
-void Location::printConfig() const
+bool Location::operator == (const Location &rhs) const
 {
-	std::cout << BOLD << CYAN << "Location Config:" << RESET << std::endl;
-	std::cout << BOLD << MAGENTA << "Path: " << GREEN << path << RESET << std::endl;
-	std::cout << BOLD << MAGENTA << "Root: " << GREEN << root << RESET << std::endl;
-	std::cout << BOLD << MAGENTA << "Index: " << GREEN << index << RESET << std::endl;
-	std::cout << BOLD << MAGENTA << "Redirect: " << GREEN << redirect << RESET << std::endl;
-	std::cout << BOLD << MAGENTA << "Autoindex: " << GREEN << (autoindex ? "true" : "false") << RESET << std::endl;
-	std::cout << BOLD << MAGENTA << "Client Max Body Size: " << GREEN
-			  << client_max_body_size.first << " " << client_max_body_size.second
-			  << RESET << std::endl;
+	return path == rhs.path &&
+			root == rhs.root &&
+			index == rhs.index &&
+			redirect == rhs.redirect &&
+			autoindex == rhs.autoindex &&
+			client_max_body_size == rhs.client_max_body_size &&
+			allowed_methods == rhs.allowed_methods;
+}
 
-	std::cout << BOLD << MAGENTA << "Allowed Methods: " << RESET;
-	for (std::vector<std::string>::const_iterator it = allowed_methods.begin(); it != allowed_methods.end(); ++it)
-	{
-		std::cout << GREEN << *it;
-		if (it + 1 != allowed_methods.end())
-			std::cout << ", ";
-	}
-	std::cout << RESET << std::endl;
+ostream &operator << (ostream &os, const Location &rhs)
+{
+	os << BOLD << CYAN << "Location Config:" << RESET << '\n';
+	os << BOLD << MAGENTA << "Path: " << GREEN << rhs.getPath() << RESET << '\n';
+	os << BOLD << MAGENTA << "Root: " << GREEN << rhs.getRoot() << RESET << '\n';
+	os << BOLD << MAGENTA << "Index: " << GREEN << rhs.getIndex() << RESET << '\n';
+	os << BOLD << MAGENTA << "Redirect: " << GREEN << rhs.getRedirect() << RESET << '\n';
+	os << BOLD << MAGENTA << "Autoindex: " << GREEN << (rhs.getAutoindex() ? "true" : "false") << RESET << '\n';
+	os << BOLD << MAGENTA << "Client Max Body Size: " << GREEN
+		<< rhs.getClientMaxBodySizeInBytes() << RESET << '\n';
+
+	os << BOLD << MAGENTA << "Allowed Methods: " << RESET
+		<< rhs.getAllowedMethodsAsString() << RESET << '\n';
+
+	return os;
 }

@@ -1,6 +1,14 @@
 #include "Server.hpp"
 #include "colors.h"
 
+using std::vector;
+using std::map;
+using std::pair;
+using std::invalid_argument;
+using std::string;
+using std::cout;
+using std::cerr;
+
 Server::Server()
 : client_max_body_size(std::pair<size_t, std::string>(1, "MB")) {} // 1 MB default
 
@@ -8,13 +16,13 @@ Server::~Server() {}
 
 void Server::addPort(int port)
 {
-	if (std::find(ports.begin(), ports.end(), port) == ports.end())
+	if (find(ports.begin(), ports.end(), port) == ports.end())
 		ports.push_back(port);
 }
 
-void Server::addServerName(const std::string &server_name)
+void Server::addServerName(const string &server_name)
 {
-	if (std::find(server_names.begin(), server_names.end(), server_name) == server_names.end())
+	if (find(server_names.begin(), server_names.end(), server_name) == server_names.end())
 		server_names.push_back(server_name);
 }
 
@@ -25,7 +33,7 @@ void Server::addServerName(const std::string &server_name)
 // }
 
 
-void Server::setClientMaxBodySize(size_t size, const std::string &unit)
+void Server::setClientMaxBodySize(size_t size, const string &unit)
 {
 	client_max_body_size.first = size;
 	// client_max_body_size.second = unit;
@@ -40,12 +48,12 @@ void Server::setClientMaxBodySize(size_t size, const std::string &unit)
 		client_max_body_size.second = "B";
 	else
 	{
-		std::cerr << RED << "Invalid unit for client_max_body_size: " << unit << RESET << std::endl;
-		throw std::invalid_argument("Invalid unit for client_max_body_size");
+		cerr << RED << "Invalid unit for client_max_body_size: " << unit << RESET << '\n';
+		throw invalid_argument("Invalid unit for client_max_body_size");
 	}
 }
 
-void Server::addErrorPage(int code, const std::string &path)
+void Server::addErrorPage(int code, const string &path)
 {
 	error_pages[code] = path;
 }
@@ -55,9 +63,9 @@ void Server::addLocation(const Location &location)
 	locations.push_back(location);
 }
 
-void Server::removeLocation(const std::string &path)
+void Server::removeLocation(const string &path)
 {
-	for (std::vector<Location>::iterator it = locations.begin(); it != locations.end(); ++it)
+	for (vector<Location>::iterator it = locations.begin(); it != locations.end(); ++it)
 	{
 		if (it->getPath() == path)
 		{
@@ -80,7 +88,7 @@ const std::map<int, std::string> &Server::getErrorPages() const { return error_p
 size_t Server::getClientMaxBodySizeInBytes() const
 {
 	size_t size = client_max_body_size.first;
-	std::string unit = client_max_body_size.second;
+	string unit = client_max_body_size.second;
 
 	if (unit == "KB" || unit == "kb")
 		return size * 1024;
@@ -93,43 +101,42 @@ size_t Server::getClientMaxBodySizeInBytes() const
 }
 
 void Server::printConfig() const {
-	std::cout << BOLD << CYAN << "=== Server Configuration ===" << RESET << std::endl;
+	cout << BOLD << CYAN << "=== Server Configuration ===" << RESET << '\n';
 
-	std::cout << BOLD << MAGENTA << "Ports: " << RESET;
+	cout << BOLD << MAGENTA << "Ports: " << RESET;
 	for (size_t i = 0; i < ports.size(); ++i) {
-		std::cout << GREEN << ports[i];
-		if (i + 1 < ports.size()) std::cout << ", ";
+		cout << GREEN << ports[i];
+		if (i + 1 < ports.size()) cout << ", ";
 	}
-	std::cout << RESET << std::endl;
+	cout << RESET << '\n';
 
-	std::cout << BOLD << MAGENTA << "Server Names: " << RESET;
+	cout << BOLD << MAGENTA << "Server Names: " << RESET;
 	for (size_t i = 0; i < server_names.size(); ++i) {
-		std::cout << GREEN << server_names[i];
-		if (i + 1 < server_names.size()) std::cout << ", ";
+		cout << GREEN << server_names[i];
+		if (i + 1 < server_names.size()) cout << ", ";
 	}
-	std::cout << RESET << std::endl;
+	cout << RESET << '\n';
 
 
-	std::cout << BOLD << MAGENTA << "Client Max Body Size: " << GREEN
+	cout << BOLD << MAGENTA << "Client Max Body Size: " << GREEN
 			  << client_max_body_size.first << " " << client_max_body_size.second
 			  << RESET << std::endl;
 
 	if (!error_pages.empty()) {
-		std::cout << BOLD << MAGENTA << "Error Pages: " << RESET << std::endl;
-		for (std::map<int, std::string>::const_iterator it = error_pages.begin(); it != error_pages.end(); ++it) {
-			std::cout << "  " << it->first << " => " << it->second << std::endl;
+		cout << BOLD << MAGENTA << "Error Pages: " << RESET << '\n';
+		for (map<int, string>::const_iterator it = error_pages.begin(); it != error_pages.end(); ++it) {
+			cout << "  " << it->first << " => " << it->second << '\n';
 		}
 	}
 
 	std::cout << std::endl;
 
 	if (!locations.empty()) {
-		std::cout << BOLD << CYAN << "--- Locations ---" << RESET << std::endl;
-		for (std::vector<Location>::const_iterator it = locations.begin(); it != locations.end(); ++it) {
-			it->printConfig();
+		cout << BOLD << CYAN << "--- Locations ---" << RESET << '\n';
+		for (vector<Location>::const_iterator it = locations.begin(); it != locations.end(); ++it) {
+			cout << *it;
 		}
 	}
-	std::cout << BOLD << CYAN << "========================" << RESET << std::endl;
-	std::cout << std::endl;
+	cout << BOLD << CYAN << "========================" << RESET << '\n';
+	cout << '\n';
 }
-

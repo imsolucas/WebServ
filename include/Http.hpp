@@ -15,6 +15,7 @@ enum StatusCode
 	UNAUTHORIZED = 401,
 	FORBIDDEN = 403,
 	NOT_FOUND = 404,
+	METHOD_NOT_ALLOWED = 405,
 	CONTENT_TOO_LARGE = 413,
 	INTERNAL_SERVER_ERROR = 500,
 	NOT_IMPLEMENTED = 501,
@@ -22,8 +23,19 @@ enum StatusCode
 	GATEWAY_TIMEOUT = 504
 };
 
+enum PathType
+{
+	R_FILE, // regular file
+	DIRECTORY,
+	OTHER,
+	NOT_EXIST
+};
+
 namespace Http
 {
+	extern const std::map<StatusCode, std::string> statusText;
+	extern const std::map<std::string, std::string> mimeType;
+
 	const std::string GET = "GET";
 	const std::string POST = "POST";
 	const std::string DELETE = "DELETE";
@@ -45,12 +57,7 @@ namespace Http
 	const std::string CONTENT_LANGUAGE = "Content-Language";
 }
 
-struct HttpMessage
-{
-	std::string startLine;
-	std::vector<std::string> headers;
-	std::string body;
-};
+class Location;
 
 struct HttpRequest
 {
@@ -62,6 +69,7 @@ struct HttpRequest
 
 	bool operator == (const HttpRequest &rhs) const;
 };
+std::ostream &operator << (std::ostream &os, const HttpRequest &r);
 
 struct HttpResponse
 {
@@ -73,9 +81,21 @@ struct HttpResponse
 
 	bool operator == (const HttpResponse &rhs) const;
 };
+std::ostream &operator << (std::ostream &os, const HttpResponse &r);
 
 std::string	serialize(const HttpResponse &response);
 HttpRequest	deserialize(const std::string &stream);
+std::pair<std::string, std::string> parseHeader(const std::string &line);
+std::string parseBody(std::istringstream &iss, size_t contentLength);
+std::string parseChunkedBody(std::istringstream &iss);
 
-std::ostream &operator << (std::ostream &os, const HttpRequest &r);
-std::ostream &operator << (std::ostream &os, const HttpResponse &r);
+HttpResponse serveFile(HttpRequest &request, const std::string &file, const std::map<int, std::string> &errorPages);
+const Location *matchURI(const std::string &URI, const std::vector<Location> &locations);
+HttpResponse listDirectory(const Location &location, const std::string &directory, const std::map<int, std::string> &errorPages);
+std::string autoindex(const std::string &directory);
+HttpResponse redirect(StatusCode code, const std::string &path);
+HttpResponse handleError(StatusCode code, const std::map<int, std::string> &errorPages);
+
+PathType getPathType(const std::string &path);
+std::string getContentType(const std::string &file);
+bool isCGI(const std::string &file);

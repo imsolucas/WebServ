@@ -11,6 +11,8 @@ public:
     Location(const std::string &path);
     ~Location();
 
+    bool operator == (const Location &rhs) const;
+
     // Setters
     void setPath(const std::string &path);
     void setRoot(const std::string &root);
@@ -32,9 +34,8 @@ public:
     const std::vector<std::string> &getAllowedMethods() const;
     std::string getAllowedMethodsAsString() const;
 
-    // Utils
-    bool isMethodAllowed(const std::string &method) const;
-    void printConfig() const;
+        // Utils
+        bool isMethodAllowed(const std::string &method) const;
 
 private:
     std::string path;                // e.g., "/upload"
@@ -45,3 +46,5 @@ private:
     std::pair<size_t, std::string> client_max_body_size; // Max body size for client requests
     std::vector<std::string> allowed_methods; // Allowed HTTP methods
 };
+
+std::ostream &operator << (std::ostream &os, const Location &rhs);

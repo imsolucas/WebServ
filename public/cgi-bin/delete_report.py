@@ -22,7 +22,7 @@ try:
 	filename = os.path.basename(filename)
 	path = os.path.join(UPLOAD_DIR, filename)
 
-	if not os.path.exists(path):	
+	if not os.path.exists(path):
 		raise Exception("File not found")
 
 	os.remove(path)

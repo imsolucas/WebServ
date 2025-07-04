@@ -1,6 +1,6 @@
 # pragma once
 
-# include "Http.h"
+# include "Http.hpp"
 
 # include <stdexcept>
 # include <string>
@@ -18,7 +18,7 @@
 class CGIHandler
 {
 	public:
-		// http request will be modified when unchunking the body
+		// http request will be modified for unchunked bodies
 		CGIHandler(HttpRequest &req, std::string root);
 		StatusCode execute();
 		const std::string &getCGIOutput() const;
@@ -42,7 +42,6 @@ class CGIHandler
 		std::string _cgiBody;
 		int _cgiStatusCode;
 
-		void _unchunkBody();
 		void _setupPipes();
 		void _setupEnv();
 		void _parseRequestTarget();
@@ -57,12 +56,6 @@ class CGIHandler
 		void _extractCGIStatusCode();
 
 	public:
-		class UnchunkingException : public std::runtime_error
-		{
-			public:
-				UnchunkingException();
-		};
-
 		class ScriptNotFoundException : public std::runtime_error
 		{
 			public:
