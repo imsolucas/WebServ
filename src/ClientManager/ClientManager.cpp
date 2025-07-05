@@ -220,7 +220,7 @@ bool ClientManager::_preparseHeaders(ClientMeta &client)
 		if (pos != string::npos)
 		{
 			string key = utils::trim(line.substr(0, pos), " \t\r");
-			string value = line.substr(pos + 1);
+			string value = utils::trim(line.substr(pos + 1), " \t\r");
 			if (!key.empty() && !value.empty())
 				req.headers[utils::toLower(key)] = value;
 		}

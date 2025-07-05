@@ -23,7 +23,10 @@ void ListenerManager::_setupAllListeners(const vector<Server>&servers)
 		vector<int>ports = serverIt->getPorts();
 		vector<int>::const_iterator portIt = ports.begin();
 		for (; portIt != ports.end(); ++portIt)
-			_setUpListener(*portIt);
+		{
+			if (!_isPortAlreadyListening(*portIt))
+				_setUpListener(*portIt);
+		}
 	}
 }
 
@@ -105,4 +108,17 @@ void ListenerManager::_setUpListener(int port)
 	_listenerMap[listenerFd] = port;
 
 	cout << BLUE << "Listener with fd " << listenerFd << " set up on port " << port << "!\n" << RESET;
+}
+
+// This function checks if a port is already being listened to by any listener,
+// and is necessary to prevent multiple listeners from trying to bind to the same port.
+bool ListenerManager::_isPortAlreadyListening(int port) const
+{
+	map<int, int>::const_iterator it = _listenerMap.begin();
+	for (; it != _listenerMap.end(); ++it)
+	{
+		if (it->second == port)
+			return true;
+	}
+	return false;
 }

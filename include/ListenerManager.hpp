@@ -20,4 +20,5 @@ class ListenerManager
 		std::map<int, int> _listenerMap;
 
 		void _setUpListener(int port);
+		bool _isPortAlreadyListening(int port) const;
 };

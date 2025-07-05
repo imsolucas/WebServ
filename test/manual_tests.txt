@@ -44,9 +44,14 @@ SIEGE COMMANDS
 Flags:
 -b: benchmark mode (no delays betweeen requests)
 -c: number of concurrent users
+-r: number of requests made per user
+-d: wait time between requests (to simulate randomness)
 -t: duration
+
+Note: -r and -t are mutually exclusive in some versions. If that's the case, remove one.
 
 1) Basic GET flood (default concurrency & duration)
 - siege -b http://localhost:8080/
 2) With custom concurrency and duration
 - siege -c 10 -t 10s http://localhost:8080/
+- siege -c 20 -r 10 -d 1 http://localhost:8080/
