@@ -31,8 +31,8 @@ StatusCode CGIHandler::execute()
 		// environment variable can be correctly set up.
 		if (_req.headers.count("transfer-encoding") && _req.headers.at("transfer-encoding") == "chunked")
 		{
-			_req.headers["content-length"] = utils::toString(_req.body.size());
 			_req.headers.erase("transfer-encoding");
+			_req.headers["content-length"] = utils::toString(_req.body.size());
 		}
 		_setupPipes();
 		_setupEnv();
@@ -262,7 +262,6 @@ void CGIHandler::_cgiParentProcess()
 	char buffer[1024];
 	ssize_t bytesRead;
 	while ((bytesRead = read(_stdoutPipe[0], buffer, sizeof(buffer))) > 0)
-		// string& append (const char* s, size_t n);
 		_cgiOutput.append(buffer, bytesRead);
 	// close pipe after reading complete.
 	close(_stdoutPipe[0]);

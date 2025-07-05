@@ -48,7 +48,6 @@ void ClientManager::removeClient(int fd)
 	cout << RED << "Client with fd " << fd << " disconnected!\n" << RESET;
 }
 
-// boolean reflects success of recv call().
 void ClientManager::recvFromClient(int fd)
 {
 	char buffer[4096];
@@ -57,7 +56,6 @@ void ClientManager::recvFromClient(int fd)
 	// signed size_t can be negative.
 	ssize_t bytesReceived = recv(fd, buffer, sizeof(buffer), 0);
 	// 0 bytes read is the client's EOF signal when it closes its connection.
-	// a more reliable signal to detect for graceful closure than POLLHUP.
 	if (bytesReceived == 0)
 	{
 		cout << "Client with fd " << fd << " has hung up.\n";
@@ -152,7 +150,8 @@ void ClientManager::_handleIncomingData(int fd, const char *buffer, size_t bytes
 				if (success)
 					client.state = STATE_HEADERS_PREPARSED;
 				else
-					// if preparsing fails, we assume headers are complete.
+					// if preparsing fails, we don't have a reliable way to determine the end of the body,
+					// so we just assume the request is ready.
 					client.state = STATE_REQUEST_READY;
 			}
 			else

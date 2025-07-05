@@ -40,7 +40,7 @@ void WebServer::run()
 		// .data() returns a pointer to the first element in the array used internally by the vector.
 		int ready = poll(_poll.data(), _poll.size(), -1);
 		// poll() returns the number of file descriptors that have had an event occur on them.
-		// return value: 0 = timeout (irrelavant with -1 timeout parameter); -1 = error
+		// return value: 0 = timeout (irrelevant with -1 timeout parameter); -1 = error
 		// prevent double printing if SIGINT received
 		if (ready < 0 && !gStopLoop)
 			throw runtime_error("Failed to poll file descriptors.");
