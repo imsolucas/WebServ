@@ -80,9 +80,8 @@ string ClientManager::_handleRequest(const ClientMeta &client)
 
 		case DIRECTORY:
 			if (path[path.length() - 1] != '/')
-				response = handleError(NOT_FOUND, errorPages);
-			else
-				response = listDirectory(*location, path, errorPages);
+				path += '/';
+			response = listDirectory(*location, path, errorPages);
 		break;
 
 		case NOT_EXIST:
