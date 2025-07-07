@@ -1,6 +1,7 @@
 # include "CGIHandler.hpp"
 # include "colors.h"
 # include "utils.hpp"
+# include "signal.hpp"
 
 # include <cerrno> // errno
 # include <iostream>
@@ -30,8 +31,8 @@ StatusCode CGIHandler::execute()
 		// environment variable can be correctly set up.
 		if (_req.headers.count("transfer-encoding") && _req.headers.at("transfer-encoding") == "chunked")
 		{
-			_req.headers["content-length"] = utils::toString(_req.body.size());
 			_req.headers.erase("transfer-encoding");
+			_req.headers["content-length"] = utils::toString(_req.body.size());
 		}
 		_setupPipes();
 		_setupEnv();
@@ -255,29 +256,36 @@ void CGIHandler::_cgiParentProcess()
 
 	// timeout should happen before reading from stdout because read()
 	// will block if the script loops forever.
+	_waitForChild();
 	_resolveChildStatus();
 
 	char buffer[1024];
 	ssize_t bytesRead;
 	while ((bytesRead = read(_stdoutPipe[0], buffer, sizeof(buffer))) > 0)
-		// string& append (const char* s, size_t n);
 		_cgiOutput.append(buffer, bytesRead);
 	// close pipe after reading complete.
 	close(_stdoutPipe[0]);
 }
 
-// This function will wait on the child process and throw exceptions if the child exited
-// with non-zero exit status or timed out.
-void CGIHandler::_resolveChildStatus()
+// This function will wait on the child process.
+// It will kill the child if the SIGTERM/SIGINT signal is received or if the child times out.
+void CGIHandler::_waitForChild()
 {
-	int status;
 	int msElapsed = 0;
 
 	while (msElapsed < TIMEOUT_MS)
 	{
+		// if server shutdown was requested, kill and reap the child process.
+		if (gStopLoop)
+		{
+			kill(_childPid, SIGKILL);
+			waitpid(_childPid, &_childStatus, 0);
+			return;
+		}
+
 		// wait for child's exit status to check that CGI script was successfully executed.
 		// WNOHANG means waitpid is non-blocking and will immediately return if no child has exited.
-		pid_t exited = waitpid(_childPid, &status, WNOHANG);
+		pid_t exited = waitpid(_childPid, &_childStatus, WNOHANG);
 		if (exited < 0)
 			throw runtime_error("CGI: Failed to wait for child process.");
 		// > 0 means the child exited
@@ -288,18 +296,24 @@ void CGIHandler::_resolveChildStatus()
 		++msElapsed;
 	}
 
-	// if CGI has timed out, kill the child process.
+	// if CGI has timed out, kill and reap the child process.
 	if (msElapsed >= TIMEOUT_MS)
 	{
 		kill(_childPid, SIGKILL);
+		waitpid(_childPid, &_childStatus, 0);
 		throw TimeoutException();
 	}
+}
 
+// This function will resolve the child's status and throw exceptions if the 
+// child exited with non-zero exit status.
+void CGIHandler::_resolveChildStatus()
+{
 	// WIFEXITED(status) returns true if the child terminated normally via exit().
 	// WEXITSTATUS(status) only gives the actual exit code if WIFEXITED(status) is true.
-	if (WIFEXITED(status))
+	if (WIFEXITED(_childStatus))
 	{
-		int exitStatus = WEXITSTATUS(status);
+		int exitStatus = WEXITSTATUS(_childStatus);
 		if (exitStatus != 0)
 		{
 			switch (exitStatus)
@@ -316,7 +330,7 @@ void CGIHandler::_resolveChildStatus()
 		}
 	}
 	// child was terminated by signal e.g.SIGSEGV, SIGKILL
-	else if (WIFSIGNALED(status))
+	else if (WIFSIGNALED(_childStatus))
 		throw AbnormalTerminationException();
 }
 

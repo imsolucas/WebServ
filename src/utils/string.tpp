@@ -2,8 +2,8 @@
 
 # include "utils.hpp"
 
-using std::string;
 using std::ostringstream;
+using std::string;
 
 template<typename T>
 string utils::toString(const T &any)

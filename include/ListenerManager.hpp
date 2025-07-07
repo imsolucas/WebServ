@@ -12,7 +12,6 @@ class ListenerManager
 
 		bool isListener(int fd);
 
-		// getters
 		const std::map<int, int> &getListenerMap() const;
 		int getPort(int listenerFd) const;
 
@@ -21,4 +20,5 @@ class ListenerManager
 		std::map<int, int> _listenerMap;
 
 		void _setUpListener(int port);
+		bool _isPortAlreadyListening(int port) const;
 };

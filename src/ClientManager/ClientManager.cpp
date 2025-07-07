@@ -12,10 +12,11 @@ using std::getline;
 using std::istringstream;
 using std::map;
 using std::string;
+using std::stringstream;
 using std::vector;
 
-ClientManager::ClientManager(std::vector<int> &pollRemoveQueue, std::vector<int> &pollToggleQueue,
-								std::vector<int> &pollAddQueue, const std::vector<Server> &servers)
+ClientManager::ClientManager(vector<int> &pollRemoveQueue, vector<int> &pollToggleQueue,
+								vector<int> &pollAddQueue, const vector<Server> &servers)
 : _pollRemoveQueue(pollRemoveQueue), _pollToggleQueue(pollToggleQueue), _pollAddQueue(pollAddQueue), _servers(servers) {}
 
 void ClientManager::addClient(int listenerFd, int port)
@@ -47,7 +48,6 @@ void ClientManager::removeClient(int fd)
 	cout << RED << "Client with fd " << fd << " disconnected!\n" << RESET;
 }
 
-// boolean reflects success of recv call().
 void ClientManager::recvFromClient(int fd)
 {
 	char buffer[4096];
@@ -56,7 +56,6 @@ void ClientManager::recvFromClient(int fd)
 	// signed size_t can be negative.
 	ssize_t bytesReceived = recv(fd, buffer, sizeof(buffer), 0);
 	// 0 bytes read is the client's EOF signal when it closes its connection.
-	// a more reliable signal to detect for graceful closure than POLLHUP.
 	if (bytesReceived == 0)
 	{
 		cout << "Client with fd " << fd << " has hung up.\n";
@@ -151,7 +150,8 @@ void ClientManager::_handleIncomingData(int fd, const char *buffer, size_t bytes
 				if (success)
 					client.state = STATE_HEADERS_PREPARSED;
 				else
-					// if preparsing fails, we assume headers are complete.
+					// if preparsing fails, we don't have a reliable way to determine the end of the body,
+					// so we just assume the request is ready.
 					client.state = STATE_REQUEST_READY;
 			}
 			else
@@ -220,7 +220,7 @@ bool ClientManager::_preparseHeaders(ClientMeta &client)
 		if (pos != string::npos)
 		{
 			string key = utils::trim(line.substr(0, pos), " \t\r");
-			string value = line.substr(pos + 1);
+			string value = utils::trim(line.substr(pos + 1), " \t\r");
 			if (!key.empty() && !value.empty())
 				req.headers[utils::toLower(key)] = value;
 		}
@@ -261,7 +261,7 @@ void ClientManager::_determineBodyEnd(ClientMeta &client, const PreparsedRequest
 	else if (req.headers.count("content-length"))
 	{
 		// create a stringstream to extract the content length as an integer
-		std::stringstream ss(req.headers.at("content-length"));
+		stringstream ss(req.headers.at("content-length"));
 		// set content length to 0 if fail to parse a valid number
 		if (!(ss >> client.requestMeta.contentLength))
 			client.requestMeta.contentLength = 0;
@@ -301,7 +301,7 @@ const Server *ClientManager::_selectServerBlock(ClientMeta &client, const Prepar
 	for (vector<const Server *>::const_iterator serverIt = candidates.begin(); serverIt != candidates.end(); ++serverIt)
 	{
 		const vector<string> &serverNames = (*serverIt)->getServerNames();
-		for (std::vector<string>::const_iterator nameIt = serverNames.begin(); nameIt != serverNames.end(); ++nameIt)
+		for (vector<string>::const_iterator nameIt = serverNames.begin(); nameIt != serverNames.end(); ++nameIt)
 		{
 			if (*nameIt == serverName)
 				return *serverIt;

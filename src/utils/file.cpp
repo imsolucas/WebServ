@@ -3,11 +3,11 @@
 
 # include "utils.hpp"
 
-using std::runtime_error;
-using std::vector;
-using std::ifstream;
-using std::string;
 using std::getline;
+using std::ifstream;
+using std::runtime_error;
+using std::string;
+using std::vector;
 
 string utils::readFile(const string &path)
 {
