@@ -144,12 +144,13 @@ string autoindex(const string &directory)
 		 << "<h1>Directory Listing for " << directory << "</h1>\n"
 		 << "<ul>\n";
 
+	string root = directory.substr(directory.find('/'));
 	vector<string> dirents = utils::readDirectory(directory);
 	if (dirents.empty()) return "";
 	for (vector<string>::const_iterator it = dirents.begin();
 		it != dirents.end(); ++it)
 	{
-		body << "<li><a href=\"" << *it << "\">" << *it << "</a></li>\n";
+		body << "<li><a href=\"" + root + *it + "\">" + *it + "</a></li>\n";
 	}
 
 	body << "</ul>\n"
