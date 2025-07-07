@@ -65,7 +65,12 @@ string ClientManager::_handleRequest(const ClientMeta &client)
 		return serialize(response);
 	}
 
-	string path = location->getRoot() + requestTarget;
+	string path;
+	string root = utils::splitFirst(location->getRoot(), '/')[0];
+	if (root.empty())
+		path = location->getRoot() + requestTarget;
+	else
+		path = root + requestTarget;
 	PathType type = getPathType(path);
 	switch (type)
 	{
