@@ -3,7 +3,7 @@
 > 🚀 **Fast, flexible, and fun to learn!**  
 > A custom HTTP web server written in C++ for educational purposes.
 
-```
+
 
 
 - 📃 Error handling and logging system
